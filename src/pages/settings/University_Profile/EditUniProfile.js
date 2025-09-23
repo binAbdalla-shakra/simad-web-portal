@@ -194,16 +194,40 @@ const UniversityProfileEdit = () => {
     }, [universityInfo, missionQuill, visionQuill, historyQuill, achievementsQuill, guidingPrinciplesQuill]);
 
     // Handle input changes for university info
+    // const handleInputChange = (e, section, field, subfield = null) => {
+    //     const value = e.target.value;
+
+    //     if (subfield) {
+    //         setUniversityInfo(prev => ({
+    //             ...prev,
+    //             [section]: {
+    //                 ...prev[section],
+    //                 [subfield]: value
+    //             }
+    //         }));
+    //     } else if (section) {
+    //         setUniversityInfo(prev => ({
+    //             ...prev,
+    //             [section]: {
+    //                 ...prev[section],
+    //                 [field]: value
+    //             }
+    //         }));
+    //     } else {
+    //         setUniversityInfo(prev => ({
+    //             ...prev,
+    //             [field]: value
+    //         }));
+    //     }
+    // };
     const handleInputChange = (e, section, field, subfield = null) => {
         const value = e.target.value;
 
         if (subfield) {
+            // For array fields, always store as string for easy typing
             setUniversityInfo(prev => ({
                 ...prev,
-                [section]: {
-                    ...prev[section],
-                    [subfield]: value
-                }
+                [field]: value
             }));
         } else if (section) {
             setUniversityInfo(prev => ({
@@ -462,7 +486,11 @@ const UniversityProfileEdit = () => {
                     history: historyContent,
                     core_values: achievementsContent,
                     guiding_principles: guidingPrinciplesContent
-                }
+                },
+                colors: universityInfo.colors ? universityInfo.colors.split(',').map(item => item.trim()).filter(item => item !== '') : [],
+                formerNames: universityInfo.formerNames ? universityInfo.formerNames.split(',').map(item => item.trim()).filter(item => item !== '') : [],
+                otherNames: universityInfo.otherNames ? universityInfo.otherNames.split(',').map(item => item.trim()).filter(item => item !== '') : []
+
             };
 
             // Validate data before sending
@@ -736,8 +764,9 @@ const UniversityProfileEdit = () => {
                                                                     <Input
                                                                         type="text"
                                                                         id="colors"
-                                                                        value={Array.isArray(universityInfo.colors) ? universityInfo.colors.join(', ') : universityInfo.colors || ''}
-                                                                        onChange={(e) => handleInputChange(e, null, 'colors', e.target.value.split(',').map(item => item.trim()))}
+                                                                        value={universityInfo.colors || ''}
+                                                                        onChange={(e) => handleInputChange(e, null, 'colors', true)}
+                                                                        placeholder="Red, Blue, Green"
                                                                     />
                                                                 </FormGroup>
                                                             </Col>
@@ -748,8 +777,9 @@ const UniversityProfileEdit = () => {
                                                             <Input
                                                                 type="text"
                                                                 id="formerNames"
-                                                                value={Array.isArray(universityInfo.formerNames) ? universityInfo.formerNames.join(', ') : universityInfo.formerNames || ''}
-                                                                onChange={(e) => handleInputChange(e, null, 'formerNames', e.target.value.split(',').map(item => item.trim()))}
+                                                                value={universityInfo.formerNames || ''}
+                                                                onChange={(e) => handleInputChange(e, null, 'formerNames', true)}
+                                                                placeholder="Old Name 1, Old Name 2"
                                                             />
                                                         </FormGroup>
 
@@ -758,8 +788,9 @@ const UniversityProfileEdit = () => {
                                                             <Input
                                                                 type="text"
                                                                 id="otherNames"
-                                                                value={Array.isArray(universityInfo.otherNames) ? universityInfo.otherNames.join(', ') : universityInfo.otherNames || ''}
-                                                                onChange={(e) => handleInputChange(e, null, 'otherNames', e.target.value.split(',').map(item => item.trim()))}
+                                                                value={universityInfo.otherNames || ''}
+                                                                onChange={(e) => handleInputChange(e, null, 'otherNames', true)}
+                                                                placeholder="Alternative Name 1, Alternative Name 2"
                                                             />
                                                         </FormGroup>
                                                     </CardBody>
