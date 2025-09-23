@@ -53,9 +53,10 @@ const UniversityProfileEdit = () => {
     // FilePond states
     const [logoFiles, setLogoFiles] = useState([]);
     const [bgFiles, setBgFiles] = useState([]);
-    const [whySimadImages, setWhySimadImages] = useState({});
-    const [senateMemberImages, setSenateMemberImages] = useState({});
-    const [accreditationLogos, setAccreditationLogos] = useState({});
+    // Replace these object states with arrays
+    const [whySimadImages, setWhySimadImages] = useState([]);
+    const [senateMemberImages, setSenateMemberImages] = useState([]);
+    const [accreditationLogos, setAccreditationLogos] = useState([]);
 
     useEffect(() => {
         dispatch(onGetUniversityInfo());
@@ -68,6 +69,11 @@ const UniversityProfileEdit = () => {
             setHistoryData(uniData.historyItems || []);
             setSenateMembers(uniData.senateMembers || []);
             setAccreditations(uniData.accreditations || []);
+
+            // Initialize image arrays with empty arrays for each item
+            setWhySimadImages(Array(uniData.whySimadItems?.length || 0).fill([]));
+            setSenateMemberImages(Array(uniData.senateMembers?.length || 0).fill([]));
+            setAccreditationLogos(Array(uniData.accreditations?.length || 0).fill([]));
         }
     }, [uniData]);
 
@@ -240,6 +246,9 @@ const UniversityProfileEdit = () => {
                 isActive: true
             }
         ]);
+
+        // Add empty array for the new item's images
+        setWhySimadImages(prev => [...prev, []]);
     };
 
     // Handle removing why SIMAD item
@@ -249,6 +258,13 @@ const UniversityProfileEdit = () => {
                 const updatedData = [...prevData];
                 updatedData.splice(index, 1);
                 return updatedData;
+            });
+
+            // Also remove the corresponding image entry
+            setWhySimadImages(prev => {
+                const updatedImages = [...prev];
+                updatedImages.splice(index, 1);
+                return updatedImages;
             });
         }
     };
@@ -341,7 +357,7 @@ const UniversityProfileEdit = () => {
         });
     };
 
-    // Add new senate member
+    // Add Senate member
     const addSenateMember = () => {
         setSenateMembers(prevData => [
             ...prevData,
@@ -356,9 +372,11 @@ const UniversityProfileEdit = () => {
                 isActive: true
             }
         ]);
+
+        setSenateMemberImages(prev => [...prev, []]);
     };
 
-    // Remove senate member - FIXED: Create a new array instead of direct mutation
+    // Remove Senate member
     const removeSenateMember = (index) => {
         if (senateMembers.length > 1) {
             setSenateMembers(prevData => {
@@ -366,8 +384,15 @@ const UniversityProfileEdit = () => {
                 updatedData.splice(index, 1);
                 return updatedData;
             });
+
+            setSenateMemberImages(prev => {
+                const updatedImages = [...prev];
+                updatedImages.splice(index, 1);
+                return updatedImages;
+            });
         }
     };
+
 
     // Handle changes for accreditations - FIXED: Create a new array instead of direct mutation
     const handleAccreditationChange = (index, field, value) => {
@@ -395,9 +420,11 @@ const UniversityProfileEdit = () => {
                 isActive: true
             }
         ]);
+
+        setAccreditationLogos(prev => [...prev, []]);
     };
 
-    // Remove accreditation - FIXED: Create a new array instead of direct mutation
+    // Remove accreditation
     const removeAccreditation = (index) => {
         if (accreditations.length > 1) {
             setAccreditations(prevData => {
@@ -405,9 +432,14 @@ const UniversityProfileEdit = () => {
                 updatedData.splice(index, 1);
                 return updatedData;
             });
+
+            setAccreditationLogos(prev => {
+                const updatedLogos = [...prev];
+                updatedLogos.splice(index, 1);
+                return updatedLogos;
+            });
         }
     };
-
     // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -453,34 +485,70 @@ const UniversityProfileEdit = () => {
 
             setSaveStatus({ type: 'info', message: 'Saving changes...' });
 
-            // Send all data in a single API call
-            const data = {
-                university: updatedUniversityInfo,
-                whySimadItems: whySimadData,
-                historyItems: historyData,
-                senateMembers: senateMembers,
-                accreditations: accreditations
-            };
+            // Create FormData object
+            const formData = new FormData();
+
+            // Add JSON data as strings
+            formData.append('university', JSON.stringify(updatedUniversityInfo));
+            formData.append('whySimadItems', JSON.stringify(whySimadData));
+            formData.append('historyItems', JSON.stringify(historyData));
+            formData.append('senateMembers', JSON.stringify(senateMembers));
+            formData.append('accreditations', JSON.stringify(accreditations));
+
+            // Add university logo and background images
+            if (logoFiles.length > 0) {
+                formData.append('universityLogo', logoFiles[0].file);
+            }
+            if (bgFiles.length > 0) {
+                formData.append('universityBackground', bgFiles[0].file);
+            }
+
+            // Add WhySimad images
+            whySimadImages.forEach((fileItems, index) => {
+                if (fileItems && fileItems.length > 0) {
+                    formData.append(`whySimadImage[${index}]`, fileItems[0].file);
+                }
+            });
+
+            // Add Senate member images
+            senateMemberImages.forEach((fileItems, index) => {
+                if (fileItems && fileItems.length > 0) {
+                    formData.append(`senateImage[${index}]`, fileItems[0].file);
+                }
+            });
+
+            // Add Accreditation logos
+            accreditationLogos.forEach((fileItems, index) => {
+                if (fileItems && fileItems.length > 0) {
+                    formData.append(`accreditationLogo[${index}]`, fileItems[0].file);
+                }
+            });
+
+            // Send all data in a single API call with FormData
             try {
-                const result = await dispatch(onUpdateUniversityInfo(data)).unwrap();
-                // result here is your payload from the API
+                const result = await dispatch(onUpdateUniversityInfo(formData)).unwrap();
+                console.log("result is:", result)
                 if (!result.success) {
                     if (result.errors?.length) {
                         throw new Error(result.errors.join(', '));
                     }
                     throw new Error(result.message || 'Failed to save changes');
                 }
+
+                setSaveStatus({ type: 'success', message: 'All changes saved successfully!' });
+
+                // Redirect after a short delay
+                setTimeout(() => {
+                    navigate("/setting-profile");
+                }, 2000);
+
             } catch (err) {
-                console.error(err.message);
+                console.error('Error saving data:', err);
+                setSaveStatus({
+                    type: 'danger',
+                    message: err.message || 'Error saving changes. Please try again.'
+                });
             }
-
-
-            setSaveStatus({ type: 'success', message: 'All changes saved successfully!' });
-
-            // Redirect after a short delay
-            setTimeout(() => {
-                navigate("/setting-profile");
-            }, 2000);
 
         } catch (error) {
             setSaveStatus({
@@ -489,7 +557,6 @@ const UniversityProfileEdit = () => {
             });
         }
     };
-
     return (
         <div className="page-content">
             <Container fluid>
@@ -953,24 +1020,33 @@ const UniversityProfileEdit = () => {
                                                                         <FilePond
                                                                             files={whySimadImages[index] || []}
                                                                             onupdatefiles={(fileItems) => {
-                                                                                const newImages = { ...whySimadImages };
-                                                                                newImages[index] = fileItems;
-                                                                                setWhySimadImages(newImages);
+                                                                                setWhySimadImages(prev => {
+                                                                                    const newImages = [...prev];
+                                                                                    newImages[index] = fileItems;
+                                                                                    return newImages;
+                                                                                });
 
+                                                                                // Update the whySimadData with the image filename
                                                                                 if (fileItems.length > 0) {
                                                                                     handleWhySimadChange(index, 'image', fileItems[0].file.name);
+                                                                                } else {
+                                                                                    handleWhySimadChange(index, 'image', '');
                                                                                 }
                                                                             }}
                                                                             allowMultiple={false}
-                                                                            name="image"
+                                                                            allowPaste={false}
+
+                                                                            name={`whySimadImage[${index}]`}
                                                                             labelIdle='Drag & Drop your image or <span class="filepond--label-action">Browse</span>'
+                                                                            acceptedFileTypes={['image/*']}
+                                                                            maxFileSize="5MB"
                                                                         />
                                                                         {item.image && (
                                                                             <div className="mt-2">
                                                                                 <small className="text-muted">Current image: {item.image}</small>
                                                                                 <div className="mt-1">
                                                                                     <img
-                                                                                        src={require(`../../../assets/images/${item.image}`)}
+                                                                                        src={item.image}
                                                                                         alt="Current"
                                                                                         className="img-thumbnail"
                                                                                         style={{ height: 'auto' }}
@@ -1161,24 +1237,32 @@ const UniversityProfileEdit = () => {
                                                                         <FilePond
                                                                             files={senateMemberImages[index] || []}
                                                                             onupdatefiles={(fileItems) => {
-                                                                                const newImages = { ...senateMemberImages };
-                                                                                newImages[index] = fileItems;
-                                                                                setSenateMemberImages(newImages);
+                                                                                setSenateMemberImages(prev => {
+                                                                                    const newImages = [...prev];
+                                                                                    newImages[index] = fileItems;
+                                                                                    return newImages;
+                                                                                });
 
                                                                                 if (fileItems.length > 0) {
                                                                                     handleSenateChange(index, 'image', fileItems[0].file.name);
+                                                                                } else {
+                                                                                    handleSenateChange(index, 'image', '');
                                                                                 }
                                                                             }}
                                                                             allowMultiple={false}
-                                                                            name="image"
+                                                                            allowPaste={false}
+
+                                                                            name={`senateImage[${index}]`}
                                                                             labelIdle='Drag & Drop your image or <span class="filepond--label-action">Browse</span>'
+                                                                            acceptedFileTypes={['image/*']}
+                                                                            maxFileSize="5MB"
                                                                         />
                                                                         {member.image && (
                                                                             <div className="mt-2">
                                                                                 <small className="text-muted">Current image: {member.image}</small>
                                                                                 <div className="mt-1">
                                                                                     <img
-                                                                                        src={require(`../../../assets/images/${member.image}`)}
+                                                                                        src={member.image}
                                                                                         alt="Current"
                                                                                         className="img-thumbnail"
                                                                                         style={{ maxHeight: '100px' }}
@@ -1283,24 +1367,32 @@ const UniversityProfileEdit = () => {
                                                                         <FilePond
                                                                             files={accreditationLogos[index] || []}
                                                                             onupdatefiles={(fileItems) => {
-                                                                                const newLogos = { ...accreditationLogos };
-                                                                                newLogos[index] = fileItems;
-                                                                                setAccreditationLogos(newLogos);
+                                                                                setAccreditationLogos(prev => {
+                                                                                    const newLogos = [...prev];
+                                                                                    newLogos[index] = fileItems;
+                                                                                    return newLogos;
+                                                                                });
 
                                                                                 if (fileItems.length > 0) {
                                                                                     handleAccreditationChange(index, 'logo', fileItems[0].file.name);
+                                                                                } else {
+                                                                                    handleAccreditationChange(index, 'logo', '');
                                                                                 }
                                                                             }}
                                                                             allowMultiple={false}
-                                                                            name="logo"
+                                                                            allowPaste={false}
+
+                                                                            name={`accreditationLogo[${index}]`}
                                                                             labelIdle='Drag & Drop your logo or <span class="filepond--label-action">Browse</span>'
+                                                                            acceptedFileTypes={['image/*']}
+                                                                            maxFileSize="5MB"
                                                                         />
                                                                         {item.logo && (
                                                                             <div className="mt-2">
                                                                                 <small className="text-muted">Current logo: {item.logo}</small>
                                                                                 <div className="mt-1">
                                                                                     <img
-                                                                                        src={require(`../../../assets/images/${item.logo}`)}
+                                                                                        src={item.logo}
                                                                                         alt="Current"
                                                                                         className="img-thumbnail"
                                                                                         style={{ maxHeight: '100px' }}

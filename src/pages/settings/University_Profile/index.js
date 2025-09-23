@@ -385,7 +385,7 @@ const UniversityProfile = () => {
                                                                 {card.image && (
                                                                     <div className="card-img-container">
                                                                         <img
-                                                                            src={require(`../../../assets/images/${card.image}`)}
+                                                                            src={card.image}
                                                                             className="card-img-top"
                                                                             alt={card.title}
                                                                             style={{ height: '200px', objectFit: 'cover' }}
@@ -473,7 +473,7 @@ const UniversityProfile = () => {
                                                                 <div className="flex-shrink-0">
                                                                     <div className="avatar-wrapper position-relative">
                                                                         <img
-                                                                            src={require(`../../../assets/images/${member.image}`)}
+                                                                            src={member.image}
                                                                             alt={member.name}
                                                                             className="avatar-lg rounded shadow-sm"
                                                                         />
@@ -572,7 +572,7 @@ const UniversityProfile = () => {
                                                         <CardBody className="d-flex flex-column"> {/* Use flex column layout */}
                                                             <div className="d-flex mb-3">
                                                                 <div className="flex-shrink-0">
-                                                                    <img src={require(`../../../assets/images/${item.logo}`)} alt="" className="avatar-md" />
+                                                                    <img src={item.logo} alt="" className="avatar-md" />
                                                                 </div>
                                                                 <div className="flex-grow-1 ms-3">
                                                                     <h5 className="card-title mb-1">{item.name}</h5>

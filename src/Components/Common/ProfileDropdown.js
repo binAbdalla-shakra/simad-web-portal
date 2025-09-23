@@ -25,7 +25,9 @@ const ProfileDropdown = () => {
         if (sessionStorage.getItem("authUser")) {
             const obj = JSON.parse(sessionStorage.getItem("authUser"));
             // console.log("obj is:", obj.data.user.username)
-            setUserName(obj.data.user.username || "Admin"
+            // setUserName(obj.data.user.username || "Admin"
+            setUserName("Admin"
+
             );
         }
     }, [userName, user]);

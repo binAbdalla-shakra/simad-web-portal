@@ -1,4 +1,5 @@
 // src/helpers/backend_helper.js
+import axios from "axios";
 import api from "./api_helper";
 import * as url from "./url_helper";
 
@@ -38,9 +39,26 @@ export const UserAPI = {
 };
 
 //  University APIs
+// export const UniversityAPI = {
+//     get: () => api.get(url.UNIVERSITY_INFO),
+//     update: (uni) => api.update(url.UNIVERSITY_INFO, uni)
+// };
 export const UniversityAPI = {
     get: () => api.get(url.UNIVERSITY_INFO),
-    update: (uni) => api.update(url.UNIVERSITY_INFO, uni)
+    update: (uni) => {
+        // Check if it's FormData (for file uploads) or regular data
+        if (uni instanceof FormData) {
+            // For FormData, use post with multipart/form-data headers
+            return axios.post(url.UNIVERSITY_INFO, uni, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+        } else {
+            // For regular JSON data, use the existing api.update method
+            return api.update(url.UNIVERSITY_INFO, uni);
+        }
+    }
 };
 
 // ================================== END OF SETTINGS URL ===================================================
