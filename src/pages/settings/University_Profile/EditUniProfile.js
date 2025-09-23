@@ -492,7 +492,6 @@ const UniversityProfileEdit = () => {
                 otherNames: universityInfo.otherNames ? universityInfo.otherNames.split(',').map(item => item.trim()).filter(item => item !== '') : []
 
             };
-
             // Validate data before sending
             const validationErrors = validateUniversityData({
                 universityInfo: updatedUniversityInfo,
