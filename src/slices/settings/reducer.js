@@ -1,9 +1,10 @@
 // src/slices/settings/reducer.js
 import { createSlice } from "@reduxjs/toolkit";
-import { getUsersData, getUniversityInfo } from './thunk';
+import { getUsersData, getUniversityInfo, getRoles } from './thunk';
 export const initialState = {
     usersData: [],
     uniData: [],
+    rolesData: [],
     error: {},
 };
 
@@ -18,6 +19,15 @@ const SettingSlice = createSlice({
         builder.addCase(getUsersData.rejected, (state, action) => {
             state.error = action.payload.error || null;
         });
+
+
+        builder.addCase(getRoles.fulfilled, (state, action) => {
+            state.rolesData = action.payload;
+        });
+        builder.addCase(getRoles.rejected, (state, action) => {
+            state.error = action.payload.error || null;
+        });
+
 
         // university
         builder.addCase(getUniversityInfo.fulfilled, (state, action) => {

@@ -22,6 +22,7 @@ import {
     addUser as onAddNewUser,
     updateUser as onUpdateUser,
     deleteUser as onDeleteUser,
+    getRoles as onGetRoles
 } from "../../../slices/thunks";
 
 // Formik
@@ -39,9 +40,15 @@ const Users = () => {
     const selectusersData = createSelector(
         (state) => state.Settings,
         (usersData) => usersData.usersData
+
     );
 
+    const roles = useSelector(state => state.Settings.rolesData) || [];
+
+
+
     const usersData = useSelector(selectusersData);
+
     const [usersList, setUsersList] = useState([]);
     const [loading, setLoading] = useState(false);
     const [modal, setModal] = useState(false);
@@ -75,12 +82,12 @@ const Users = () => {
         { value: "Inactive", label: "Inactive" }
     ];
 
-    const roleOptions = [
-        { value: "", label: "All Roles" },
-        { value: "Admin", label: "Admin" },
-        { value: "User", label: "User" },
-        { value: "Editor", label: "Editor" }
-    ];
+
+    const roleOptions = roles?.roles.map(role => ({
+        value: role._id,
+        label: role.type
+    }));
+
 
     // Fetch users with filters
     const fetchUsers = useCallback(async () => {
@@ -93,6 +100,11 @@ const Users = () => {
             setLoading(false);
         }
     }, [dispatch]);
+
+    useEffect(() => {
+        dispatch(onGetRoles());
+    }, [dispatch]);
+
 
     // Update users list when data changes
     useEffect(() => {
@@ -202,7 +214,7 @@ const Users = () => {
         initialValues: {
             username: formData.username,
             email: formData.email,
-            password: formData.password,
+            // password: formData.password,
             firstName: formData.firstName,
             lastName: formData.lastName,
             phone: formData.phone,
@@ -219,14 +231,15 @@ const Users = () => {
                 .required("Email is required")
                 .trim()
                 .lowercase(),
-            password: Yup.string()
-                .when('isEdit', (isEdit, schema) => {
-                    return isEdit ? schema.notRequired() : schema.min(8, "Password must be at least 8 characters").required("Password is required")
-                }),
+            // password: Yup.string()
+            //     .when('isEdit', (isEdit, schema) => {
+            //         return isEdit ? schema.notRequired() : schema.min(8, "Password must be at least 8 characters").required("Password is required")
+            //     }),
             firstName: Yup.string().required("First name is required").trim(),
             lastName: Yup.string().required("Last name is required").trim(),
-            phone: Yup.string().trim(),
-            title: Yup.string().trim(),
+            phone: Yup.string().required("Phone is required").trim(),
+            title: Yup.string().required("Role is required"),
+
             isActive: Yup.boolean()
         }),
         onSubmit: (values) => {
@@ -235,7 +248,7 @@ const Users = () => {
                     id: selectedUser ? selectedUser._id : 0,
                     ...values,
                     // Don't update password if not changed
-                    password: values.password || undefined
+                    // password: values.password || undefined
                 };
                 dispatch(onUpdateUser(updateUserData));
             } else {
@@ -256,32 +269,26 @@ const Users = () => {
         {
             name: '#',
             cell: (row, index) => index + 1,
-            width: '60px'
         },
         {
             name: 'Username',
             selector: row => row.username,
-            sortable: true
         },
         {
             name: 'Full Name',
             selector: row => `${row.firstName} ${row.lastName}`,
-            sortable: true
         },
         {
             name: 'Email',
             selector: row => row.email,
-            sortable: true
         },
         {
             name: 'Phone',
             selector: row => row.phone || '-',
-            sortable: true
         },
         {
             name: 'Title/Role',
             selector: row => row.title || 'User',
-            sortable: true
         },
         {
             name: 'Status',
@@ -290,7 +297,6 @@ const Users = () => {
                     {row.isActive ? 'Active' : 'Inactive'}
                 </Badge>
             ),
-            sortable: true
         },
         {
             name: 'Actions',
@@ -304,7 +310,6 @@ const Users = () => {
                     </Button>
                 </div>
             ),
-            width: '120px'
         }
     ];
 
@@ -414,6 +419,7 @@ const Users = () => {
                                                 value={validation.values.firstName}
                                                 onChange={validation.handleChange}
                                                 onBlur={validation.handleBlur}
+                                                placeholder="e.g., Abdishakur"
                                                 invalid={validation.touched.firstName && !!validation.errors.firstName}
                                             />
                                             <FormFeedback>{validation.errors.firstName}</FormFeedback>
@@ -427,6 +433,7 @@ const Users = () => {
                                                 value={validation.values.lastName}
                                                 onChange={validation.handleChange}
                                                 onBlur={validation.handleBlur}
+                                                placeholder="e.g., Abdullahi"
                                                 invalid={validation.touched.lastName && !!validation.errors.lastName}
                                             />
                                             <FormFeedback>{validation.errors.lastName}</FormFeedback>
@@ -443,6 +450,7 @@ const Users = () => {
                                                 value={validation.values.username}
                                                 onChange={validation.handleChange}
                                                 onBlur={validation.handleBlur}
+                                                placeholder="e.g., shakra"
                                                 invalid={validation.touched.username && !!validation.errors.username}
                                             />
                                             <FormFeedback>{validation.errors.username}</FormFeedback>
@@ -457,6 +465,7 @@ const Users = () => {
                                                 value={validation.values.email}
                                                 onChange={validation.handleChange}
                                                 onBlur={validation.handleBlur}
+                                                placeholder="e.g., abdi@gmail.com"
                                                 invalid={validation.touched.email && !!validation.errors.email}
                                             />
                                             <FormFeedback>{validation.errors.email}</FormFeedback>
@@ -464,34 +473,17 @@ const Users = () => {
                                     </Col>
                                 </Row>
 
-                                {!isEdit && (
-                                    <Row>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label>Password <span className="text-danger">*</span></Label>
-                                                <Input
-                                                    type="password"
-                                                    name="password"
-                                                    value={validation.values.password}
-                                                    onChange={validation.handleChange}
-                                                    onBlur={validation.handleBlur}
-                                                    invalid={validation.touched.password && !!validation.errors.password}
-                                                />
-                                                <FormFeedback>{validation.errors.password}</FormFeedback>
-                                            </FormGroup>
-                                        </Col>
-                                    </Row>
-                                )}
 
                                 <Row>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label>Phone</Label>
+                                            <Label>Phone <span className="text-danger">*</span></Label>
                                             <Input
                                                 name="phone"
                                                 value={validation.values.phone}
                                                 onChange={validation.handleChange}
                                                 onBlur={validation.handleBlur}
+                                                placeholder="e.g., +252610000000"
                                                 invalid={validation.touched.phone && !!validation.errors.phone}
                                             />
                                             <FormFeedback>{validation.errors.phone}</FormFeedback>
@@ -499,14 +491,19 @@ const Users = () => {
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label>Title/Role</Label>
-                                            <Input
+                                            <Label>Role</Label>
+                                            <Select
                                                 name="title"
-                                                value={validation.values.title}
-                                                onChange={validation.handleChange}
+                                                options={roleOptions}
+                                                value={roleOptions.find(opt => opt.value === validation.values.title)}
+                                                onChange={(selected) => validation.setFieldValue("title", selected ? selected.value : "")}
                                                 onBlur={validation.handleBlur}
-                                                invalid={validation.touched.title && !!validation.errors.title}
+                                                isClearable
                                             />
+                                            {validation.touched.title && validation.errors.title && (
+                                                <div className="invalid-feedback d-block">{validation.errors.title}</div>
+                                            )}
+
                                             <FormFeedback>{validation.errors.title}</FormFeedback>
                                         </FormGroup>
                                     </Col>

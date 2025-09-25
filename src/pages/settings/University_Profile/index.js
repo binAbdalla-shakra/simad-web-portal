@@ -152,7 +152,7 @@ const UniversityProfile = () => {
                                         </NavItem>
                                         <NavItem className="fs-14">
                                             <NavLink
-                                                href="#documents"
+                                                href="#why-simad"
                                                 className={classnames({ active: activeTab === '2' })}
                                                 onClick={() => { toggleTab('2'); }}
                                             >
@@ -162,7 +162,7 @@ const UniversityProfile = () => {
                                         </NavItem>
                                         <NavItem className="fs-14">
                                             <NavLink
-                                                href="#activities"
+                                                href="#history"
                                                 className={classnames({ active: activeTab === '3' })}
                                                 onClick={() => { toggleTab('3'); }}
                                             >
@@ -172,7 +172,7 @@ const UniversityProfile = () => {
                                         </NavItem>
                                         <NavItem className="fs-14">
                                             <NavLink
-                                                href="#projects"
+                                                href="#senate"
                                                 className={classnames({ active: activeTab === '4' })}
                                                 onClick={() => { toggleTab('4'); }}
                                             >
@@ -182,7 +182,7 @@ const UniversityProfile = () => {
                                         </NavItem>
                                         <NavItem className="fs-14">
                                             <NavLink
-                                                href="#documents"
+                                                href="#accreditations"
                                                 className={classnames({ active: activeTab === '5' })}
                                                 onClick={() => { toggleTab('5'); }}
                                             >
@@ -237,7 +237,7 @@ const UniversityProfile = () => {
                                                                         <th className="ps-0" scope="row">E-mail :</th>
                                                                         <td className="text-muted">{universityInfo?.contact?.email || "registrar@simad.edu.so"}</td>
                                                                     </tr>
-                                                                    <tr>
+                                                                    {/* <tr>
                                                                         <th className="ps-0" scope="row">Language</th>
                                                                         <td className="text-muted">	{universityInfo?.academics?.language || "Somali language"}</td>
                                                                     </tr>
@@ -248,8 +248,8 @@ const UniversityProfile = () => {
                                                                         </td>
 
 
-                                                                    </tr>
-                                                                    <tr>
+                                                                    </tr> */}
+                                                                    {/* <tr>
                                                                         <th className="ps-0" scope="row">Former names</th>
                                                                         <td className="text-muted">{universityInfo?.formerNames || "Simad for Somali Institute of Management and Administration Development"}</td>
                                                                     </tr>
@@ -260,7 +260,7 @@ const UniversityProfile = () => {
                                                                     <tr>
                                                                         <th className="ps-0" scope="row">Other name</th>
                                                                         <td className="text-muted">{universityInfo?.otherNames || "Abb. SU"}</td>
-                                                                    </tr>
+                                                                    </tr> */}
                                                                 </tbody>
                                                             </Table>
                                                         </div>
@@ -316,8 +316,8 @@ const UniversityProfile = () => {
                                                         <h5 className="card-title mb-3">Vision</h5>
                                                         <div dangerouslySetInnerHTML={{ __html: universityInfo?.description?.vision }} />
 
-                                                        <h5 className="card-title mb-3">History</h5>
-                                                        <div dangerouslySetInnerHTML={{ __html: universityInfo?.description?.history }} />
+                                                        {/* <h5 className="card-title mb-3">History</h5>
+                                                        <div dangerouslySetInnerHTML={{ __html: universityInfo?.description?.history }} /> */}
 
                                                         <h5 className="card-title mb-3">Guiding Principles</h5>
                                                         <div dangerouslySetInnerHTML={{ __html: universityInfo?.description?.guiding_principles }} />
@@ -488,23 +488,46 @@ const UniversityProfile = () => {
                                                                     <div className="d-flex align-items-center">
                                                                         <small className="text-info">
                                                                             <i className="ri-time-line me-1"></i>
-                                                                            Member since 2018
+                                                                            Long-standing member of the university family
                                                                         </small>
                                                                     </div>
                                                                 </div>
                                                             </div>
 
                                                             {/* Message section */}
+
                                                             <div className="mb-4 flex-grow-1">
                                                                 <h6 className="fs-14 mb-2 text-primary d-flex align-items-center">
                                                                     <i className="ri-chat-quote-line me-2"></i>Message
                                                                 </h6>
-                                                                <div className="bg-light rounded p-3">
-                                                                    <p
-                                                                        className={`mb-0 fst-italic `}
-                                                                    >
-                                                                        "{member.message}"
+                                                                <div className="bg-light rounded p-3 message-container">
+                                                                    <p className="mb-0 fst-italic text-muted">
+                                                                        {member.message.length > 150
+                                                                            ? `"${member.message.substring(0, 150)}..."`
+                                                                            : `"${member.message}"`}
                                                                     </p>
+                                                                    {member.message.length > 150 && (
+                                                                        <button
+                                                                            className="btn btn-link p-0 text-decoration-none mt-1"
+                                                                            onClick={(e) => {
+                                                                                e.preventDefault();
+                                                                                const msgElem = e.target
+                                                                                    .closest('.message-container')
+                                                                                    .querySelector('p');
+                                                                                if (msgElem.classList.contains('expanded')) {
+                                                                                    msgElem.classList.remove('expanded');
+                                                                                    msgElem.textContent = `"${member.message.substring(0, 150)}..."`;
+                                                                                    e.target.textContent = 'Read more';
+                                                                                } else {
+                                                                                    msgElem.classList.add('expanded');
+                                                                                    msgElem.textContent = `"${member.message}"`;
+                                                                                    e.target.textContent = 'Read less';
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            <small>Read more</small>
+                                                                        </button>
+                                                                    )}
                                                                 </div>
                                                             </div>
 
@@ -545,10 +568,10 @@ const UniversityProfile = () => {
                                                                 <div className="d-flex justify-content-between align-items-center">
                                                                     <div className="d-flex align-items-center">
                                                                         <span className="badge bg-info bg-opacity-10 text-info me-2">
-                                                                            <i className="ri-medal-line me-1"></i>Leadership
+                                                                            <i className="ri-medal-line me-1"></i>{member.position}
                                                                         </span>
                                                                         <span className="badge bg-success bg-opacity-10 text-success">
-                                                                            <i className="ri-group-line me-1"></i>Faculty
+                                                                            <i className="ri-group-line me-1"></i>{universityInfo?.name}
                                                                         </span>
                                                                     </div>
 

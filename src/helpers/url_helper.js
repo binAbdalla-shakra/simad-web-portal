@@ -2,6 +2,8 @@
 //USERs
 export const POST_LOGIN = "/users/login";
 export const USERS = "/users";
+export const ROLES = "/roles";
+
 // University 
 export const UNIVERSITY_INFO = "/about-university";
 

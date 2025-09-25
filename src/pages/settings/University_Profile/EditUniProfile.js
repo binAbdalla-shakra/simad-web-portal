@@ -194,32 +194,6 @@ const UniversityProfileEdit = () => {
     }, [universityInfo, missionQuill, visionQuill, historyQuill, achievementsQuill, guidingPrinciplesQuill]);
 
     // Handle input changes for university info
-    // const handleInputChange = (e, section, field, subfield = null) => {
-    //     const value = e.target.value;
-
-    //     if (subfield) {
-    //         setUniversityInfo(prev => ({
-    //             ...prev,
-    //             [section]: {
-    //                 ...prev[section],
-    //                 [subfield]: value
-    //             }
-    //         }));
-    //     } else if (section) {
-    //         setUniversityInfo(prev => ({
-    //             ...prev,
-    //             [section]: {
-    //                 ...prev[section],
-    //                 [field]: value
-    //             }
-    //         }));
-    //     } else {
-    //         setUniversityInfo(prev => ({
-    //             ...prev,
-    //             [field]: value
-    //         }));
-    //     }
-    // };
     const handleInputChange = (e, section, field, subfield = null) => {
         const value = e.target.value;
 
@@ -487,9 +461,9 @@ const UniversityProfileEdit = () => {
                     core_values: achievementsContent,
                     guiding_principles: guidingPrinciplesContent
                 },
-                colors: universityInfo.colors ? universityInfo.colors.split(',').map(item => item.trim()).filter(item => item !== '') : [],
-                formerNames: universityInfo.formerNames ? universityInfo.formerNames.split(',').map(item => item.trim()).filter(item => item !== '') : [],
-                otherNames: universityInfo.otherNames ? universityInfo.otherNames.split(',').map(item => item.trim()).filter(item => item !== '') : []
+                // colors: universityInfo.colors ? universityInfo.colors.split(',').map(item => item.trim()).filter(item => item !== '') : [],
+                // formerNames: universityInfo.formerNames ? universityInfo.formerNames.split(',').map(item => item.trim()).filter(item => item !== '') : [],
+                // otherNames: universityInfo.otherNames ? universityInfo.otherNames.split(',').map(item => item.trim()).filter(item => item !== '') : []
 
             };
             // Validate data before sending
@@ -554,7 +528,7 @@ const UniversityProfileEdit = () => {
             // Send all data in a single API call with FormData
             try {
                 const result = await dispatch(onUpdateUniversityInfo(formData)).unwrap();
-                console.log("result is:", result)
+                // console.log("result is:", result)
                 if (!result.success) {
                     if (result.errors?.length) {
                         throw new Error(result.errors.join(', '));
@@ -726,15 +700,7 @@ const UniversityProfileEdit = () => {
                                                             </Col>
                                                         </Row>
 
-                                                        <FormGroup>
-                                                            <Label for="motto">Motto</Label>
-                                                            <Input
-                                                                type="text"
-                                                                id="motto"
-                                                                value={universityInfo.motto || ''}
-                                                                onChange={(e) => handleInputChange(e, null, 'motto')}
-                                                            />
-                                                        </FormGroup>
+
 
                                                         <Row>
                                                             <Col md={6}>
@@ -759,47 +725,20 @@ const UniversityProfileEdit = () => {
                                                             </Col>
                                                             <Col md={6}>
                                                                 <FormGroup>
-                                                                    <Label for="colors">Colors (comma separated)</Label>
+                                                                    <Label for="motto">Motto</Label>
                                                                     <Input
                                                                         type="text"
-                                                                        id="colors"
-                                                                        value={universityInfo.colors || ''}
-                                                                        onChange={(e) => handleInputChange(e, null, 'colors', true)}
-                                                                        placeholder="Red, Blue, Green"
+                                                                        id="motto"
+                                                                        value={universityInfo.motto || ''}
+                                                                        onChange={(e) => handleInputChange(e, null, 'motto')}
                                                                     />
                                                                 </FormGroup>
                                                             </Col>
                                                         </Row>
 
-                                                        <FormGroup>
-                                                            <Label for="formerNames">Former Names (comma separated)</Label>
-                                                            <Input
-                                                                type="text"
-                                                                id="formerNames"
-                                                                value={universityInfo.formerNames || ''}
-                                                                onChange={(e) => handleInputChange(e, null, 'formerNames', true)}
-                                                                placeholder="Old Name 1, Old Name 2"
-                                                            />
-                                                        </FormGroup>
 
-                                                        <FormGroup>
-                                                            <Label for="otherNames">Other Names (comma separated)</Label>
-                                                            <Input
-                                                                type="text"
-                                                                id="otherNames"
-                                                                value={universityInfo.otherNames || ''}
-                                                                onChange={(e) => handleInputChange(e, null, 'otherNames', true)}
-                                                                placeholder="Alternative Name 1, Alternative Name 2"
-                                                            />
-                                                        </FormGroup>
-                                                    </CardBody>
-                                                </Card>
 
-                                                <Card>
-                                                    <CardHeader>
-                                                        <h5 className="card-title mb-0">Statistics</h5>
-                                                    </CardHeader>
-                                                    <CardBody>
+
                                                         <Row>
                                                             <Col md={6}>
                                                                 <FormGroup>
@@ -824,17 +763,9 @@ const UniversityProfileEdit = () => {
                                                                 </FormGroup>
                                                             </Col>
                                                         </Row>
-                                                        <FormGroup>
-                                                            <Label for="faculties">Number of Faculties</Label>
-                                                            <Input
-                                                                type="number"
-                                                                id="faculties"
-                                                                value={universityInfo.stats?.faculties || ''}
-                                                                onChange={(e) => handleInputChange(e, 'stats', 'faculties')}
-                                                            />
-                                                        </FormGroup>
                                                     </CardBody>
                                                 </Card>
+
                                             </Col>
 
                                             <Col xxl={6}>
@@ -854,7 +785,7 @@ const UniversityProfileEdit = () => {
                                                         </FormGroup>
 
                                                         <Row>
-                                                            <Col md={6}>
+                                                            <Col md={4}>
                                                                 <FormGroup>
                                                                     <Label for="city">City</Label>
                                                                     <Input
@@ -865,7 +796,7 @@ const UniversityProfileEdit = () => {
                                                                     />
                                                                 </FormGroup>
                                                             </Col>
-                                                            <Col md={6}>
+                                                            <Col md={4}>
                                                                 <FormGroup>
                                                                     <Label for="state">State/Region</Label>
                                                                     <Input
@@ -876,9 +807,7 @@ const UniversityProfileEdit = () => {
                                                                     />
                                                                 </FormGroup>
                                                             </Col>
-                                                        </Row>
-                                                        <Row>
-                                                            <Col md={6}>
+                                                            <Col md={4}>
                                                                 <FormGroup>
                                                                     <Label for="country">Country</Label>
                                                                     <Input
@@ -889,7 +818,10 @@ const UniversityProfileEdit = () => {
                                                                     />
                                                                 </FormGroup>
                                                             </Col>
-                                                            <Col md={6}>
+                                                        </Row>
+
+                                                        <Row>
+                                                            <Col md={4}>
                                                                 <FormGroup>
                                                                     <Label for="phone">Phone Number</Label>
                                                                     <Input
@@ -900,55 +832,32 @@ const UniversityProfileEdit = () => {
                                                                     />
                                                                 </FormGroup>
                                                             </Col>
+                                                            <Col md={4}>
+                                                                <FormGroup>
+                                                                    <Label for="email">Email Address</Label>
+                                                                    <Input
+                                                                        type="email"
+                                                                        id="email"
+                                                                        value={universityInfo.contact?.email || ''}
+                                                                        onChange={(e) => handleInputChange(e, 'contact', 'email')}
+                                                                    />
+                                                                </FormGroup>
+                                                            </Col>
+                                                            <Col md={4}>
+                                                                <FormGroup>
+                                                                    <Label for="website">Website</Label>
+                                                                    <Input
+                                                                        type="url"
+                                                                        id="website"
+                                                                        value={universityInfo.contact?.website || ''}
+                                                                        onChange={(e) => handleInputChange(e, 'contact', 'website')}
+                                                                    />
+                                                                </FormGroup>
+                                                            </Col>
                                                         </Row>
-                                                        <FormGroup>
-                                                            <Label for="email">Email Address</Label>
-                                                            <Input
-                                                                type="email"
-                                                                id="email"
-                                                                value={universityInfo.contact?.email || ''}
-                                                                onChange={(e) => handleInputChange(e, 'contact', 'email')}
-                                                            />
-                                                        </FormGroup>
-
-                                                        <FormGroup>
-                                                            <Label for="website">Website</Label>
-                                                            <Input
-                                                                type="url"
-                                                                id="website"
-                                                                value={universityInfo.contact?.website || ''}
-                                                                onChange={(e) => handleInputChange(e, 'contact', 'website')}
-                                                            />
-                                                        </FormGroup>
                                                     </CardBody>
                                                 </Card>
 
-                                                <Card>
-                                                    <CardHeader>
-                                                        <h5 className="card-title mb-0">Academic Information</h5>
-                                                    </CardHeader>
-                                                    <CardBody>
-                                                        <FormGroup>
-                                                            <Label for="language">Language of Instruction</Label>
-                                                            <Input
-                                                                type="text"
-                                                                id="language"
-                                                                value={universityInfo.academics?.language || ''}
-                                                                onChange={(e) => handleInputChange(e, 'academics', 'language')}
-                                                            />
-                                                        </FormGroup>
-
-                                                        <FormGroup>
-                                                            <Label for="affiliation">Affiliation</Label>
-                                                            <Input
-                                                                type="text"
-                                                                id="affiliation"
-                                                                value={universityInfo.academics?.affiliation || ''}
-                                                                onChange={(e) => handleInputChange(e, 'academics', 'affiliation')}
-                                                            />
-                                                        </FormGroup>
-                                                    </CardBody>
-                                                </Card>
                                             </Col>
 
                                             <Col xs={12}>
@@ -971,7 +880,7 @@ const UniversityProfileEdit = () => {
                                                             </div>
                                                         </FormGroup>
 
-                                                        <FormGroup>
+                                                        <FormGroup style={{ display: "none" }}>
                                                             <Label for="history">History</Label>
                                                             <div className="snow-editor" style={{ height: 300, marginBottom: '20px' }}>
                                                                 <div ref={historyRef} />
@@ -1488,14 +1397,14 @@ const UniversityProfileEdit = () => {
                         </Col>
                     </Row>
 
-                    <div className="text-end mt-4 mb-4">
+                    {/* <div className="text-end mt-4 mb-4">
                         <Button color="success" type="submit" className="me-2">
                             <i className="ri-save-line align-bottom me-1"></i> Save Changes
                         </Button>
                         <Link to="/setting-profile" className="btn btn-secondary">
                             <i className="ri-close-line align-bottom me-1"></i> Cancel
                         </Link>
-                    </div>
+                    </div> */}
                 </Form>
             </Container>
         </div>

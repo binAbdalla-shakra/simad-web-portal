@@ -8,7 +8,8 @@ import SignIn from '../pages/AuthenticationInner/Login';
 import UniversityProfile from '../pages/settings/University_Profile/index';
 import EditUniProfile from '../pages/settings/University_Profile/EditUniProfile';
 
-import Users from '../pages/settings/Users'
+import Users from '../pages/settings/Users';
+import Roles from '../pages/settings/Roles';
 
 import ProgramCategories from '../pages/Setup/programCategories';
 import Schools from '../pages/Setup/Schools'
@@ -26,6 +27,7 @@ import Alt404 from '../pages/AuthenticationInner/Errors/Alt404';
 import Error500 from '../pages/AuthenticationInner/Errors/Error500';
 
 import Offlinepage from "../pages/AuthenticationInner/Errors/Offlinepage";
+import { compact } from "lodash";
 
 
 
@@ -37,6 +39,7 @@ const authProtectedRoutes = [
   { path: "/setting-edit-profile", component: <EditUniProfile /> },
 
   { path: "/setting-users", component: <Users /> },
+  { path: "/setting-roles", component: <Roles /> },
 
 
   { path: "/setup/parogram-categories", component: <ProgramCategories /> },

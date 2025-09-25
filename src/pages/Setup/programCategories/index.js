@@ -60,12 +60,6 @@ const ProgramCategories = () => {
         isActive: true
     });
 
-    // Options for selects
-    const statusOptions = [
-        { value: "", label: "All Statuses" },
-        { value: "Active", label: "Active" },
-        { value: "Inactive", label: "Inactive" }
-    ];
 
     // Fetch categories
     const fetchCategories = useCallback(async () => {
@@ -219,36 +213,27 @@ const ProgramCategories = () => {
     const columns = [
         {
             name: '#',
-            cell: (row, index) => index + 1,
-            width: '60px'
+            cell: (row, index) => index + 1
         },
         {
             name: 'Name',
             selector: row => row.name,
-            width: '300px'
-
         },
         {
             name: 'Description',
             selector: row => row.description,
-            sortable: true,
             wrap: true,
-            // style: {
-            //     maxWidth: '300px'
-            // }
         },
         {
             name: 'Icon',
             cell: row => row.icon ? (
                 <i className={row.icon} style={{ fontSize: '20px' }}></i>
             ) : '-',
-            // width: '80px'
         },
         {
             name: 'Order',
             selector: row => row.order,
             sortable: true,
-            // width: '80px'
         },
         {
             name: 'Status',
@@ -257,8 +242,6 @@ const ProgramCategories = () => {
                     {row.isActive ? 'Active' : 'Inactive'}
                 </Badge>
             ),
-            sortable: true,
-            // width: '100px'
         },
         {
             name: 'Actions',
@@ -275,7 +258,6 @@ const ProgramCategories = () => {
                     </Button>
                 </div>
             ),
-            // width: '120px'
         }
     ];
 

@@ -31,18 +31,11 @@ export const login = (data) => api.create(url.POST_LOGIN, data);
 // ================================== SETTINGS URL ===================================================
 
 //  User APIs
-export const UserAPI = {
-    list: () => api.get(url.USERS),
-    create: (user) => api.create(url.USERS, user),
-    update: (user) => api.update(`${url.USERS}/${user.id}`, user),
-    delete: (id) => api.delete(`${url.USERS}/${id}`)
-};
+export const UserAPI = makeCRUD(url.USERS);
 
-//  University APIs
-// export const UniversityAPI = {
-//     get: () => api.get(url.UNIVERSITY_INFO),
-//     update: (uni) => api.update(url.UNIVERSITY_INFO, uni)
-// };
+export const RoleAPI = makeCRUD(url.ROLES);
+
+
 export const UniversityAPI = {
     get: () => api.get(url.UNIVERSITY_INFO),
     update: (uni) => {
