@@ -6,6 +6,7 @@ import {
     getDepartments,
     getPrograms,
     getStaffs,
+    getPartnersInfo
 } from "./thunk";
 
 export const initialState = {
@@ -14,6 +15,7 @@ export const initialState = {
     departmentsData: [],
     programsData: [],
     staffsData: [],
+    partnersData: [],
     error: {},
 };
 const SetupSlice = createSlice({
@@ -58,6 +60,14 @@ const SetupSlice = createSlice({
             state.staffsData = action.payload;
         });
         builder.addCase(getStaffs.rejected, (state, action) => {
+            state.error = action.payload?.error || null;
+        });
+
+        // === partner ===
+        builder.addCase(getPartnersInfo.fulfilled, (state, action) => {
+            state.partnersData = action.payload;
+        });
+        builder.addCase(getPartnersInfo.rejected, (state, action) => {
             state.error = action.payload?.error || null;
         });
 

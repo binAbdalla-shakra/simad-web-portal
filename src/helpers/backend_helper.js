@@ -64,5 +64,20 @@ export const DepartmentAPI = makeCRUD(url.DEPARTMENTS);
 export const ProgramAPI = makeCRUD(url.PROGRAMS);
 export const StaffAPI = makeCRUD(url.STAFFS);
 
+
+export const PartnerAPI = {
+    list: () => api.get(url.PARTNERS),
+    createOrupdate: (payload) => {
+        // For FormData, use post with multipart/form-data headers
+        return axios.post(url.PARTNERS, payload, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
+    delete: (id) => api.delete(`${url.PARTNERS}/${id}`)
+};
+
+
 // // ================================== END OF SETUPS URL ===================================================
 

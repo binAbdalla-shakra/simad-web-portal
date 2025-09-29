@@ -2,6 +2,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { toast } from "react-toastify";
 
 export const makeCRUDThunks = (name, API) => {
+    // console.log("API is:", API)
     const list = createAsyncThunk(`${name}/list`, async (_, thunkAPI) => {
         try {
             const res = await API.list();

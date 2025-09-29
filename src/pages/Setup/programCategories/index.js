@@ -327,10 +327,11 @@ const ProgramCategories = () => {
                         <Row>
                             <Col md={8}>
                                 <FormGroup>
-                                    <Label>Name <span className="text-danger">*</span></Label>
+                                    <Label>Type <span className="text-danger">*</span></Label>
                                     <Input
                                         name="name"
                                         value={formData.name}
+                                        placeholder='Undergraduate'
                                         onChange={handleInputChange}
 
                                     />
@@ -354,6 +355,7 @@ const ProgramCategories = () => {
                                     <Input
                                         type="textarea"
                                         name="description"
+                                        placeholder='eg. some description about the category'
                                         value={formData.description}
                                         onChange={handleInputChange}
 

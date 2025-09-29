@@ -17,6 +17,8 @@ import Schools from '../pages/Setup/Schools'
 import Departments from '../pages/Setup/Departments';
 import Programs from '../pages/Setup/Programs';
 import Staffs from '../pages/Setup/Staffs';
+import Partners from '../pages/Setup/Partners';
+
 
 
 
@@ -51,6 +53,8 @@ const authProtectedRoutes = [
   { path: "/setup/programs", component: <Programs /> },
 
   { path: "/setup/staffs", component: <Staffs /> },
+  { path: "/setup/partners", component: <Partners /> },
+
 
 
 
