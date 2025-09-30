@@ -6,6 +6,8 @@ import {
     Modal, ModalBody, ModalFooter, ModalHeader,
     Button, Badge
 } from "reactstrap";
+import Select from "react-select";
+
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import BreadCrumb from "../../../Components/Common/BreadCrumb";
@@ -32,23 +34,32 @@ import { createSelector } from 'reselect';
 import {
     getPartnersInfo as onGetPartnersInfo,
     deletePartner as onDeletePartner,
-    CreateOrUpdatePartner as onCreateOrUpdatePartner
+    CreateOrUpdatePartner as onCreateOrUpdatePartner,
+    getPartnerCategories as onGetPartnerCategories
 } from "../../../slices/thunks";
+import { set } from 'lodash';
 
 // Selectors
 const selectPartnersData = createSelector(
     (state) => state.Setups,
     (partnersData) => partnersData.partnersData.partners || []
 );
-
+const selectPartnerCategoriesData = createSelector(
+    (state) => state.Setups,
+    (partner_categoriesData) => partner_categoriesData.partner_categoriesData.categories || []
+);
 const PartnersPage = () => {
     document.title = "Partners | simad University";
 
     const dispatch = useDispatch();
     const partnersData = useSelector(selectPartnersData);
+    const partnerCategoriesData = useSelector(selectPartnerCategoriesData);
+
 
     // State management
     const [partners, setPartners] = useState([]);
+    const [partnerCategories, setPartnerCategories] = useState([]);
+
     const [loading, setLoading] = useState(false);
     const [modal, setModal] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
@@ -72,25 +83,17 @@ const PartnersPage = () => {
     });
     const [logoFiles, setLogoFiles] = useState([]);
 
-    // Categories options
-    const categoryOptions = [
-        { value: '68d8c6db6b8f773f3a54ea30', label: 'Technology' },
-        { value: 'education', label: 'Education' },
-        { value: 'healthcare', label: 'Healthcare' },
-        { value: 'finance', label: 'Finance' },
-        { value: 'retail', label: 'Retail' },
-        { value: 'manufacturing', label: 'Manufacturing' },
-        { value: 'other', label: 'Other' }
-    ];
+
 
     // Fetch partners
-    const fetchPartners = useCallback(async () => {
+    const fetchPartnersAndCategories = useCallback(async () => {
         setLoading(true);
         try {
             await dispatch(onGetPartnersInfo());
+            await dispatch(onGetPartnerCategories());
         } catch (error) {
-            console.error("Error loading partners:", error);
-            toast.error("Failed to load partners");
+            console.error("Error loading partners or categories:", error);
+            toast.error("Failed to load partners or categories");
         } finally {
             setLoading(false);
         }
@@ -98,11 +101,13 @@ const PartnersPage = () => {
 
     // Load partners data
     useEffect(() => {
-        fetchPartners();
-    }, [fetchPartners]);
+        fetchPartnersAndCategories();
+    }, [fetchPartnersAndCategories]);
     // console.log("data is:", partnersData)
     // Update partners list when data changes
     useEffect(() => {
+        const partnerCategories = Array.isArray(partnerCategoriesData) ? partnerCategoriesData : [];
+
         const initialPartners = Array.isArray(partnersData) ? partnersData : [];
         const partnersWithOrder = initialPartners.map((partner, index) => ({
             ...partner,
@@ -110,8 +115,9 @@ const PartnersPage = () => {
         }));
         const sortedPartners = partnersWithOrder.sort((a, b) => a.order - b.order);
         setPartners(sortedPartners);
+        setPartnerCategories(partnerCategories);
         setFilteredPartners(sortedPartners);
-    }, [partnersData]);
+    }, [partnersData, partnerCategoriesData]);
 
     // Handle filter changes
     const handleFilterChange = (e) => {
@@ -132,45 +138,13 @@ const PartnersPage = () => {
         setFilteredPartners(filtered);
     };
 
-    // Handle category filter change separately
-    const handleCategoryFilterChange = (e) => {
-        const { value } = e.target;
-        setFilters(prevFilters => ({ ...prevFilters, category: value }));
 
-        const filtered = partners.filter(partner => {
-            const matchesSearch = !filters.search ||
-                partner.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
-                partner.desc?.toLowerCase().includes(filters.search.toLowerCase());
+    const categoryOptions = partnerCategories.map(category => ({
+        value: category._id,
+        label: category.categoryName
+    }));
 
-            const matchesCategory = !value || partner.category === value;
 
-            return matchesSearch && matchesCategory;
-        });
-        setFilteredPartners(filtered);
-    };
-
-    // Handle drag end
-    const handleDragEnd = (result) => {
-        if (!result.destination) return;
-
-        const items = Array.from(filteredPartners);
-        const [reorderedItem] = items.splice(result.source.index, 1);
-        items.splice(result.destination.index, 0, reorderedItem);
-
-        // Update order numbers
-        const updatedItems = items.map((item, index) => ({
-            ...item,
-            order: index
-        }));
-
-        setFilteredPartners(updatedItems);
-
-        // Console log the order update (as requested)
-        console.log('Partner Order Update:', {
-            partnerId: reorderedItem.id,
-            order: result.destination.index
-        });
-    };
 
     // Handle form input changes
     const handleInputChange = (e) => {
@@ -283,7 +257,6 @@ const PartnersPage = () => {
         try {
             await dispatch(onDeletePartner(selectedPartner._id));
             setDeleteModal(false);
-            fetchPartners();
         } catch (error) {
             console.error("Error deleting partner:", error);
             toast.error("Failed to delete partner");
@@ -297,7 +270,7 @@ const PartnersPage = () => {
             name: partner.name || "",
             desc: partner.desc || "",
             howLong: partner.howLong || "",
-            category: partner.category || "",
+            category: partner.category._id || "",
             logo: null
         });
         setIsEdit(true);
@@ -319,25 +292,6 @@ const PartnersPage = () => {
         setModal(true);
     };
 
-    // Get category label
-    const getCategoryLabel = (categoryValue) => {
-        const category = categoryOptions.find(opt => opt.value === categoryValue);
-        return category ? category.label : categoryValue;
-    };
-
-    // Get category badge color
-    const getCategoryBadgeColor = (categoryValue) => {
-        const colors = {
-            technology: 'primary',
-            education: 'success',
-            healthcare: 'info',
-            finance: 'warning',
-            retail: 'secondary',
-            manufacturing: 'dark',
-            other: 'light'
-        };
-        return colors[categoryValue] || 'light';
-    };
 
     return (
         <div className="page-content">
@@ -363,19 +317,32 @@ const PartnersPage = () => {
                             <Col md={4}>
                                 <FormGroup>
                                     <Label>Category</Label>
-                                    <Input
-                                        type="select"
+                                    <Label>Role</Label>
+
+                                    <Select
                                         name="category"
-                                        value={filters.category}
-                                        onChange={handleCategoryFilterChange}
-                                    >
-                                        <option value="">All Categories</option>
-                                        {categoryOptions.map(option => (
-                                            <option key={option.value} value={option.value}>
-                                                {option.label}
-                                            </option>
-                                        ))}
-                                    </Input>
+                                        value={categoryOptions.find(option => option.value === filters.category) || null}
+                                        onChange={(selected) => {
+                                            const value = selected ? selected.value : "";
+                                            setFilters(prev => ({ ...prev, category: value }));
+
+                                            const filtered = partners.filter(partner => {
+                                                const matchesSearch = !filters.search ||
+                                                    partner.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
+                                                    partner.desc?.toLowerCase().includes(filters.search.toLowerCase());
+
+                                                const matchesCategory = !value || partner.category._id === value;
+
+                                                return matchesSearch && matchesCategory;
+                                            });
+
+                                            setFilteredPartners(filtered);
+                                        }}
+                                        options={[{ value: "", label: "All Categories" }, ...categoryOptions]}
+                                        isClearable
+                                        placeholder="Select Category"
+                                    />
+
                                 </FormGroup>
                             </Col>
                         </Row>
@@ -416,7 +383,7 @@ const PartnersPage = () => {
                                     <Col key={partner._id} lg={3} md={4} sm={6} className="mb-4">
                                         <Card className="h-100 shadow-sm">
                                             <div className="card-header bg-light d-flex justify-content-between align-items-center">
-                                                <Badge color="secondary" className="fs-12">
+                                                <Badge color="primary" className="fs-12">
                                                     Order: {partner.order + 1}
                                                 </Badge>
                                                 <div className="d-flex gap-1">
@@ -464,10 +431,10 @@ const PartnersPage = () => {
 
                                                 {/* Category */}
                                                 <Badge
-                                                    color={getCategoryBadgeColor(partner.category.categoryName)}
+                                                    color="success"
                                                     className="mb-3"
                                                 >
-                                                    {getCategoryLabel(partner.category._id)}
+                                                    {partner.category.categoryName}
                                                 </Badge>
 
                                                 {/* Description */}
@@ -544,20 +511,21 @@ const PartnersPage = () => {
                             <Col md={6}>
                                 <FormGroup>
                                     <Label>Category <span className="text-danger">*</span></Label>
-                                    <Input
-                                        type="select"
+                                    <Select
                                         name="category"
-                                        value={formData.category}
-                                        onChange={handleInputChange}
+                                        value={categoryOptions.find(option => option.value === formData.category) || null}
+                                        onChange={(selected) => {
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                category: selected ? selected.value : ""
+                                            }));
+                                        }}
+                                        options={categoryOptions}
+                                        placeholder="Select Category"
+                                        isClearable
                                         required
-                                    >
-                                        <option value="">Select Category</option>
-                                        {categoryOptions.map(option => (
-                                            <option key={option.value} value={option.value}>
-                                                {option.label}
-                                            </option>
-                                        ))}
-                                    </Input>
+                                    />
+
                                 </FormGroup>
                             </Col>
                             <Col md={12}>

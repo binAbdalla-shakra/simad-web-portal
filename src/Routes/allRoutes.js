@@ -19,6 +19,9 @@ import Programs from '../pages/Setup/Programs';
 import Staffs from '../pages/Setup/Staffs';
 import Partners from '../pages/Setup/Partners';
 
+import PartnerCategories from '../pages/Setup/PartnerCategories';
+
+
 
 
 
@@ -54,6 +57,9 @@ const authProtectedRoutes = [
 
   { path: "/setup/staffs", component: <Staffs /> },
   { path: "/setup/partners", component: <Partners /> },
+
+  { path: "/setup/partner-categories", component: <PartnerCategories /> },
+
 
 
 

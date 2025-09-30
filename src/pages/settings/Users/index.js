@@ -83,10 +83,6 @@ const Users = () => {
     ];
 
 
-    const roleOptions = roles?.roles.map(role => ({
-        value: role._id,
-        label: role.type
-    }));
 
 
     // Fetch users with filters
@@ -131,6 +127,12 @@ const Users = () => {
             [name]: selectedOption?.value || ""
         }));
     };
+
+    // console.log("roles are: ", roles)
+    const roleOptions = roles?.roles.map(role => ({
+        value: role._id,
+        label: role.type
+    }));
 
     // Handle filter changes
     const handleFilterChange = (e) => {

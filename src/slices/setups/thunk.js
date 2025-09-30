@@ -1,6 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { DepartmentAPI, PartnerAPI, ProgramAPI, ProgramCategoryAPI, SchoolAPI, StaffAPI } from "../../helpers/backend_helper";
+import { DepartmentAPI, PartnerAPI, PartnerCategoryAPI, ProgramAPI, ProgramCategoryAPI, SchoolAPI, StaffAPI } from "../../helpers/backend_helper";
 import { makeCRUDThunks } from "../../helpers/thunk_factory";
+import { toast } from "react-toastify";
 
 export const {
     list: getProgramsCategories,
@@ -41,7 +42,15 @@ export const {
 } = makeCRUDThunks("setup/staff", StaffAPI);
 
 
-// PartnerTHunk
+
+export const {
+    list: getPartnerCategories,
+    create: addPartnerCategory,
+    update: updatePartnerCategory,
+    delete: deletePartnerCategory
+} = makeCRUDThunks("setup/partnerCategory", PartnerCategoryAPI);
+
+
 export const {
     list: getPartnersInfo,
     delete: deletePartner,
@@ -52,7 +61,8 @@ export const CreateOrUpdatePartner = createAsyncThunk(
     async (data, { dispatch }) => {
         try {
             const res = await PartnerAPI.createOrupdate(data);
-
+            if (!res.success) throw res;
+            toast.success(res.message);
             dispatch(getPartnersInfo());
             return res;
         } catch (error) {

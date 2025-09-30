@@ -37,7 +37,7 @@ export const RoleAPI = makeCRUD(url.ROLES);
 
 
 export const UniversityAPI = {
-    get: () => api.get(url.UNIVERSITY_INFO),
+    list: () => api.get(url.UNIVERSITY_INFO),
     update: (uni) => {
         // Check if it's FormData (for file uploads) or regular data
         if (uni instanceof FormData) {
@@ -63,6 +63,9 @@ export const SchoolAPI = makeCRUD(url.SCHOOLS);
 export const DepartmentAPI = makeCRUD(url.DEPARTMENTS);
 export const ProgramAPI = makeCRUD(url.PROGRAMS);
 export const StaffAPI = makeCRUD(url.STAFFS);
+
+
+export const PartnerCategoryAPI = makeCRUD(url.PARTNERS_CATEGORY);
 
 
 export const PartnerAPI = {

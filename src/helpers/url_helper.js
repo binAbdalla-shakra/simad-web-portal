@@ -21,6 +21,8 @@ export const PROGRAMS = "/programs";
 // staff
 export const STAFFS = "/staffs";
 
+export const PARTNERS_CATEGORY = "/partner-categories";
+
 export const PARTNERS = "/partners";
 
 // ================================== END OF SETUPS URL ===================================================

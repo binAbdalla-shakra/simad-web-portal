@@ -146,7 +146,19 @@ const Navdata = () => {
           link: "/setup/staffs",
           parentId: "setups",
         },
+        {
+          id: "partner-categories",
+          label: "Partner Categories",
+          link: "/setup/partner-categories",
+          parentId: "setups",
+        },
 
+        {
+          id: "partners",
+          label: "Partners",
+          link: "/setup/partners",
+          parentId: "setups",
+        },
 
       ],
     },

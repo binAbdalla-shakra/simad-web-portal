@@ -17,6 +17,7 @@ export const makeCRUDThunks = (name, API) => {
     const create = createAsyncThunk(`${name}/create`, async (payload, { dispatch, rejectWithValue }) => {
         try {
             const res = await API.create(payload);
+            // console.log("res is:", res)
             if (!res.success) throw res;
             toast.success(res.message);
             dispatch(list()); // refresh
@@ -31,6 +32,7 @@ export const makeCRUDThunks = (name, API) => {
     const update = createAsyncThunk(`${name}/update`, async (payload, { dispatch, rejectWithValue }) => {
         try {
             const res = await API.update(payload);
+            console.log("res is:", res)
             if (!res.success) throw res;
             toast.success(res.message);
             dispatch(list()); // refresh
