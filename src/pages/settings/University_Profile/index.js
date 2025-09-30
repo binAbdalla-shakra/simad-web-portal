@@ -5,7 +5,8 @@ import {
     Nav, NavItem, NavLink, Row, TabContent,
     TabPane, Badge, Media,
     Table,
-    Button
+    Button,
+    Spinner
 } from 'reactstrap';
 import 'animate.css';
 import { motion } from "framer-motion";
@@ -39,7 +40,7 @@ const UniversityProfile = () => {
     const [historyData, setHistoryData] = useState([]);
     const [senateMembers, setSenateMembers] = useState([]);
     const [accreditations, setAccreditations] = useState([]);
-
+    const [loading, setLoading] = useState(true);
 
 
     const selectLayoutState = (state) => state.Layout;
@@ -68,6 +69,7 @@ const UniversityProfile = () => {
         setHistoryData(uniData?.historyItems || []);
         setSenateMembers(uniData?.senateMembers || []);
         setAccreditations(uniData?.accreditations || []);
+        setLoading(false);
 
 
     }, [uniData]);
@@ -81,6 +83,13 @@ const UniversityProfile = () => {
     };
 
 
+    if (loading) {
+        return (
+            <div className="d-flex justify-content-center align-items-center vh-100">
+                <Spinner color="primary" style={{ width: '3rem', height: '3rem' }} />
+            </div>
+        );
+    }
 
 
     return (

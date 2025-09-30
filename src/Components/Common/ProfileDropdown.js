@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap';
+import { Link, useNavigate } from 'react-router-dom';
+import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap';
 import { createSelector } from 'reselect';
 import { useSelector } from 'react-redux';
 
 //import images
 import avatar1 from "../../assets/images/logo-simad.png";
+import { logoutCurrentUser, logoutUser } from '../../slices/thunks';
+import { useDispatch } from 'react-redux';
 
 const ProfileDropdown = () => {
-
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
 
     const profiledropdownData = createSelector(
         (state) => state.Profile,
@@ -20,17 +23,23 @@ const ProfileDropdown = () => {
     const { user } = useSelector(profiledropdownData);
 
     const [userName, setUserName] = useState("Admin");
+    const [role, setRole] = useState("user");
+
 
     useEffect(() => {
         if (sessionStorage.getItem("authUser")) {
             const obj = JSON.parse(sessionStorage.getItem("authUser"));
             // console.log("obj is:", obj.data.user.username)
-            // setUserName(obj.data.user.username || "Admin"
-            setUserName("Admin"
+            setUserName(obj.data.user.username || "Admin");
+            // setRole(obj.data.user.roles[0] || "user");
 
-            );
         }
     }, [userName, user]);
+
+    const handleLogout = () => {
+        dispatch(logoutCurrentUser(navigate));
+    };
+
 
     //Dropdown Toggle
     const [isProfileDropdown, setIsProfileDropdown] = useState(false);
@@ -46,66 +55,27 @@ const ProfileDropdown = () => {
                             alt="Header Avatar" />
                         <span className="text-start ms-xl-2">
                             <span className="d-none d-xl-inline-block ms-1 fw-medium user-name-text">{userName}</span>
-                            <span className="d-none d-xl-block ms-1 fs-12 text-muted user-name-sub-text">Admin</span>
+                            {/* <span className="d-none d-xl-block ms-1 fs-12 text-muted user-name-sub-text">{userName}</span> */}
                         </span>
                     </span>
                 </DropdownToggle>
                 <DropdownMenu className="dropdown-menu-end">
                     <h6 className="dropdown-header">Welcome {userName}!</h6>
                     <DropdownItem className='p-0'>
-                        <Link to="/profile" className="dropdown-item">
+                        <Link to="/setting-profile" className="dropdown-item">
                             <i className="mdi mdi-account-circle text-muted fs-16 align-middle me-1"></i>
                             <span className="align-middle">Profile</span>
                         </Link>
                     </DropdownItem>
-                    {/* <DropdownItem className='p-0'>
-                        <Link to="/apps-chat" className="dropdown-item">
-                            <i className="mdi mdi-message-text-outline text-muted fs-16 align-middle me-1"></i> <span
-                                className="align-middle">Messages</span>
-                        </Link>
+
+
+                    <DropdownItem onClick={handleLogout} className="dropdown-item w-100 text-start">
+                        <i className="mdi mdi-logout text-muted fs-16 align-middle me-1"></i>
+                        <span className="align-middle" data-key="t-logout">
+                            Logout
+                        </span>
                     </DropdownItem>
-                    <DropdownItem className='p-0'>
-                        <Link to="#" className="dropdown-item">
-                            <i className="mdi mdi-calendar-check-outline text-muted fs-16 align-middle me-1"></i> <span
-                                className="align-middle">Taskboard</span>
-                        </Link>
-                    </DropdownItem>
-                    <DropdownItem className='p-0'>
-                        <Link to="/pages-faqs" className="dropdown-item">
-                            <i
-                                className="mdi mdi-lifebuoy text-muted fs-16 align-middle me-1"></i> <span
-                                    className="align-middle">Help</span>
-                        </Link>
-                    </DropdownItem>
-                    <div className="dropdown-divider"></div>
-                    <DropdownItem className='p-0'>
-                        <Link to="/pages-profile" className="dropdown-item">
-                            <i
-                                className="mdi mdi-wallet text-muted fs-16 align-middle me-1"></i> <span
-                                    className="align-middle">Balance : <b>$5971.67</b></span>
-                        </Link>
-                    </DropdownItem > */}
-                    <DropdownItem className='p-0'>
-                        <Link to="/pages-profile" className="dropdown-item">
-                            <span
-                                className="badge bg-success-subtle text-success mt-1 float-end">New</span><i
-                                    className="mdi mdi-cog-outline text-muted fs-16 align-middle me-1"></i> <span
-                                        className="align-middle">Settings</span>
-                        </Link>
-                    </DropdownItem>
-                    {/* <DropdownItem className='p-0'>
-                        <Link to="/auth-lockscreen-basic" className="dropdown-item">
-                            <i
-                                className="mdi mdi-lock text-muted fs-16 align-middle me-1"></i> <span className="align-middle">Lock screen</span>
-                        </Link>
-                    </DropdownItem> */}
-                    <DropdownItem className='p-0'>
-                        <Link to="/logout" className="dropdown-item">
-                            <i
-                                className="mdi mdi-logout text-muted fs-16 align-middle me-1"></i> <span
-                                    className="align-middle" data-key="t-logout">Logout</span>
-                        </Link>
-                    </DropdownItem>
+
                 </DropdownMenu>
             </Dropdown>
         </React.Fragment>

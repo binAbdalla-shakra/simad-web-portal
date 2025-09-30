@@ -1,6 +1,8 @@
 // ================================== SETTINGS URL ===================================================
 //USERs
 export const POST_LOGIN = "/users/login";
+export const CHANGE_PASSWORD = "/users/change-password";
+
 export const USERS = "/users";
 export const ROLES = "/roles";
 

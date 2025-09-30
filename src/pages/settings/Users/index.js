@@ -43,9 +43,15 @@ const Users = () => {
 
     );
 
+    //     const selectusersData = createSelector(
+    //     (state) => state.Settings,
+    //     (usersData) => usersData.usersData
+
+    // );
+
     const roles = useSelector(state => state.Settings.rolesData) || [];
 
-
+    //    console.log("")
 
     const usersData = useSelector(selectusersData);
 
@@ -71,7 +77,7 @@ const Users = () => {
         firstName: "",
         lastName: "",
         phone: "",
-        title: "",
+        roles: [],
         isActive: true
     });
 
@@ -97,9 +103,18 @@ const Users = () => {
         }
     }, [dispatch]);
 
-    useEffect(() => {
-        dispatch(onGetRoles());
+    const fetchRoles = useCallback(async () => {
+        setLoading(true);
+        try {
+            await dispatch(onGetRoles());
+        } catch (error) {
+            console.error("Error loading roles:", error);
+        } finally {
+            setLoading(false);
+        }
     }, [dispatch]);
+
+
 
 
     // Update users list when data changes
@@ -108,31 +123,21 @@ const Users = () => {
     }, [fetchUsers]);
 
     useEffect(() => {
+        fetchRoles();
+    }, [fetchRoles]);
+
+    useEffect(() => {
         setUsersList(usersData?.users || []);
     }, [usersData]);
 
-    // Handle form input changes
-    const handleInputChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
-    };
-
-    // Handle select changes
-    const handleSelectChange = (name, selectedOption) => {
-        setFormData(prev => ({
-            ...prev,
-            [name]: selectedOption?.value || ""
-        }));
-    };
 
     // console.log("roles are: ", roles)
-    const roleOptions = roles?.roles.map(role => ({
-        value: role._id,
-        label: role.type
-    }));
+    const roleOptions = Array.isArray(roles?.roles)
+        ? roles.roles.map(role => ({
+            value: role._id,
+            label: role.type
+        }))
+        : [];
 
     // Handle filter changes
     const handleFilterChange = (e) => {
@@ -173,7 +178,8 @@ const Users = () => {
             firstName: user.firstName || "",
             lastName: user.lastName || "",
             phone: user.phone || "",
-            title: user.title || "",
+            roles: user.roles || [],
+
             isActive: user.isActive || true
         });
         setIsEdit(true);
@@ -220,7 +226,7 @@ const Users = () => {
             firstName: formData.firstName,
             lastName: formData.lastName,
             phone: formData.phone,
-            title: formData.title,
+            roles: formData.roles,
             isActive: formData.isActive
         },
         validationSchema: Yup.object({
@@ -240,30 +246,33 @@ const Users = () => {
             firstName: Yup.string().required("First name is required").trim(),
             lastName: Yup.string().required("Last name is required").trim(),
             phone: Yup.string().required("Phone is required").trim(),
-            title: Yup.string().required("Role is required"),
+            roles: Yup.array()
+                .of(Yup.string())
+                .min(1, "At least one role is required")
+                .required("Role is required"),
+
 
             isActive: Yup.boolean()
         }),
         onSubmit: (values) => {
+            const payload = {
+                ...values,
+            };
+
             if (isEdit) {
-                const updateUserData = {
-                    id: selectedUser ? selectedUser._id : 0,
-                    ...values,
-                    // Don't update password if not changed
-                    // password: values.password || undefined
-                };
-                dispatch(onUpdateUser(updateUserData));
+                dispatch(onUpdateUser({ _id: selectedUser._id, ...payload }));
             } else {
-                const newUserData = {
+                dispatch(onAddNewUser({
+                    ...payload,
                     id: (Math.floor(Math.random() * (30 - 20)) + 20).toString(),
-                    ...values,
                     avatar: 'user-dummy-img.jpg',
+                    password: process.env.REACT_APP_DEFAULT_PASS || "Simad1999",
                     bg_url: 'user-dummy-img.jpg'
-                };
-                dispatch(onAddNewUser(newUserData));
+                }));
             }
             setModal(false);
-        },
+        }
+
     });
 
     // Table columns
@@ -289,9 +298,16 @@ const Users = () => {
             selector: row => row.phone || '-',
         },
         {
-            name: 'Title/Role',
-            selector: row => row.title || 'User',
+            name: 'Roles',
+            cell: row => {
+                const userRoles = Array.isArray(row.roles) ? row.roles : [];
+                return userRoles.map(roleId => {
+                    const role = roleOptions.find(r => r.value === roleId);
+                    return role ? role.label : roleId;
+                }).join(', ');
+            }
         },
+
         {
             name: 'Status',
             cell: row => (
@@ -318,7 +334,7 @@ const Users = () => {
     return (
         <div className="page-content">
             <Container fluid>
-                <BreadCrumb title="Users" pageTitle="Pages" />
+                <BreadCrumb title="Users" pageTitle="Settings" />
 
                 {/* Filter Controls */}
                 <Card className="mb-3">
@@ -347,7 +363,7 @@ const Users = () => {
                                     />
                                 </FormGroup>
                             </Col>
-                            <Col md={3}>
+                            <Col md={3} style={{ display: 'none' }}>
                                 <FormGroup>
                                     <Label>Role</Label>
                                     <Select
@@ -493,17 +509,46 @@ const Users = () => {
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label>Role</Label>
+                                            <Label>Roles <span className="text-danger">*</span></Label>
+
                                             <Select
-                                                name="title"
+                                                name="roles"
+                                                isMulti
                                                 options={roleOptions}
-                                                value={roleOptions.find(opt => opt.value === validation.values.title)}
-                                                onChange={(selected) => validation.setFieldValue("title", selected ? selected.value : "")}
+                                                value={roleOptions.filter(opt => (validation.values.roles || []).includes(opt.value))}
+
+                                                onChange={(selected) =>
+                                                    validation.setFieldValue("roles", selected ? selected.map(opt => opt.value) : [])
+                                                }
                                                 onBlur={validation.handleBlur}
-                                                isClearable
+                                                closeMenuOnSelect={false}
+                                                styles={{
+                                                    option: (provided, state) => ({
+                                                        ...provided,
+                                                        color: 'white',
+                                                        backgroundColor: state.isFocused ? '#4a6fa5' : '#2f4b73',
+                                                    }),
+                                                    multiValue: (base) => ({
+                                                        ...base,
+                                                        backgroundColor: '#2f4b73',
+                                                        color: 'white',
+                                                    }),
+                                                    multiValueLabel: (base) => ({
+                                                        ...base,
+                                                        color: 'white',
+                                                    }),
+                                                    multiValueRemove: (base) => ({
+                                                        ...base,
+                                                        color: 'white',
+                                                        ':hover': {
+                                                            backgroundColor: '#1c2b45',
+                                                            color: 'white',
+                                                        },
+                                                    }),
+                                                }}
                                             />
-                                            {validation.touched.title && validation.errors.title && (
-                                                <div className="invalid-feedback d-block">{validation.errors.title}</div>
+                                            {validation.touched.roles && validation.errors.roles && (
+                                                <div className="invalid-feedback d-block">{validation.errors.roles}</div>
                                             )}
 
                                             <FormFeedback>{validation.errors.title}</FormFeedback>

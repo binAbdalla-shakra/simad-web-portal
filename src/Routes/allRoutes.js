@@ -24,7 +24,7 @@ import PartnerCategories from '../pages/Setup/PartnerCategories';
 
 
 
-
+import CreateNewPassword from '../pages/AuthenticationInner/ChangePassword';
 
 import TwosVerify from '../pages/AuthenticationInner/TwoStepVerification';
 import Cover404 from '../pages/AuthenticationInner/Errors/Cover404';
@@ -61,11 +61,6 @@ const authProtectedRoutes = [
   { path: "/setup/partner-categories", component: <PartnerCategories /> },
 
 
-
-
-
-
-
   // this route should be at the end of all other routes
   // eslint-disable-next-line react/display-name
   {
@@ -82,6 +77,10 @@ const authProtectedRoutes = [
 const publicRoutes = [
   // Authentication Page
   { path: "/login", component: <SignIn /> },
+
+  { path: "/create-new-pass", component: <CreateNewPassword /> },
+
+
 
   //AuthenticationInner pages
   { path: "/auth-twostep", component: <TwosVerify /> },

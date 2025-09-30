@@ -101,7 +101,7 @@ const Navdata = () => {
 
     {
       id: "setups",
-      label: "Setups",
+      label: "Academic Setups",
       icon: "ri-apps-2-line",
       link: "/#",
       stateVariables: menuStates["Setups"] || false,
@@ -127,19 +127,28 @@ const Navdata = () => {
         },
 
         {
-          id: "departments",
-          label: "Departments",
-          link: "/setup/departments",
-          parentId: "setups",
-        },
-
-        {
           id: "programs",
           label: "Programs",
           link: "/setup/programs",
           parentId: "setups",
         },
 
+
+      ],
+    },
+    {
+      id: "organization",
+      label: "Organizations",
+      icon: "ri-apps-2-line",
+      link: "/#",
+      stateVariables: menuStates["Organizations"] || false,
+      click: function (e) {
+        e.preventDefault();
+        setMenuStates((prev) => ({ ...prev, Organizations: !prev.Organizations }));
+        setIscurrentState("Organizations");
+        updateIconSidebar(e);
+      },
+      subItems: [
         {
           id: "staffs",
           label: "Staffs",
@@ -160,19 +169,65 @@ const Navdata = () => {
           parentId: "setups",
         },
 
+
+      ],
+    },
+
+
+    {
+      id: "content-management",
+      label: "Content Management",
+      icon: "ri-file-list-3-line",
+      stateVariables: menuStates["ContentManagement"] || false,
+      click: function (e) {
+        e.preventDefault();
+        setMenuStates((prev) => ({ ...prev, ContentManagement: !prev.ContentManagement }));
+        setIscurrentState("ContentManagement");
+        updateIconSidebar(e);
+      },
+      subItems: [
+        { id: "events", label: "Events", link: "/content/events", parentId: "content-management" },
+        { id: "news", label: "News", link: "/content/news", parentId: "content-management" },
+        { id: "media-gallery", label: "Media Gallery", link: "/content/media-gallery", parentId: "content-management" },
       ],
     },
 
     {
-      id: "settings",
-      label: "Settings",
-      icon: "ri-apps-2-line",
-      link: "/#",
-      stateVariables: menuStates["Settings"] || false,
+      id: "user-management",
+      label: "User Management",
+      icon: "ri-team-line",
+      stateVariables: menuStates["UserManagement"] || false,
       click: function (e) {
         e.preventDefault();
-        setMenuStates((prev) => ({ ...prev, Settings: !prev.Settings }));
-        setIscurrentState("Settings");
+        setMenuStates((prev) => ({ ...prev, UserManagement: !prev.UserManagement }));
+        setIscurrentState("UserManagement");
+        updateIconSidebar(e);
+      },
+      subItems: [
+        {
+          id: "users",
+          label: "Users",
+          link: "/setting-users",
+          parentId: "user-management",
+        },
+        {
+          id: "roles",
+          label: "Roles",
+          link: "/setting-roles",
+          parentId: "user-management",
+        },
+      ],
+    },
+
+    {
+      id: "system-settings",
+      label: "System Settings",
+      icon: "ri-settings-3-line",
+      stateVariables: menuStates["SystemSettings"] || false,
+      click: function (e) {
+        e.preventDefault();
+        setMenuStates((prev) => ({ ...prev, SystemSettings: !prev.SystemSettings }));
+        setIscurrentState("SystemSettings");
         updateIconSidebar(e);
       },
       subItems: [
@@ -180,37 +235,21 @@ const Navdata = () => {
           id: "profile",
           label: "Profile",
           link: "/setting-profile",
-          parentId: "settings",
+          parentId: "system-settings",
         },
-
+        // Future expansion
         {
-          id: "users",
-          label: "Users",
-          link: "/setting-users",
-          parentId: "settings",
+          id: "menus",
+          label: "Menus",
+          link: "/setting-menus",
+          parentId: "system-settings",
         },
         {
-          id: "roles",
-          label: "Roles",
-          link: "/setting-roles",
-          parentId: "settings",
+          id: "permissions",
+          label: "Permissions",
+          link: "/setting-permissions",
+          parentId: "system-settings",
         },
-
-        // {
-        //   id: "menus",
-        //   label: "Menus",
-        //   link: "/setting-menus",
-        //   parentId: "settings",
-        // },
-
-        // {
-        //   id: "permissions",
-        //   label: "Permissions",
-        //   link: "/setting-permissions",
-        //   parentId: "settings",
-        // },
-
-
       ],
     },
 
