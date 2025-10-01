@@ -84,5 +84,33 @@ export const PartnerAPI = {
 };
 
 
+
+export const NewsAPI = {
+    list: () => api.get(url.NEWS),
+    createOrupdate: (payload) => {
+        // For FormData, use post with multipart/form-data headers
+        return axios.post(url.NEWS, payload, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
+    delete: (id) => api.delete(`${url.NEWS}/${id}`)
+};
+
+export const EventsAPI = {
+    list: () => api.get(url.EVENTS),
+    createOrupdate: (payload) => {
+        // For FormData, use post with multipart/form-data headers
+        return axios.post(url.EVENTS, payload, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
+    delete: (id) => api.delete(`${url.EVENTS}/${id}`)
+};
+
+
 // // ================================== END OF SETUPS URL ===================================================
 

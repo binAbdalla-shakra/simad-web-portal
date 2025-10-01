@@ -8,7 +8,8 @@ export * from "./auth/forgetpwd/thunk";
 export * from "./auth/profile/thunk";
 
 // Settings
-export * from "./settings/thunk"
+export * from "./settings/thunk";
 
 
-export * from "./setups/thunk"
+export * from "./setups/thunk";
+export * from "./ContentManagement/thunk";

@@ -87,3 +87,10 @@ const SetupSlice = createSlice({
 });
 
 export default SetupSlice.reducer;
+
+
+
+
+
+
+

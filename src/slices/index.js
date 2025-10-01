@@ -10,9 +10,11 @@ import ForgetPasswordReducer from "./auth/forgetpwd/reducer";
 import ProfileReducer from "./auth/profile/reducer";
 
 
-import SettingsReducer from "./settings/reducer"
+import SettingsReducer from "./settings/reducer";
 
-import SetupReducer from "./setups/reducer"
+import SetupReducer from "./setups/reducer";
+
+import ContentManagementReducer from "./ContentManagement/reducer";
 
 const rootReducer = combineReducers({
     Layout: LayoutReducer,
@@ -21,9 +23,8 @@ const rootReducer = combineReducers({
     ForgetPassword: ForgetPasswordReducer,
     Profile: ProfileReducer,
     Settings: SettingsReducer,
-    Setups: SetupReducer
-
-
+    Setups: SetupReducer,
+    ContentManagement: ContentManagementReducer,
 });
 
 export default rootReducer;

@@ -27,4 +27,9 @@ export const PARTNERS_CATEGORY = "/partner-categories";
 
 export const PARTNERS = "/partners";
 
+export const NEWS = "/news";
+export const EVENTS = "/events";
+
+
+
 // ================================== END OF SETUPS URL ===================================================

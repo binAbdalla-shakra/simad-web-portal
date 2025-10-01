@@ -21,6 +21,11 @@ import Partners from '../pages/Setup/Partners';
 
 import PartnerCategories from '../pages/Setup/PartnerCategories';
 
+import Events from '../pages/ContentManagement/Events';
+import News from '../pages/ContentManagement/News';
+
+
+
 
 
 
@@ -33,6 +38,7 @@ import Error500 from '../pages/AuthenticationInner/Errors/Error500';
 
 import Offlinepage from "../pages/AuthenticationInner/Errors/Offlinepage";
 import { compact } from "lodash";
+import { components } from "react-select";
 
 
 
@@ -60,6 +66,9 @@ const authProtectedRoutes = [
 
   { path: "/setup/partner-categories", component: <PartnerCategories /> },
 
+
+  { path: "/content/events", component: <Events /> },
+  { path: "/content/news", component: <News /> },
 
   // this route should be at the end of all other routes
   // eslint-disable-next-line react/display-name
