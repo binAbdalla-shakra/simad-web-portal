@@ -61,10 +61,49 @@ export const UniversityAPI = {
 // // ================================== SETUPS URL ===================================================
 
 export const ProgramCategoryAPI = makeCRUD(url.PROGRAMS_CATEGORY);
-export const SchoolAPI = makeCRUD(url.SCHOOLS);
-export const DepartmentAPI = makeCRUD(url.DEPARTMENTS);
-export const ProgramAPI = makeCRUD(url.PROGRAMS);
-export const StaffAPI = makeCRUD(url.STAFFS);
+
+export const StaffAPI = {
+    list: () => api.get(url.STAFFS),
+    createOrupdate: (payload) => {
+        // For FormData, use post with multipart/form-data headers
+        return axios.post(url.STAFFS, payload, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
+    delete: (id) => api.delete(`${url.STAFFS}/${id}`)
+};
+
+
+export const ProgramAPI = {
+    list: () => api.get(url.PROGRAMS),
+    createOrupdate: (payload) => {
+        // For FormData, use post with multipart/form-data headers
+        return axios.post(url.PROGRAMS, payload, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
+    delete: (id) => api.delete(`${url.PROGRAMS}/${id}`)
+};
+
+
+export const SchoolAPI = {
+    list: () => api.get(url.SCHOOLS),
+    createOrupdate: (payload) => {
+        // For FormData, use post with multipart/form-data headers
+        return axios.post(url.SCHOOLS, payload, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
+    delete: (id) => api.delete(`${url.SCHOOLS}/${id}`)
+};
+
+
 
 
 export const PartnerCategoryAPI = makeCRUD(url.PARTNERS_CATEGORY);

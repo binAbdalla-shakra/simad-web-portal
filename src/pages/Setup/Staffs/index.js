@@ -1,48 +1,83 @@
-import React, { useState, useEffect } from 'react';
-import DataTable from "react-data-table-component";
-import Select from "react-select";
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Card, CardHeader, CardBody,
     Col, Container, Row,
     Form, Input, Label, FormGroup,
     Modal, ModalBody, ModalFooter, ModalHeader,
-    Button, Badge, FormFeedback,
-    Nav, NavItem, NavLink,
-    TabContent, TabPane
+    Button, Badge, Nav, NavItem, NavLink, TabContent, TabPane
 } from "reactstrap";
-import classnames from 'classnames';
+import DataTable from "react-data-table-component";
+import Select from "react-select";
+
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import BreadCrumb from "../../../Components/Common/BreadCrumb";
 import DeleteModal from "../../../Components/Common/DeleteModal";
 import Loader from "../../../Components/Common/Loader";
-import { api } from "../../../config";
+import CreatableSelect from 'react-select/creatable';
+// Import FilePond for file uploads
+import { FilePond, registerPlugin } from 'react-filepond';
+import 'filepond/dist/filepond.min.css';
+import FilePondPluginImageExifOrientation from 'filepond-plugin-image-exif-orientation';
+import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
+import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
 
-const Staffs = () => {
+// Register the plugins
+registerPlugin(FilePondPluginImageExifOrientation, FilePondPluginImagePreview);
+
+import { useDispatch, useSelector } from 'react-redux';
+import { createSelector } from 'reselect';
+
+//redux
+import {
+    getStaffs as onGetStaff,
+    deleteStaff as onDeleteStaff,
+    CreateOrUpdateStaff as onCreateOrUpdateStaff
+} from "../../../slices/thunks";
+import { wrap } from 'lodash';
+
+// Selectors
+const selectStaffData = createSelector(
+    (state) => state.Setups,
+    (staffData) => staffData.staffData.staff || []
+);
+
+const resizeObserverErr = window.ResizeObserver;
+window.ResizeObserver = class extends resizeObserverErr {
+    constructor(callback) {
+        super((...args) => {
+            try {
+                callback(...args);
+            } catch (e) {
+                // ignore ResizeObserver errors
+            }
+        });
+    }
+};
+
+
+const StaffPage = () => {
     document.title = "Staff | simad University";
 
+    const dispatch = useDispatch();
+    const staffData = useSelector(selectStaffData);
+
     // State management
-    const [staffs, setStaffs] = useState([]);
-    const [schools, setSchools] = useState([]);
-    const [departments, setDepartments] = useState([]);
+    const [staff, setStaff] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
     const [modal, setModal] = useState(false);
-    const [deleteModal, setDeleteModal] = useState(false);
     const [viewModal, setViewModal] = useState(false);
+    const [deleteModal, setDeleteModal] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
     const [selectedStaff, setSelectedStaff] = useState(null);
-    const [activeStep, setActiveStep] = useState(1); // Wizard step state
-
-    const [activeViewTab, setActiveViewTab] = useState('1');
-
+    const [filteredStaff, setFilteredStaff] = useState([]);
+    const [activeTab, setActiveTab] = useState('1');
 
     // Filters state
     const [filters, setFilters] = useState({
         search: '',
-        role: '',
-        department: '',
-        status: ''
+        title: '',
+        isResearchContributor: ''
     });
 
     // Form state
@@ -50,130 +85,100 @@ const Staffs = () => {
         name: "",
         title: "",
         bio: "",
-        message: "",
-        photoUrl: "",
         email: "",
         phone: "",
         officeLocation: "",
-        role: "Professor",
-        school: "",
-        department: "",
+        photoUrl: "",
         isResearchContributor: false,
         researchInterests: [],
-        professionalExperience: [],
-        publications: [],
-        education: [],
-        awards: [],
-        isActive: true,
-        order: 0
+        professionalExperience: [{
+            position: "",
+            organization: "",
+            startDate: "",
+            endDate: "",
+            isCurrent: false,
+            description: "",
+            achievements: [""]
+        }],
+        education: [{
+            degree: "",
+            fieldOfStudy: "",
+            institution: "",
+            graduationYear: new Date().getFullYear(),
+            country: "",
+            thesisTitle: ""
+        }],
+        publications: [{
+            title: "",
+            journalOrConference: "",
+            publicationDate: "",
+            authors: [""],
+            link: "",
+            isSelected: false
+        }],
+        awards: [{
+            title: "",
+            awardingBody: "",
+            year: new Date().getFullYear(),
+            description: ""
+        }]
     });
+    const [photoFiles, setPhotoFiles] = useState([]);
 
-    // Item states for nested arrays
-    const [experienceItem, setExperienceItem] = useState({
-        position: "",
-        organization: "",
-        startDate: "",
-        endDate: "",
-        isCurrent: false,
-        description: "",
-        achievements: []
-    });
-
-    const [publicationItem, setPublicationItem] = useState({
-        title: "",
-        journalOrConference: "",
-        publicationDate: "",
-        authors: [],
-        link: "",
-        isSelected: false
-    });
-
-    const [educationItem, setEducationItem] = useState({
-        degree: "",
-        fieldOfStudy: "",
-        institution: "",
-        graduationYear: "",
-        country: "",
-        thesisTitle: ""
-    });
-
-    const [awardItem, setAwardItem] = useState({
-        title: "",
-        awardingBody: "",
-        year: "",
-        description: ""
-    });
-
-    const [achievementInput, setAchievementInput] = useState("");
-    const [authorInput, setAuthorInput] = useState("");
-    const [researchInterestInput, setResearchInterestInput] = useState("");
-
-    // Options for selects
-    const statusOptions = [
-        { value: "", label: "All Statuses" },
-        { value: "Active", label: "Active" },
-        { value: "Inactive", label: "Inactive" }
-    ];
-
-    const roleOptions = [
-        { value: "", label: "All Roles" },
-        { value: "Dean", label: "Dean" },
-        { value: "Department Head", label: "Department Head" },
-        { value: "Professor", label: "Professor" },
-        { value: "Lecturer", label: "Lecturer" },
-        { value: "Administrator", label: "Administrator" },
-        { value: "Coordinator", label: "Coordinator" },
-        { value: "Other", label: "Other" }
-    ];
-
-    // Fetch staff with filters
-    const fetchStaffs = async () => {
+    // Fetch staff
+    const fetchStaff = useCallback(async () => {
         setLoading(true);
-        setError(null);
         try {
-            // Build query params
-            const params = new URLSearchParams();
-            if (filters.search) params.append('search', filters.search);
-            if (filters.role) params.append('role', filters.role);
-            if (filters.department) params.append('department', filters.department);
-            if (filters.status) params.append('isActive', filters.status === 'Active');
-
-            const response = await fetch(`${api.API_URL}/staff?${params.toString()}`);
-            const data = await response.json();
-
-            if (!response.ok) throw new Error(data.message || 'Failed to fetch staff');
-
-            setStaffs(data.data.staff || []);
+            await dispatch(onGetStaff());
         } catch (error) {
-            setError(error.message);
-            toast.error(`Error loading staff: ${error.message}`);
+            console.error("Error loading staff:", error);
+
         } finally {
             setLoading(false);
         }
-    };
+    }, [dispatch]);
 
-    // Fetch schools and departments for dropdowns
-    const fetchSchoolsAndDepartments = async () => {
-        try {
-            // Fetch schools
-            const schoolsResponse = await fetch(`${api.API_URL}/schools?isActive=true`);
-            const schoolsData = await schoolsResponse.json();
+    // Load staff data
+    useEffect(() => {
+        fetchStaff();
+    }, [fetchStaff]);
 
-            if (schoolsResponse.ok) {
-                setSchools(schoolsData.data.schools || []);
-            }
+    // Update staff list when data changes
+    useEffect(() => {
+        const initialStaff = Array.isArray(staffData) ? staffData : [];
+        setStaff(initialStaff);
+        setFilteredStaff(initialStaff);
+    }, [staffData]);
 
-            // Fetch departments
-            const deptsResponse = await fetch(`${api.API_URL}/departments?isActive=true`);
-            const deptsData = await deptsResponse.json();
 
-            if (deptsResponse.ok) {
-                setDepartments(deptsData.data.departments || []);
-            }
-        } catch (error) {
-            console.error("Error fetching schools/departments:", error);
-            toast.error(`Error loading schools/departments: ${error.message}`);
-        }
+    useEffect(() => {
+        return () => {
+            // force clear research interests select
+            setFormData(prev => ({ ...prev, researchInterests: [...prev.researchInterests] }));
+        };
+    }, []);
+
+
+    // Handle filter changes
+    const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        setFilters(prevFilters => ({ ...prevFilters, [name]: value }));
+
+        const filtered = staff.filter(staffMember => {
+            const matchesSearch = !value ||
+                staffMember.name?.toLowerCase().includes(value.toLowerCase()) ||
+                staffMember.email?.toLowerCase().includes(value.toLowerCase()) ||
+                staffMember.title?.toLowerCase().includes(value.toLowerCase());
+
+            const matchesTitle = !filters.title ||
+                staffMember.title === (name === 'title' ? value : filters.title);
+
+            const matchesResearch = filters.isResearchContributor === '' ||
+                staffMember.isResearchContributor === (filters.isResearchContributor === 'true');
+
+            return matchesSearch && matchesTitle && matchesResearch;
+        });
+        setFilteredStaff(filtered);
     };
 
     // Handle form input changes
@@ -185,210 +190,104 @@ const Staffs = () => {
         }));
     };
 
-    // Handle select changes
-    const handleSelectChange = (name, selectedOption) => {
-        setFormData(prev => ({
-            ...prev,
-            [name]: selectedOption?.value || ""
-        }));
-    };
-
-    // Handle filter changes
-    const handleFilterChange = (e) => {
-        const { name, value } = e.target;
-        setFilters(prev => ({ ...prev, [name]: value }));
-    };
-
-    // Handle select filter changes
-    const handleSelectFilterChange = (name, selectedOption) => {
-        setFilters(prev => ({
-            ...prev,
-            [name]: selectedOption?.value || ""
-        }));
-    };
-
-    // Add research interest
-    const addResearchInterest = () => {
-        if (!researchInterestInput.trim()) return;
-
-        setFormData(prev => ({
-            ...prev,
-            researchInterests: [...prev.researchInterests, researchInterestInput.trim()]
-        }));
-
-        setResearchInterestInput("");
-    };
-
-    // Remove research interest
-    const removeResearchInterest = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            researchInterests: prev.researchInterests.filter((_, i) => i !== index)
-        }));
-    };
-
-    // Add professional experience
-    const addExperience = () => {
-        if (!experienceItem.position || !experienceItem.organization || !experienceItem.startDate) {
-            toast.warning("Please fill in position, organization, and start date");
-            return;
-        }
-
-        setFormData(prev => ({
-            ...prev,
-            professionalExperience: [...prev.professionalExperience, { ...experienceItem }]
-        }));
-
-        setExperienceItem({
-            position: "",
-            organization: "",
-            startDate: "",
-            endDate: "",
-            isCurrent: false,
-            description: "",
-            achievements: []
+    // Handle array field changes
+    const handleArrayFieldChange = (field, index, subField, value) => {
+        setFormData(prev => {
+            const updatedArray = [...prev[field]];
+            updatedArray[index] = {
+                ...updatedArray[index],
+                [subField]: value
+            };
+            return {
+                ...prev,
+                [field]: updatedArray
+            };
         });
     };
 
-    // Remove professional experience
-    const removeExperience = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            professionalExperience: prev.professionalExperience.filter((_, i) => i !== index)
-        }));
-    };
-
-    // Add achievement to current experience item
-    const addAchievement = () => {
-        if (!achievementInput.trim()) return;
-
-        setExperienceItem(prev => ({
-            ...prev,
-            achievements: [...prev.achievements, achievementInput.trim()]
-        }));
-
-        setAchievementInput("");
-    };
-
-    // Remove achievement from current experience item
-    const removeAchievement = (index) => {
-        setExperienceItem(prev => ({
-            ...prev,
-            achievements: prev.achievements.filter((_, i) => i !== index)
-        }));
-    };
-
-    // Add publication
-    const addPublication = () => {
-        if (!publicationItem.title || !publicationItem.journalOrConference || !publicationItem.publicationDate) {
-            toast.warning("Please fill in title, journal/conference, and publication date");
-            return;
-        }
-
-        setFormData(prev => ({
-            ...prev,
-            publications: [...prev.publications, { ...publicationItem }]
-        }));
-
-        setPublicationItem({
-            title: "",
-            journalOrConference: "",
-            publicationDate: "",
-            authors: [],
-            link: "",
-            isSelected: false
+    // Handle nested array changes (like achievements, authors)
+    const handleNestedArrayChange = (field, index, subField, subIndex, value) => {
+        setFormData(prev => {
+            const updatedArray = [...prev[field]];
+            const updatedSubArray = [...updatedArray[index][subField]];
+            updatedSubArray[subIndex] = value;
+            updatedArray[index] = {
+                ...updatedArray[index],
+                [subField]: updatedSubArray
+            };
+            return {
+                ...prev,
+                [field]: updatedArray
+            };
         });
     };
 
-    // Remove publication
-    const removePublication = (index) => {
+    // Add new item to array
+    const addArrayItem = (field, template) => {
         setFormData(prev => ({
             ...prev,
-            publications: prev.publications.filter((_, i) => i !== index)
+            [field]: [...prev[field], { ...template }]
         }));
     };
 
-    // Add author to current publication item
-    const addAuthor = () => {
-        if (!authorInput.trim()) return;
-
-        setPublicationItem(prev => ({
-            ...prev,
-            authors: [...prev.authors, authorInput.trim()]
-        }));
-
-        setAuthorInput("");
-    };
-
-    // Remove author from current publication item
-    const removeAuthor = (index) => {
-        setPublicationItem(prev => ({
-            ...prev,
-            authors: prev.authors.filter((_, i) => i !== index)
-        }));
-    };
-
-    // Add education
-    const addEducation = () => {
-        if (!educationItem.degree || !educationItem.fieldOfStudy || !educationItem.institution || !educationItem.graduationYear) {
-            toast.warning("Please fill in degree, field of study, institution, and graduation year");
-            return;
-        }
-
+    // Remove item from array
+    const removeArrayItem = (field, index) => {
         setFormData(prev => ({
             ...prev,
-            education: [...prev.education, { ...educationItem }]
+            [field]: prev[field].filter((_, i) => i !== index)
         }));
+    };
 
-        setEducationItem({
-            degree: "",
-            fieldOfStudy: "",
-            institution: "",
-            graduationYear: "",
-            country: "",
-            thesisTitle: ""
+    // Add nested array item
+    const addNestedArrayItem = (field, index, subField, template = "") => {
+        setFormData(prev => {
+            const updatedArray = [...prev[field]];
+            updatedArray[index] = {
+                ...updatedArray[index],
+                [subField]: [...updatedArray[index][subField], template]
+            };
+            return {
+                ...prev,
+                [field]: updatedArray
+            };
         });
     };
 
-    // Remove education
-    const removeEducation = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            education: prev.education.filter((_, i) => i !== index)
-        }));
-    };
-
-    // Add award
-    const addAward = () => {
-        if (!awardItem.title || !awardItem.awardingBody || !awardItem.year) {
-            toast.warning("Please fill in title, awarding body, and year");
-            return;
-        }
-
-        setFormData(prev => ({
-            ...prev,
-            awards: [...prev.awards, { ...awardItem }]
-        }));
-
-        setAwardItem({
-            title: "",
-            awardingBody: "",
-            year: "",
-            description: ""
+    // Remove nested array item
+    const removeNestedArrayItem = (field, index, subField, subIndex) => {
+        setFormData(prev => {
+            const updatedArray = [...prev[field]];
+            const updatedSubArray = updatedArray[index][subField].filter((_, i) => i !== subIndex);
+            updatedArray[index] = {
+                ...updatedArray[index],
+                [subField]: updatedSubArray
+            };
+            return {
+                ...prev,
+                [field]: updatedArray
+            };
         });
     };
 
-    // Remove award
-    const removeAward = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            awards: prev.awards.filter((_, i) => i !== index)
-        }));
+    // Handle file upload
+    const handleFileUpdate = (fileItems) => {
+        setPhotoFiles(fileItems);
+        if (fileItems.length > 0) {
+            setFormData(prev => ({
+                ...prev,
+                photoUrl: fileItems[0].file
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                photoUrl: ""
+            }));
+        }
     };
 
     // Validate form
     const validateForm = () => {
-        const requiredFields = ['name', 'title', 'email', 'role'];
+        const requiredFields = ['name', 'title', 'bio', 'email'];
         const missingFields = requiredFields.filter(field => !formData[field]);
 
         if (missingFields.length > 0) {
@@ -396,201 +295,395 @@ const Staffs = () => {
             return false;
         }
 
-        // Validate email format
+        // Email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formData.email)) {
-            toast.warning("Please enter a valid email address");
-            return false;
-        }
-
-        if (formData.order < 0) {
-            toast.warning("Order cannot be negative");
+            toast.warning('Please enter a valid email address');
             return false;
         }
 
         return true;
     };
 
+    // Reset form
+    const resetForm = () => {
+        setFormData({
+            name: "",
+            title: "",
+            bio: "",
+            email: "",
+            phone: "",
+            officeLocation: "",
+            photoUrl: "",
+            isResearchContributor: false,
+            researchInterests: [],
+            professionalExperience: [{
+                position: "",
+                organization: "",
+                startDate: "",
+                endDate: "",
+                isCurrent: false,
+                description: "",
+                achievements: [""]
+            }],
+            education: [{
+                degree: "",
+                fieldOfStudy: "",
+                institution: "",
+                graduationYear: new Date().getFullYear(),
+                country: "",
+                thesisTitle: ""
+            }],
+            publications: [{
+                title: "",
+                journalOrConference: "",
+                publicationDate: "",
+                authors: [""],
+                link: "",
+                isSelected: false
+            }],
+            awards: [{
+                title: "",
+                awardingBody: "",
+                year: new Date().getFullYear(),
+                description: ""
+            }]
+        });
+        setPhotoFiles([]);
+        setSelectedStaff(null);
+        setActiveTab('1');
+    };
+
+    // In the createStaff and updateStaff functions, replace with this:
+
     // Create new staff
-    const createStaff = async () => {
+    const createStaff = async (e) => {
+        e.preventDefault();
         if (!validateForm()) return;
 
         try {
-            const authUser = JSON.parse(sessionStorage.getItem("authUser"));
-            const staffData = {
-                ...formData,
-                createdBy: authUser?.data?.user?.username || "Admin"
-            };
+            const submitData = new FormData();
 
-            const response = await fetch(`${api.API_URL}/staff`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(staffData)
+            // Append basic fields
+            const basicFields = ['name', 'title', 'bio', 'email', 'phone', 'officeLocation'];
+            basicFields.forEach(field => {
+                submitData.append(field, formData[field]);
             });
 
-            const data = await response.json();
+            // Append boolean field
+            submitData.append('isResearchContributor', formData.isResearchContributor);
 
-            if (!response.ok) throw new Error(data.message || 'Failed to create staff');
+            if (formData.isResearchContributor) {
+                // Append research interests as array
+                formData.researchInterests.forEach((interest, index) => {
+                    if (interest.trim()) {
+                        submitData.append(`researchInterests[${index}]`, interest);
+                    }
+                });
 
-            toast.success("Staff created successfully");
-            fetchStaffs();
-            setModal(false);
+                // Append publications
+                formData.publications.forEach((pub, index) => {
+                    submitData.append(`publications[${index}][title]`, pub.title);
+                    submitData.append(`publications[${index}][journalOrConference]`, pub.journalOrConference);
+                    submitData.append(`publications[${index}][publicationDate]`, pub.publicationDate);
+                    submitData.append(`publications[${index}][link]`, pub.link || '');
+                    submitData.append(`publications[${index}][isSelected]`, pub.isSelected);
+
+                    pub.authors.forEach((author, aIndex) => {
+                        if (author.trim()) {
+                            submitData.append(`publications[${index}][authors][${aIndex}]`, author);
+                        }
+                    });
+                });
+            }
+            // Append photo file if exists
+            if (formData.photoUrl instanceof File) {
+                submitData.append('photo', formData.photoUrl);
+            }
+
+            // Append array fields as individual entries (not JSON strings)
+            formData.professionalExperience.forEach((exp, index) => {
+                submitData.append(`professionalExperience[${index}][position]`, exp.position);
+                submitData.append(`professionalExperience[${index}][organization]`, exp.organization);
+                submitData.append(`professionalExperience[${index}][startDate]`, exp.startDate);
+                submitData.append(`professionalExperience[${index}][endDate]`, exp.endDate || '');
+                submitData.append(`professionalExperience[${index}][isCurrent]`, exp.isCurrent);
+                submitData.append(`professionalExperience[${index}][description]`, exp.description || '');
+
+                // Append achievements as array
+                exp.achievements.forEach((achievement, aIndex) => {
+                    if (achievement.trim()) {
+                        submitData.append(`professionalExperience[${index}][achievements][${aIndex}]`, achievement);
+                    }
+                });
+            });
+
+            formData.education.forEach((edu, index) => {
+                submitData.append(`education[${index}][degree]`, edu.degree);
+                submitData.append(`education[${index}][fieldOfStudy]`, edu.fieldOfStudy);
+                submitData.append(`education[${index}][institution]`, edu.institution);
+                submitData.append(`education[${index}][graduationYear]`, edu.graduationYear.toString());
+                submitData.append(`education[${index}][country]`, edu.country || '');
+                submitData.append(`education[${index}][thesisTitle]`, edu.thesisTitle || '');
+            });
+
+            formData.awards.forEach((award, index) => {
+                submitData.append(`awards[${index}][title]`, award.title);
+                submitData.append(`awards[${index}][awardingBody]`, award.awardingBody);
+                submitData.append(`awards[${index}][year]`, award.year.toString());
+                submitData.append(`awards[${index}][description]`, award.description || '');
+            });
+
+
+
+            await dispatch(onCreateOrUpdateStaff(submitData));
+
+            handleModalClose();
+            resetForm();
         } catch (error) {
-            toast.error(`Error creating staff: ${error.message}`);
+            console.error("Error creating staff:", error);
+
         }
     };
 
     // Update staff
-    const updateStaff = async () => {
+    const updateStaff = async (e) => {
+        e.preventDefault();
         if (!validateForm() || !selectedStaff) return;
 
         try {
-            const authUser = JSON.parse(sessionStorage.getItem("authUser"));
-            const staffData = {
-                ...formData,
-                _id: selectedStaff._id,
-                updatedBy: authUser?.data?.user?.username || "Admin"
-            };
+            const submitData = new FormData();
 
-            const response = await fetch(`${api.API_URL}/staff/${selectedStaff._id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(staffData)
+            // Append basic fields
+            const basicFields = ['name', 'title', 'bio', 'email', 'phone', 'officeLocation'];
+            basicFields.forEach(field => {
+                submitData.append(field, formData[field]);
             });
 
-            const data = await response.json();
+            // Append boolean field
+            submitData.append('isResearchContributor', formData.isResearchContributor);
+            if (formData.isResearchContributor) {
+                // Append research interests as array
+                formData.researchInterests.forEach((interest, index) => {
+                    if (interest.trim()) {
+                        submitData.append(`researchInterests[${index}]`, interest);
+                    }
+                });
 
-            if (!response.ok) throw new Error(data.message || 'Failed to update staff');
+                // Append publications
+                formData.publications.forEach((pub, index) => {
+                    submitData.append(`publications[${index}][title]`, pub.title);
+                    submitData.append(`publications[${index}][journalOrConference]`, pub.journalOrConference);
+                    submitData.append(`publications[${index}][publicationDate]`, pub.publicationDate);
+                    submitData.append(`publications[${index}][link]`, pub.link || '');
+                    submitData.append(`publications[${index}][isSelected]`, pub.isSelected);
 
-            toast.success("Staff updated successfully");
-            fetchStaffs();
-            setModal(false);
+                    pub.authors.forEach((author, aIndex) => {
+                        if (author.trim()) {
+                            submitData.append(`publications[${index}][authors][${aIndex}]`, author);
+                        }
+                    });
+                });
+            }
+
+            // Append photo file if exists
+            if (formData.photoUrl instanceof File) {
+                submitData.append('photo', formData.photoUrl);
+            }
+
+            // Append array fields as individual entries
+            formData.professionalExperience.forEach((exp, index) => {
+                submitData.append(`professionalExperience[${index}][position]`, exp.position);
+                submitData.append(`professionalExperience[${index}][organization]`, exp.organization);
+                submitData.append(`professionalExperience[${index}][startDate]`, exp.startDate);
+                submitData.append(`professionalExperience[${index}][endDate]`, exp.endDate || '');
+                submitData.append(`professionalExperience[${index}][isCurrent]`, exp.isCurrent);
+                submitData.append(`professionalExperience[${index}][description]`, exp.description || '');
+
+                // Append achievements as array
+                exp.achievements.forEach((achievement, aIndex) => {
+                    if (achievement.trim()) {
+                        submitData.append(`professionalExperience[${index}][achievements][${aIndex}]`, achievement);
+                    }
+                });
+            });
+
+            formData.education.forEach((edu, index) => {
+                submitData.append(`education[${index}][degree]`, edu.degree);
+                submitData.append(`education[${index}][fieldOfStudy]`, edu.fieldOfStudy);
+                submitData.append(`education[${index}][institution]`, edu.institution);
+                submitData.append(`education[${index}][graduationYear]`, edu.graduationYear.toString());
+                submitData.append(`education[${index}][country]`, edu.country || '');
+                submitData.append(`education[${index}][thesisTitle]`, edu.thesisTitle || '');
+            });
+
+
+
+            formData.awards.forEach((award, index) => {
+                submitData.append(`awards[${index}][title]`, award.title);
+                submitData.append(`awards[${index}][awardingBody]`, award.awardingBody);
+                submitData.append(`awards[${index}][year]`, award.year.toString());
+                submitData.append(`awards[${index}][description]`, award.description || '');
+            });
+
+
+
+            // Append ID for update
+            submitData.append('_id', selectedStaff._id);
+
+            await dispatch(onCreateOrUpdateStaff(submitData));
+
+            handleModalClose();
+            resetForm();
         } catch (error) {
-            toast.error(`Error updating staff: ${error.message}`);
+            console.error("Error updating staff:", error);
+
         }
     };
+
+    const handleModalClose = () => {
+        setPhotoFiles([]); // reset FilePond files
+        setModal(false);
+    };
+
 
     // Delete staff
     const deleteStaff = async () => {
         if (!selectedStaff) return;
 
         try {
-            const response = await fetch(`${api.API_URL}/staff/${selectedStaff._id}`, {
-                method: 'DELETE'
-            });
+            await dispatch(onDeleteStaff(selectedStaff._id));
 
-            const data = await response.json();
-
-            if (!response.ok) throw new Error(data.message || 'Failed to delete staff');
-
-            toast.success("Staff deleted successfully");
             setDeleteModal(false);
-            fetchStaffs();
+            fetchStaff();
         } catch (error) {
-            toast.error(`Error deleting staff: ${error.message}`);
+            console.error("Error deleting staff:", error);
+
         }
     };
 
     // Open modal for edit
-    const handleEdit = (staff) => {
-        setSelectedStaff(staff);
+    const handleEdit = (staffMember) => {
+        setSelectedStaff(staffMember);
+
+        // Parse array fields if they are strings (from backend)
+        const parseArrayField = (field) => {
+            if (!staffMember[field]) return getDefaultArray(field);
+            if (Array.isArray(staffMember[field])) return staffMember[field];
+            try {
+                return JSON.parse(staffMember[field]);
+            } catch {
+                return getDefaultArray(field);
+            }
+        };
+
+        // Format date for HTML date input (YYYY-MM-DD)
+        const formatDateForInput = (dateString) => {
+            if (!dateString) return '';
+            try {
+                const date = new Date(dateString);
+                return date.toISOString().split('T')[0];
+            } catch {
+                return '';
+            }
+        };
+
+        // Parse and format professional experience dates
+        const parsedProfessionalExperience = parseArrayField('professionalExperience').map(exp => ({
+            ...exp,
+            startDate: formatDateForInput(exp.startDate),
+            endDate: formatDateForInput(exp.endDate)
+        }));
+
+        // Parse and format publication dates
+        const parsedPublications = parseArrayField('publications').map(pub => ({
+            ...pub,
+            publicationDate: formatDateForInput(pub.publicationDate)
+        }));
+
         setFormData({
-            name: staff.name,
-            title: staff.title,
-            bio: staff.bio || "",
-            message: staff.message || "",
-            photoUrl: staff.photoUrl || "",
-            email: staff.email,
-            phone: staff.phone || "",
-            officeLocation: staff.officeLocation || "",
-            role: staff.role,
-            school: staff.school?._id || staff.school || "",
-            department: staff.department?._id || staff.department || "",
-            isResearchContributor: staff.isResearchContributor || false,
-            researchInterests: staff.researchInterests || [],
-            professionalExperience: staff.professionalExperience || [],
-            publications: staff.publications || [],
-            education: staff.education || [],
-            awards: staff.awards || [],
-            isActive: staff.isActive,
-            order: staff.order || 0
+            name: staffMember.name || "",
+            title: staffMember.title || "",
+            bio: staffMember.bio || "",
+            email: staffMember.email || "",
+            phone: staffMember.phone || "",
+            officeLocation: staffMember.officeLocation || "",
+            photoUrl: staffMember.photoUrl || "",
+            isResearchContributor: staffMember.isResearchContributor || false,
+            researchInterests: parseArrayField('researchInterests'),
+            professionalExperience: parsedProfessionalExperience.length > 0 ? parsedProfessionalExperience : getDefaultArray('professionalExperience'),
+            education: parseArrayField('education'),
+            publications: parsedPublications.length > 0 ? parsedPublications : getDefaultArray('publications'),
+            awards: parseArrayField('awards')
         });
+
         setIsEdit(true);
         setModal(true);
-        setActiveStep(1);
+        setActiveTab('1');
+    };
+    // Helper function for default arrays
+    // Helper function for default arrays
+    const getDefaultArray = (field) => {
+        const defaults = {
+            professionalExperience: [{
+                position: "",
+                organization: "",
+                startDate: "",
+                endDate: "",
+                isCurrent: false,
+                description: "",
+                achievements: [""]
+            }],
+            education: [{
+                degree: "",
+                fieldOfStudy: "",
+                institution: "",
+                graduationYear: new Date().getFullYear(),
+                country: "",
+                thesisTitle: ""
+            }],
+            publications: [{
+                title: "",
+                journalOrConference: "",
+                publicationDate: "",
+                authors: [""],
+                link: "",
+                isSelected: false
+            }],
+            awards: [{
+                title: "",
+                awardingBody: "",
+                year: new Date().getFullYear(),
+                description: ""
+            }],
+            researchInterests: []
+        };
+        return defaults[field] || [];
+    };
+
+    // Open modal for view
+    const handleView = (staffMember) => {
+        setSelectedStaff(staffMember);
+        setViewModal(true);
+        setActiveTab('1');
     };
 
     // Open modal for create
     const handleCreate = () => {
         setSelectedStaff(null);
-        setFormData({
-            name: "",
-            title: "",
-            bio: "",
-            message: "",
-            photoUrl: "",
-            email: "",
-            phone: "",
-            officeLocation: "",
-            role: "Professor",
-            school: "",
-            department: "",
-            isResearchContributor: false,
-            researchInterests: [],
-            professionalExperience: [],
-            publications: [],
-            education: [],
-            awards: [],
-            isActive: true,
-            order: 0
-        });
-        setExperienceItem({
-            position: "",
-            organization: "",
-            startDate: "",
-            endDate: "",
-            isCurrent: false,
-            description: "",
-            achievements: []
-        });
-        setPublicationItem({
-            title: "",
-            journalOrConference: "",
-            publicationDate: "",
-            authors: [],
-            link: "",
-            isSelected: false
-        });
-        setEducationItem({
-            degree: "",
-            fieldOfStudy: "",
-            institution: "",
-            graduationYear: "",
-            country: "",
-            thesisTitle: ""
-        });
-        setAwardItem({
-            title: "",
-            awardingBody: "",
-            year: "",
-            description: ""
-        });
-        setAchievementInput("");
-        setAuthorInput("");
-        setResearchInterestInput("");
+        resetForm();
         setIsEdit(false);
         setModal(true);
-        setActiveStep(1);
     };
 
-    // Open view modal
-    const handleView = (staff) => {
-        setSelectedStaff(staff);
-        setViewModal(true);
+    // Format date for display
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
     };
 
     // Table columns
@@ -598,137 +691,153 @@ const Staffs = () => {
         {
             name: '#',
             cell: (row, index) => index + 1,
+
+        },
+        {
+            name: 'Photo',
+            cell: (row) => (
+                <div className="avatar-xs">
+                    {row.photoUrl ? (
+                        <img
+                            src={row.photoUrl}
+                            alt={row.name}
+                            className="rounded-circle"
+                            style={{ width: '32px', height: '32px', objectFit: 'cover' }}
+                        />
+                    ) : (
+                        <div className="avatar-title bg-light text-secondary rounded-circle">
+                            <i className="ri-user-line" />
+                        </div>
+                    )}
+                </div>
+            ),
+
         },
         {
             name: 'Name',
             selector: row => row.name,
             sortable: true,
+
         },
         {
             name: 'Title',
             selector: row => row.title,
-            sortable: true,
+            wrap: true,
+
         },
         {
             name: 'Email',
             selector: row => row.email,
             sortable: true,
+
         },
         {
-            name: 'Role',
-            selector: row => row.role,
-            sortable: true,
+            name: 'Phone',
+            selector: row => row.phone || 'N/A',
+
         },
         {
-            name: 'Department',
-            selector: row => row.department?.name || '-',
-            sortable: true,
-        },
-        {
-            name: 'Status',
+            name: 'Research',
             cell: row => (
-                <Badge color={row.isActive ? 'success' : 'danger'}>
-                    {row.isActive ? 'Active' : 'Inactive'}
+                <Badge color={row.isResearchContributor ? 'success' : 'secondary'}>
+                    {row.isResearchContributor ? 'Researcher' : 'Staff'}
                 </Badge>
             ),
-            sortable: true,
+
         },
         {
             name: 'Actions',
             cell: row => (
                 <div className="d-flex gap-2">
-                    <Button color="soft-info" size="sm" onClick={() => handleView(row)}>
+                    <Button
+                        color="soft-info"
+                        size="sm"
+                        onClick={() => handleView(row)}
+                        title="View Details"
+                    >
                         <i className="ri-eye-line" />
                     </Button>
-                    <Button color="soft-primary" size="sm" onClick={() => handleEdit(row)}>
+                    <Button
+                        color="soft-primary"
+                        size="sm"
+                        onClick={() => handleEdit(row)}
+                        title="Edit"
+                    >
                         <i className="ri-pencil-line" />
                     </Button>
-                    <Button color="soft-danger" size="sm" onClick={() => {
-                        setSelectedStaff(row);
-                        setDeleteModal(true);
-                    }}>
+                    <Button
+                        color="soft-danger"
+                        size="sm"
+                        onClick={() => {
+                            setSelectedStaff(row);
+                            setDeleteModal(true);
+                        }}
+                        title="Delete"
+                    >
                         <i className="ri-delete-bin-line" />
                     </Button>
                 </div>
             ),
+
         }
     ];
-
-    // Initial data load
-    useEffect(() => {
-        fetchStaffs();
-        fetchSchoolsAndDepartments();
-    }, [filters]);
 
     return (
         <div className="page-content">
             <Container fluid>
-                <BreadCrumb title="Staff Members" pageTitle="Academics" />
+                <BreadCrumb title="Staff" pageTitle="Academics" />
 
                 {/* Filter Controls */}
                 <Card className="mb-3">
                     <CardBody>
                         <Row>
-                            <Col md={3}>
+                            <Col md={4}>
                                 <FormGroup>
                                     <Label>Search</Label>
                                     <Input
                                         type="text"
                                         name="search"
-                                        placeholder="Search by name"
+                                        placeholder="Search by name, email, or title"
                                         value={filters.search}
                                         onChange={handleFilterChange}
                                     />
                                 </FormGroup>
                             </Col>
-                            <Col md={2}>
+                            {/* <Col md={3}>
                                 <FormGroup>
-                                    <Label>Role</Label>
-                                    <Select
-                                        options={roleOptions}
-                                        value={roleOptions.find(opt => opt.value === filters.role)}
-                                        onChange={(opt) => handleSelectFilterChange('role', opt)}
-                                        isClearable
+                                    <Label>Title</Label>
+                                    <Input
+                                        type="text"
+                                        name="title"
+                                        placeholder="Filter by title"
+                                        value={filters.title}
+                                        onChange={handleFilterChange}
                                     />
                                 </FormGroup>
                             </Col>
                             <Col md={3}>
                                 <FormGroup>
-                                    <Label>Department</Label>
-                                    <Select
-                                        options={departments.map(dept => ({ value: dept._id, label: dept.name }))}
-                                        value={departments.find(dept => dept._id === filters.department) ?
-                                            { value: filters.department, label: departments.find(dept => dept._id === filters.department).name } : null}
-                                        onChange={(opt) => handleSelectFilterChange('department', opt)}
-                                        isClearable
-                                        placeholder="Select department"
-                                    />
+                                    <Label>Research Contributor</Label>
+                                    <Input
+                                        type="select"
+                                        name="isResearchContributor"
+                                        value={filters.isResearchContributor}
+                                        onChange={handleFilterChange}
+                                    >
+                                        <option value="">All</option>
+                                        <option value="true">Researchers</option>
+                                        <option value="false">Non-Researchers</option>
+                                    </Input>
                                 </FormGroup>
-                            </Col>
-                            <Col md={2}>
-                                <FormGroup>
-                                    <Label>Status</Label>
-                                    <Select
-                                        options={statusOptions}
-                                        value={statusOptions.find(opt => opt.value === filters.status)}
-                                        onChange={(opt) => handleSelectFilterChange('status', opt)}
-                                        isClearable
-                                    />
-                                </FormGroup>
-                            </Col>
-                            <Col md={2} className="d-flex align-items-end mb-3">
-                                <Button color="primary" onClick={fetchStaffs} disabled={loading}>
-                                    {loading ? 'Filtering...' : 'Apply Filters'}
-                                </Button>
-                            </Col>
+                            </Col> */}
                         </Row>
                     </CardBody>
                 </Card>
 
-                {/* Data Table */}
+                {/* Staff Table */}
                 <Card>
                     <CardHeader className="d-flex justify-content-between align-items-center">
-                        <h5 className="mb-0">Staff Members List</h5>
+                        <h5 className="mb-0">Staff List</h5>
                         <Button color="primary" onClick={handleCreate}>
                             <i className="ri-add-line me-1" /> Add Staff
                         </Button>
@@ -736,12 +845,10 @@ const Staffs = () => {
                     <CardBody>
                         {loading ? (
                             <Loader />
-                        ) : error ? (
-                            <div className="text-danger">{error}</div>
                         ) : (
                             <DataTable
                                 columns={columns}
-                                data={staffs}
+                                data={filteredStaff}
                                 pagination
                                 highlightOnHover
                                 responsive
@@ -753,1108 +860,944 @@ const Staffs = () => {
             </Container>
 
             {/* Add/Edit Modal */}
-            <Modal isOpen={modal} toggle={() => setModal(false)} size="xl" style={{ maxWidth: '1200px', width: '90%' }}>
-                <ModalHeader toggle={() => setModal(false)}>
+            <Modal isOpen={modal} toggle={handleModalClose} unmountOnClose={false} size="xl" scrollable>
+                <ModalHeader toggle={handleModalClose}>
                     {isEdit ? 'Edit Staff Member' : 'Add New Staff Member'}
                 </ModalHeader>
-                <Form onSubmit={(e) => {
-                    e.preventDefault();
-                    isEdit ? updateStaff() : createStaff();
-                }}>
+                <Form onSubmit={isEdit ? updateStaff : createStaff}>
                     <ModalBody style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-
                         {/* Step Navigation */}
-                        <div className="step-arrow-nav mb-4">
-                            <Nav className="nav-pills custom-nav nav-justified" role="tablist">
-                                <NavItem>
-                                    <NavLink
-                                        href="#"
-                                        className={classnames({ active: activeStep === 1 })}
-                                        onClick={() => setActiveStep(1)}
-                                    >
-                                        <i className="ri-user-line me-1"></i> Basic Info
-                                    </NavLink>
-                                </NavItem>
-                                <NavItem>
-                                    <NavLink
-                                        href="#"
-                                        className={classnames({ active: activeStep === 2 })}
-                                        onClick={() => setActiveStep(2)}
-                                    >
-                                        <i className="ri-search-line me-1"></i> Research
-                                    </NavLink>
-                                </NavItem>
-                                <NavItem>
-                                    <NavLink
-                                        href="#"
-                                        className={classnames({ active: activeStep === 3 })}
-                                        onClick={() => setActiveStep(3)}
-                                    >
-                                        <i className="ri-briefcase-line me-1"></i> Experience
-                                    </NavLink>
-                                </NavItem>
-                                <NavItem>
-                                    <NavLink
-                                        href="#"
-                                        className={classnames({ active: activeStep === 4 })}
-                                        onClick={() => setActiveStep(4)}
-                                    >
-                                        <i className="ri-graduation-cap-line me-1"></i> Education
-                                    </NavLink>
-                                </NavItem>
-                                <NavItem>
-                                    <NavLink
-                                        href="#"
-                                        className={classnames({ active: activeStep === 5 })}
-                                        onClick={() => setActiveStep(5)}
-                                    >
-                                        <i className="ri-article-line me-1"></i> Publications
-                                    </NavLink>
-                                </NavItem>
-                                <NavItem>
-                                    <NavLink
-                                        href="#"
-                                        className={classnames({ active: activeStep === 6 })}
-                                        onClick={() => setActiveStep(6)}
-                                    >
-                                        <i className="ri-trophy-line me-1"></i> Awards
-                                    </NavLink>
-                                </NavItem>
-                            </Nav>
-                        </div>
+                        <Nav pills className="nav-pills-custom mb-4">
+                            <NavItem>
+                                <NavLink
+                                    className={activeTab === '1' ? 'active' : ''}
+                                    onClick={() => setActiveTab('1')}
+                                >
+                                    <i className="ri-user-line me-1" /> Basic Info
+                                </NavLink>
+                            </NavItem>
+                            <NavItem>
+                                <NavLink
+                                    className={activeTab === '2' ? 'active' : ''}
+                                    onClick={() => setActiveTab('2')}
+                                >
+                                    <i className="ri-briefcase-line me-1" /> Experience
+                                </NavLink>
+                            </NavItem>
+                            <NavItem>
+                                <NavLink
+                                    className={activeTab === '3' ? 'active' : ''}
+                                    onClick={() => setActiveTab('3')}
+                                >
+                                    <i className="ri-graduation-cap-line me-1" /> Education
+                                </NavLink>
+                            </NavItem>
+                            <NavItem>
+                                <NavLink
+                                    className={activeTab === '4' ? 'active' : ''}
+                                    onClick={() => setActiveTab('4')}
+                                >
+                                    <i className="ri-file-paper-line me-1" /> Research
+                                </NavLink>
+                            </NavItem>
+                            <NavItem>
+                                <NavLink
+                                    className={activeTab === '5' ? 'active' : ''}
+                                    onClick={() => setActiveTab('5')}
+                                >
+                                    <i className="ri-trophy-line me-1" /> Awards
+                                </NavLink>
+                            </NavItem>
+                        </Nav>
 
-                        <TabContent activeTab={activeStep}>
-                            {/* Step 1: Basic Information */}
-                            <TabPane tabId={1}>
-                                <div className="card border">
-                                    <div className="card-header bg-light">
-                                        <h6 className="card-title mb-0">Basic Information</h6>
-                                    </div>
-                                    <div className="card-body">
-                                        <Row>
-                                            <Col md={8}>
-                                                <FormGroup>
-                                                    <Label>Full Name <span className="text-danger">*</span></Label>
-                                                    <Input
-                                                        name="name"
-                                                        value={formData.name}
-                                                        onChange={handleInputChange}
-                                                        required
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={4}>
-                                                <FormGroup>
-                                                    <Label>Title <span className="text-danger">*</span></Label>
-                                                    <Input
-                                                        name="title"
-                                                        value={formData.title}
-                                                        onChange={handleInputChange}
-                                                        required
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={6}>
-                                                <FormGroup>
-                                                    <Label>Email <span className="text-danger">*</span></Label>
-                                                    <Input
-                                                        type="email"
-                                                        name="email"
-                                                        value={formData.email}
-                                                        onChange={handleInputChange}
-                                                        required
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={6}>
-                                                <FormGroup>
-                                                    <Label>Phone</Label>
-                                                    <Input
-                                                        name="phone"
-                                                        value={formData.phone}
-                                                        onChange={handleInputChange}
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={6}>
-                                                <FormGroup>
-                                                    <Label>Role <span className="text-danger">*</span></Label>
-                                                    <Select
-                                                        options={roleOptions.filter(opt => opt.value !== "")}
-                                                        value={roleOptions.find(opt => opt.value === formData.role)}
-                                                        onChange={(opt) => handleSelectChange('role', opt)}
-                                                        required
-                                                        className="react-select"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={6}>
-                                                <FormGroup>
-                                                    <Label>Office Location</Label>
-                                                    <Input
-                                                        name="officeLocation"
-                                                        value={formData.officeLocation}
-                                                        onChange={handleInputChange}
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={6}>
-                                                <FormGroup>
-                                                    <Label>School</Label>
-                                                    <Select
-                                                        options={schools.map(school => ({ value: school._id, label: school.name }))}
-                                                        value={schools.find(school => school._id === formData.school) ?
-                                                            { value: formData.school, label: schools.find(school => school._id === formData.school).name } : null}
-                                                        onChange={(opt) => handleSelectChange('school', opt)}
-                                                        isClearable
-                                                        className="react-select"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={6}>
-                                                <FormGroup>
-                                                    <Label>Department</Label>
-                                                    <Select
-                                                        options={departments.map(dept => ({ value: dept._id, label: dept.name }))}
-                                                        value={departments.find(dept => dept._id === formData.department) ?
-                                                            { value: formData.department, label: departments.find(dept => dept._id === formData.department).name } : null}
-                                                        onChange={(opt) => handleSelectChange('department', opt)}
-                                                        isClearable
-                                                        className="react-select"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={12}>
-                                                <FormGroup>
-                                                    <Label>Bio</Label>
-                                                    <Input
-                                                        type="textarea"
-                                                        name="bio"
-                                                        value={formData.bio}
-                                                        onChange={handleInputChange}
-                                                        rows="3"
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={12}>
-                                                <FormGroup>
-                                                    <Label>Message</Label>
-                                                    <Input
-                                                        type="textarea"
-                                                        name="message"
-                                                        value={formData.message}
-                                                        onChange={handleInputChange}
-                                                        rows="2"
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={12}>
-                                                <FormGroup>
-                                                    <Label>Photo URL</Label>
-                                                    <Input
-                                                        name="photoUrl"
-                                                        value={formData.photoUrl}
-                                                        onChange={handleInputChange}
-                                                        placeholder="URL to staff photo"
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                        </Row>
-                                    </div>
-                                </div>
+                        <TabContent activeTab={activeTab}>
+                            {/* Tab 1: Basic Information */}
+                            <TabPane tabId="1">
+                                <Row>
+                                    <Col md={12}>
+                                        <FormGroup>
+                                            <Label>Photo</Label>
+                                            <FilePond
+                                                files={photoFiles}
+                                                onupdatefiles={handleFileUpdate}
+                                                allowMultiple={false}
+                                                maxFiles={1}
+                                                name="photo"
+                                                labelIdle='Drag & Drop your photo or <span class="filepond--label-action">Browse</span>'
+                                                acceptedFileTypes={['image/*']}
+                                                imagePreviewHeight={100}
+                                                credits={false}
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={6}>
+                                        <FormGroup>
+                                            <Label>Full Name <span className="text-danger">*</span></Label>
+                                            <Input
+                                                name="name"
+                                                value={formData.name}
+                                                onChange={handleInputChange}
+                                                placeholder="Enter full name"
+                                                required
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={6}>
+                                        <FormGroup>
+                                            <Label>Title <span className="text-danger">*</span></Label>
+                                            <Input
+                                                name="title"
+                                                value={formData.title}
+                                                onChange={handleInputChange}
+                                                placeholder="e.g., Professor, Lecturer, etc."
+                                                required
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={6}>
+                                        <FormGroup>
+                                            <Label>Email <span className="text-danger">*</span></Label>
+                                            <Input
+                                                type="email"
+                                                name="email"
+                                                value={formData.email}
+                                                onChange={handleInputChange}
+                                                placeholder="Enter email address"
+                                                required
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={6}>
+                                        <FormGroup>
+                                            <Label>Phone</Label>
+                                            <Input
+                                                name="phone"
+                                                value={formData.phone}
+                                                onChange={handleInputChange}
+                                                placeholder="Enter phone number"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={12}>
+                                        <FormGroup>
+                                            <Label>Office Location</Label>
+                                            <Input
+                                                name="officeLocation"
+                                                value={formData.officeLocation}
+                                                onChange={handleInputChange}
+                                                placeholder="Enter office location"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={12}>
+                                        <FormGroup>
+                                            <Label>Bio <span className="text-danger">*</span></Label>
+                                            <Input
+                                                type="textarea"
+                                                name="bio"
+                                                value={formData.bio}
+                                                onChange={handleInputChange}
+                                                placeholder="Enter professional biography"
+                                                rows="4"
+                                                required
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={12}>
+                                        <FormGroup check>
+                                            <Input
+                                                type="checkbox"
+                                                name="isResearchContributor"
+                                                checked={formData.isResearchContributor}
+                                                onChange={handleInputChange}
+                                                id="isResearchContributor"
+                                            />
+                                            <Label for="isResearchContributor" check>
+                                                Research Contributor
+                                            </Label>
+                                        </FormGroup>
+                                    </Col>
+                                </Row>
                             </TabPane>
 
-                            {/* Step 2: Research Information */}
-                            <TabPane tabId={2}>
-                                <div className="card border">
-                                    <div className="card-header bg-light">
-                                        <h6 className="card-title mb-0">Research Information</h6>
-                                    </div>
-                                    <div className="card-body">
-                                        <Row>
-                                            <Col md={12}>
-                                                <FormGroup check className="mb-4">
-                                                    <Input
-                                                        type="checkbox"
-                                                        name="isResearchContributor"
-                                                        checked={formData.isResearchContributor}
-                                                        onChange={handleInputChange}
-                                                        id="isResearchContributor"
-                                                    />
-                                                    <Label for="isResearchContributor" check className="fs-5">
-                                                        Research Contributor
-                                                    </Label>
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={12}>
-                                                <FormGroup>
-                                                    <Label className="fw-semibold">Research Interests</Label>
-                                                    <div className="d-flex mb-2">
+                            {/* Tab 2: Professional Experience */}
+                            <TabPane tabId="2">
+                                {formData.professionalExperience.map((exp, index) => (
+                                    <Card key={index} className="mb-3">
+                                        <CardHeader className="d-flex justify-content-between align-items-center">
+                                            <h6 className="mb-0">Experience #{index + 1}</h6>
+                                            {formData.professionalExperience.length > 1 && (
+                                                <Button
+                                                    color="danger"
+                                                    size="sm"
+                                                    onClick={() => removeArrayItem('professionalExperience', index)}
+                                                >
+                                                    <i className="ri-delete-bin-line" />
+                                                </Button>
+                                            )}
+                                        </CardHeader>
+                                        <CardBody>
+                                            <Row>
+                                                <Col md={6}>
+                                                    <FormGroup>
+                                                        <Label>Position <span className="text-danger">*</span></Label>
                                                         <Input
-                                                            value={researchInterestInput}
-                                                            onChange={(e) => setResearchInterestInput(e.target.value)}
-                                                            placeholder="Add research interest"
-                                                            className="form-control"
+                                                            value={exp.position}
+                                                            onChange={(e) => handleArrayFieldChange('professionalExperience', index, 'position', e.target.value)}
+                                                            placeholder="Enter position title"
+                                                            required
                                                         />
-                                                        <Button color="primary" onClick={addResearchInterest} className="ms-2">
-                                                            <i className="ri-add-line" />
-                                                        </Button>
-                                                    </div>
-                                                    <div className="d-flex flex-wrap gap-2">
-                                                        {formData.researchInterests.map((interest, index) => (
-                                                            <Badge key={index} color="primary" className="p-2 d-flex align-items-center fs-6">
-                                                                {interest}
-                                                                <Button color="link" size="sm" className="p-0 ms-1 text-light" onClick={() => removeResearchInterest(index)}>
-                                                                    <i className="ri-close-line" />
-                                                                </Button>
-                                                            </Badge>
-                                                        ))}
-                                                    </div>
-                                                </FormGroup>
-                                            </Col>
-                                        </Row>
-                                    </div>
-                                </div>
-                            </TabPane>
-
-                            {/* Step 3: Professional Experience */}
-                            <TabPane tabId={3}>
-                                <div className="card border">
-                                    <div className="card-header bg-light">
-                                        <h6 className="card-title mb-0">Professional Experience</h6>
-                                    </div>
-                                    <div className="card-body">
-                                        <Row className="mb-4">
-                                            <Col md={4}>
-                                                <FormGroup>
-                                                    <Label>Position</Label>
-                                                    <Input
-                                                        placeholder="Position"
-                                                        value={experienceItem.position}
-                                                        onChange={(e) => setExperienceItem({ ...experienceItem, position: e.target.value })}
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={4}>
-                                                <FormGroup>
-                                                    <Label>Organization</Label>
-                                                    <Input
-                                                        placeholder="Organization"
-                                                        value={experienceItem.organization}
-                                                        onChange={(e) => setExperienceItem({ ...experienceItem, organization: e.target.value })}
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={4}>
-                                                <FormGroup>
-                                                    <Label>Start Date</Label>
-                                                    <Input
-                                                        type="date"
-                                                        placeholder="Start Date"
-                                                        value={experienceItem.startDate}
-                                                        onChange={(e) => setExperienceItem({ ...experienceItem, startDate: e.target.value })}
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={4}>
-                                                <FormGroup>
-                                                    <Label>End Date</Label>
-                                                    <Input
-                                                        type="date"
-                                                        placeholder="End Date"
-                                                        value={experienceItem.endDate}
-                                                        onChange={(e) => setExperienceItem({ ...experienceItem, endDate: e.target.value })}
-                                                        disabled={experienceItem.isCurrent}
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={4}>
-                                                <FormGroup check className="mt-4 pt-2">
-                                                    <Input
-                                                        type="checkbox"
-                                                        checked={experienceItem.isCurrent}
-                                                        onChange={(e) => setExperienceItem({ ...experienceItem, isCurrent: e.target.checked, endDate: "" })}
-                                                        id="isCurrent"
-                                                    />
-                                                    <Label for="isCurrent" check>
-                                                        Current Position
-                                                    </Label>
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={4}>
-                                                <FormGroup>
-                                                    <Label>Description</Label>
-                                                    <Input
-                                                        placeholder="Description"
-                                                        value={experienceItem.description}
-                                                        onChange={(e) => setExperienceItem({ ...experienceItem, description: e.target.value })}
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={12}>
-                                                <FormGroup>
+                                                    </FormGroup>
+                                                </Col>
+                                                <Col md={6}>
+                                                    <FormGroup>
+                                                        <Label>Organization <span className="text-danger">*</span></Label>
+                                                        <Input
+                                                            value={exp.organization}
+                                                            onChange={(e) => handleArrayFieldChange('professionalExperience', index, 'organization', e.target.value)}
+                                                            placeholder="Enter organization name"
+                                                            required
+                                                        />
+                                                    </FormGroup>
+                                                </Col>
+                                                <Col md={6}>
+                                                    <FormGroup>
+                                                        <Label>Start Date <span className="text-danger">*</span></Label>
+                                                        <Input
+                                                            type="date"
+                                                            value={exp.startDate || ''}
+                                                            onChange={(e) => handleArrayFieldChange('professionalExperience', index, 'startDate', e.target.value)}
+                                                            required
+                                                        />
+                                                    </FormGroup>
+                                                </Col>
+                                                <Col md={6}>
+                                                    <FormGroup>
+                                                        <Label>End Date</Label>
+                                                        <Input
+                                                            type="date"
+                                                            value={exp.endDate || ''}
+                                                            onChange={(e) => handleArrayFieldChange('professionalExperience', index, 'endDate', e.target.value)}
+                                                            disabled={exp.isCurrent}
+                                                        />
+                                                    </FormGroup>
+                                                </Col>
+                                                <Col md={12}>
+                                                    <FormGroup check>
+                                                        <Input
+                                                            type="checkbox"
+                                                            checked={exp.isCurrent}
+                                                            onChange={(e) => handleArrayFieldChange('professionalExperience', index, 'isCurrent', e.target.checked)}
+                                                            id={`current-${index}`}
+                                                        />
+                                                        <Label for={`current-${index}`} check>
+                                                            Current Position
+                                                        </Label>
+                                                    </FormGroup>
+                                                </Col>
+                                                <Col md={12}>
+                                                    <FormGroup>
+                                                        <Label>Description</Label>
+                                                        <Input
+                                                            type="textarea"
+                                                            value={exp.description}
+                                                            onChange={(e) => handleArrayFieldChange('professionalExperience', index, 'description', e.target.value)}
+                                                            placeholder="Describe responsibilities and achievements"
+                                                            rows="3"
+                                                        />
+                                                    </FormGroup>
+                                                </Col>
+                                                <Col md={12}>
                                                     <Label>Achievements</Label>
-                                                    <div className="d-flex mb-2">
-                                                        <Input
-                                                            value={achievementInput}
-                                                            onChange={(e) => setAchievementInput(e.target.value)}
-                                                            placeholder="Add achievement"
-                                                            className="form-control"
-                                                        />
-                                                        <Button color="primary" onClick={addAchievement} className="ms-2">
-                                                            <i className="ri-add-line" />
-                                                        </Button>
-                                                    </div>
-                                                    <div className="d-flex flex-wrap gap-2">
-                                                        {experienceItem.achievements.map((achievement, index) => (
-                                                            <Badge key={index} color="primary" className="p-2 d-flex align-items-center">
-                                                                {achievement}
-                                                                <Button color="link" size="sm" className="p-0 ms-1 text-light" onClick={() => removeAchievement(index)}>
-                                                                    <i className="ri-close-line" />
+                                                    {exp.achievements.map((achievement, aIndex) => (
+                                                        <div key={aIndex} className="d-flex gap-2 mb-2">
+                                                            <Input
+                                                                value={achievement}
+                                                                onChange={(e) => handleNestedArrayChange('professionalExperience', index, 'achievements', aIndex, e.target.value)}
+                                                                placeholder="Enter achievement"
+                                                            />
+                                                            {exp.achievements.length > 1 && (
+                                                                <Button
+                                                                    color="danger"
+                                                                    size="sm"
+                                                                    onClick={() => removeNestedArrayItem('professionalExperience', index, 'achievements', aIndex)}
+                                                                >
+                                                                    <i className="ri-delete-bin-line" />
                                                                 </Button>
-                                                            </Badge>
-                                                        ))}
-                                                    </div>
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={12} className="mt-2">
-                                                <Button color="primary" onClick={addExperience} className="btn-lg">
-                                                    <i className="ri-add-line me-1" /> Add Experience
-                                                </Button>
-                                            </Col>
-                                        </Row>
-
-                                        {formData.professionalExperience.length > 0 && (
-                                            <div className="mt-4">
-                                                <h6 className="mb-3">Added Experiences</h6>
-                                                {formData.professionalExperience.map((exp, index) => (
-                                                    <div key={index} className="mb-3 p-3 border rounded bg-light">
-                                                        <div className="d-flex justify-content-between align-items-center">
-                                                            <h6 className="mb-1">{exp.position} at {exp.organization}</h6>
-                                                            <Button color="danger" size="sm" onClick={() => removeExperience(index)}>
-                                                                <i className="ri-delete-bin-line" />
-                                                            </Button>
+                                                            )}
                                                         </div>
-                                                        <p className="mb-1">
-                                                            {new Date(exp.startDate).toLocaleDateString()} -
-                                                            {exp.isCurrent ? ' Present' : ` ${new Date(exp.endDate).toLocaleDateString()}`}
-                                                        </p>
-                                                        <p className="mb-1">{exp.description}</p>
-                                                        {exp.achievements && exp.achievements.length > 0 && (
-                                                            <div>
-                                                                <strong>Achievements:</strong>
-                                                                <ul className="mb-0">
-                                                                    {exp.achievements.map((achievement, i) => (
-                                                                        <li key={i}>{achievement}</li>
-                                                                    ))}
-                                                                </ul>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                                                    ))}
+                                                    <Button
+                                                        color="light"
+                                                        size="sm"
+                                                        onClick={() => addNestedArrayItem('professionalExperience', index, 'achievements', '')}
+                                                    >
+                                                        <i className="ri-add-line me-1" /> Add Achievement
+                                                    </Button>
+                                                </Col>
+                                            </Row>
+                                        </CardBody>
+                                    </Card>
+                                ))}
+                                <Button
+                                    color="light"
+                                    onClick={() => addArrayItem('professionalExperience', {
+                                        position: "",
+                                        organization: "",
+                                        startDate: "",
+                                        endDate: "",
+                                        isCurrent: false,
+                                        description: "",
+                                        achievements: [""]
+                                    })}
+                                >
+                                    <i className="ri-add-line me-1" /> Add Another Experience
+                                </Button>
                             </TabPane>
 
-                            {/* Step 4: Education */}
-                            <TabPane tabId={4}>
-                                <div className="card border">
-                                    <div className="card-header bg-light">
-                                        <h6 className="card-title mb-0">Education Background</h6>
-                                    </div>
-                                    <div className="card-body">
-                                        <Row className="mb-4">
-                                            <Col md={4}>
-                                                <FormGroup>
-                                                    <Label>Degree</Label>
-                                                    <Input
-                                                        placeholder="Degree"
-                                                        value={educationItem.degree}
-                                                        onChange={(e) => setEducationItem({ ...educationItem, degree: e.target.value })}
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={4}>
-                                                <FormGroup>
-                                                    <Label>Field of Study</Label>
-                                                    <Input
-                                                        placeholder="Field of Study"
-                                                        value={educationItem.fieldOfStudy}
-                                                        onChange={(e) => setEducationItem({ ...educationItem, fieldOfStudy: e.target.value })}
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={4}>
-                                                <FormGroup>
-                                                    <Label>Institution</Label>
-                                                    <Input
-                                                        placeholder="Institution"
-                                                        value={educationItem.institution}
-                                                        onChange={(e) => setEducationItem({ ...educationItem, institution: e.target.value })}
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={4}>
-                                                <FormGroup>
-                                                    <Label>Graduation Year</Label>
-                                                    <Input
-                                                        type="number"
-                                                        placeholder="Graduation Year"
-                                                        value={educationItem.graduationYear}
-                                                        onChange={(e) => setEducationItem({ ...educationItem, graduationYear: e.target.value })}
-                                                        min="1900"
-                                                        max="2100"
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={4}>
-                                                <FormGroup>
-                                                    <Label>Country</Label>
-                                                    <Input
-                                                        placeholder="Country"
-                                                        value={educationItem.country}
-                                                        onChange={(e) => setEducationItem({ ...educationItem, country: e.target.value })}
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={4}>
-                                                <FormGroup>
-                                                    <Label>Thesis Title</Label>
-                                                    <Input
-                                                        placeholder="Thesis Title"
-                                                        value={educationItem.thesisTitle}
-                                                        onChange={(e) => setEducationItem({ ...educationItem, thesisTitle: e.target.value })}
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={12} className="mt-2">
-                                                <Button color="primary" onClick={addEducation} className="btn-lg">
-                                                    <i className="ri-add-line me-1" /> Add Education
+                            {/* Tab 3: Education */}
+                            <TabPane tabId="3">
+                                {formData.education.map((edu, index) => (
+                                    <Card key={index} className="mb-3">
+                                        <CardHeader className="d-flex justify-content-between align-items-center">
+                                            <h6 className="mb-0">Education #{index + 1}</h6>
+                                            {formData.education.length > 1 && (
+                                                <Button
+                                                    color="danger"
+                                                    size="sm"
+                                                    onClick={() => removeArrayItem('education', index)}
+                                                >
+                                                    <i className="ri-delete-bin-line" />
                                                 </Button>
-                                            </Col>
-                                        </Row>
-
-                                        {formData.education.length > 0 && (
-                                            <div className="mt-4">
-                                                <h6 className="mb-3">Added Education</h6>
-                                                {formData.education.map((edu, index) => (
-                                                    <div key={index} className="mb-3 p-3 border rounded bg-light">
-                                                        <div className="d-flex justify-content-between align-items-center">
-                                                            <h6 className="mb-1">{edu.degree} in {edu.fieldOfStudy}</h6>
-                                                            <Button color="danger" size="sm" onClick={() => removeEducation(index)}>
-                                                                <i className="ri-delete-bin-line" />
-                                                            </Button>
-                                                        </div>
-                                                        <p className="mb-1">{edu.institution}, {edu.graduationYear}</p>
-                                                        {edu.country && <p className="mb-1">Country: {edu.country}</p>}
-                                                        {edu.thesisTitle && <p className="mb-0">Thesis: {edu.thesisTitle}</p>}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                                            )}
+                                        </CardHeader>
+                                        <CardBody>
+                                            <Row>
+                                                <Col md={6}>
+                                                    <FormGroup>
+                                                        <Label>Degree <span className="text-danger">*</span></Label>
+                                                        <Input
+                                                            value={edu.degree}
+                                                            onChange={(e) => handleArrayFieldChange('education', index, 'degree', e.target.value)}
+                                                            placeholder="e.g., Bachelor of Science"
+                                                            required
+                                                        />
+                                                    </FormGroup>
+                                                </Col>
+                                                <Col md={6}>
+                                                    <FormGroup>
+                                                        <Label>Field of Study <span className="text-danger">*</span></Label>
+                                                        <Input
+                                                            value={edu.fieldOfStudy}
+                                                            onChange={(e) => handleArrayFieldChange('education', index, 'fieldOfStudy', e.target.value)}
+                                                            placeholder="e.g., Computer Science"
+                                                            required
+                                                        />
+                                                    </FormGroup>
+                                                </Col>
+                                                <Col md={6}>
+                                                    <FormGroup>
+                                                        <Label>Institution <span className="text-danger">*</span></Label>
+                                                        <Input
+                                                            value={edu.institution}
+                                                            onChange={(e) => handleArrayFieldChange('education', index, 'institution', e.target.value)}
+                                                            placeholder="Enter institution name"
+                                                            required
+                                                        />
+                                                    </FormGroup>
+                                                </Col>
+                                                <Col md={6}>
+                                                    <FormGroup>
+                                                        <Label>Graduation Year <span className="text-danger">*</span></Label>
+                                                        <Input
+                                                            type="number"
+                                                            value={edu.graduationYear}
+                                                            onChange={(e) => handleArrayFieldChange('education', index, 'graduationYear', parseInt(e.target.value))}
+                                                            min="1900"
+                                                            max={new Date().getFullYear() + 5}
+                                                            required
+                                                        />
+                                                    </FormGroup>
+                                                </Col>
+                                                <Col md={6}>
+                                                    <FormGroup>
+                                                        <Label>Country</Label>
+                                                        <Input
+                                                            value={edu.country}
+                                                            onChange={(e) => handleArrayFieldChange('education', index, 'country', e.target.value)}
+                                                            placeholder="Enter country"
+                                                        />
+                                                    </FormGroup>
+                                                </Col>
+                                                <Col md={6}>
+                                                    <FormGroup>
+                                                        <Label>Thesis Title</Label>
+                                                        <Input
+                                                            value={edu.thesisTitle}
+                                                            onChange={(e) => handleArrayFieldChange('education', index, 'thesisTitle', e.target.value)}
+                                                            placeholder="Enter thesis title (if applicable)"
+                                                        />
+                                                    </FormGroup>
+                                                </Col>
+                                            </Row>
+                                        </CardBody>
+                                    </Card>
+                                ))}
+                                <Button
+                                    color="light"
+                                    onClick={() => addArrayItem('education', {
+                                        degree: "",
+                                        fieldOfStudy: "",
+                                        institution: "",
+                                        graduationYear: new Date().getFullYear(),
+                                        country: "",
+                                        thesisTitle: ""
+                                    })}
+                                >
+                                    <i className="ri-add-line me-1" /> Add Another Education
+                                </Button>
                             </TabPane>
 
-                            {/* Step 5: Publications */}
-                            <TabPane tabId={5}>
-                                <div className="card border">
-                                    <div className="card-header bg-light">
-                                        <h6 className="card-title mb-0">Publications</h6>
-                                    </div>
-                                    <div className="card-body">
+                            {/* Tab 4: Research & Publications */}
+                            {/* Tab 4: Research & Publications */}
+                            <TabPane tabId="4">
+                                <Row className="mb-3">
+                                    <Col md={12}>
+                                        <FormGroup check>
+                                            <Input
+                                                type="checkbox"
+                                                name="isResearchContributor"
+                                                checked={formData.isResearchContributor}
+                                                onChange={handleInputChange}
+                                                id="isResearchContributor"
+                                            />
+                                            <Label for="isResearchContributor" check className="fw-semibold">
+                                                This staff member is a research contributor
+                                            </Label>
+                                        </FormGroup>
+                                        <small className="text-muted">
+                                            When checked, research fields will be enabled for this staff member
+                                        </small>
+                                    </Col>
+                                </Row>
+
+                                {formData.isResearchContributor ? (
+                                    <>
                                         <Row className="mb-4">
-                                            <Col md={6}>
-                                                <FormGroup>
-                                                    <Label>Title</Label>
-                                                    <Input
-                                                        placeholder="Title"
-                                                        value={publicationItem.title}
-                                                        onChange={(e) => setPublicationItem({ ...publicationItem, title: e.target.value })}
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={6}>
-                                                <FormGroup>
-                                                    <Label>Journal/Conference</Label>
-                                                    <Input
-                                                        placeholder="Journal/Conference"
-                                                        value={publicationItem.journalOrConference}
-                                                        onChange={(e) => setPublicationItem({ ...publicationItem, journalOrConference: e.target.value })}
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={6}>
-                                                <FormGroup>
-                                                    <Label>Publication Date</Label>
-                                                    <Input
-                                                        type="date"
-                                                        placeholder="Publication Date"
-                                                        value={publicationItem.publicationDate}
-                                                        onChange={(e) => setPublicationItem({ ...publicationItem, publicationDate: e.target.value })}
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={6}>
-                                                <FormGroup>
-                                                    <Label>Link</Label>
-                                                    <Input
-                                                        placeholder="Link"
-                                                        value={publicationItem.link}
-                                                        onChange={(e) => setPublicationItem({ ...publicationItem, link: e.target.value })}
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
                                             <Col md={12}>
                                                 <FormGroup>
-                                                    <Label>Authors</Label>
-                                                    <div className="d-flex mb-2">
-                                                        <Input
-                                                            value={authorInput}
-                                                            onChange={(e) => setAuthorInput(e.target.value)}
-                                                            placeholder="Add author"
-                                                            className="form-control"
-                                                        />
-                                                        <Button color="primary" onClick={addAuthor} className="ms-2">
-                                                            <i className="ri-add-line" />
-                                                        </Button>
-                                                    </div>
-                                                    <div className="d-flex flex-wrap gap-2">
-                                                        {publicationItem.authors.map((author, index) => (
-                                                            <Badge key={index} color="warning" className="p-2 d-flex align-items-center text-dark">
-                                                                {author}
-                                                                <Button color="link" size="sm" className="p-0 ms-1 text-dark" onClick={() => removeAuthor(index)}>
-                                                                    <i className="ri-close-line" />
-                                                                </Button>
-                                                            </Badge>
-                                                        ))}
-                                                    </div>
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={12} className="mt-2">
-                                                <FormGroup check>
-                                                    <Input
-                                                        type="checkbox"
-                                                        checked={publicationItem.isSelected}
-                                                        onChange={(e) => setPublicationItem({ ...publicationItem, isSelected: e.target.checked })}
-                                                        id="isSelected"
+                                                    <Label>Research Interests</Label>
+                                                    <CreatableSelect
+                                                        isMulti
+                                                        value={formData.researchInterests.map(interest => ({ value: interest, label: interest }))}
+                                                        onChange={(selected) => setFormData(prev => ({
+                                                            ...prev,
+                                                            researchInterests: selected ? selected.map(item => item.value) : []
+                                                        }))}
+                                                        options={[]}
+                                                        placeholder="Type and press enter to add research interests"
+                                                        isClearable
+                                                        formatCreateLabel={(inputValue) => `Add "${inputValue}"`}
+                                                        noOptionsMessage={() => "Type to add research interests"}
+                                                        styles={{
+                                                            option: (provided, state) => ({
+                                                                ...provided,
+                                                                backgroundColor: state.isFocused ? "#4a6fa5" : "#2f4b73",  // focused = blue, otherwise white
+                                                                color: "white",                                         // text color
+                                                            }),
+                                                            menu: (provided) => ({
+                                                                ...provided,
+                                                                backgroundColor: "white", // dropdown menu bg
+                                                            }),
+                                                            multiValue: (provided) => ({
+                                                                ...provided,
+                                                                backgroundColor: "#4a6fa5", // chip bg
+                                                                color: "white",
+                                                            }),
+                                                            multiValueLabel: (provided) => ({
+                                                                ...provided,
+                                                                color: "white", // chip text
+                                                            }),
+                                                            input: (provided) => ({
+                                                                ...provided,
+                                                                color: "#2f4b73", // typing text color
+                                                            }),
+                                                        }}
                                                     />
-                                                    <Label for="isSelected" check>
-                                                        Selected Publication
-                                                    </Label>
+                                                    <small className="text-muted">
+                                                        Type and press enter to add research interests
+                                                    </small>
                                                 </FormGroup>
-                                            </Col>
-                                            <Col md={12} className="mt-2">
-                                                <Button color="primary" onClick={addPublication} className="btn-lg">
-                                                    <i className="ri-add-line me-1" /> Add Publication
-                                                </Button>
                                             </Col>
                                         </Row>
 
-                                        {formData.publications.length > 0 && (
-                                            <div className="mt-4">
-                                                <h6 className="mb-3">Added Publications</h6>
-                                                {formData.publications.map((pub, index) => (
-                                                    <div key={index} className="mb-3 p-3 border rounded bg-light">
-                                                        <div className="d-flex justify-content-between align-items-center">
-                                                            <h6 className="mb-1">{pub.title}</h6>
-                                                            <Button color="danger" size="sm" onClick={() => removePublication(index)}>
-                                                                <i className="ri-delete-bin-line" />
+                                        <h6>Publications</h6>
+                                        {formData.publications.map((pub, index) => (
+                                            <Card key={index} className="mb-3">
+                                                <CardHeader className="d-flex justify-content-between align-items-center">
+                                                    <h6 className="mb-0">Publication #{index + 1}</h6>
+                                                    {formData.publications.length > 1 && (
+                                                        <Button
+                                                            color="danger"
+                                                            size="sm"
+                                                            onClick={() => removeArrayItem('publications', index)}
+                                                        >
+                                                            <i className="ri-delete-bin-line" />
+                                                        </Button>
+                                                    )}
+                                                </CardHeader>
+                                                <CardBody>
+                                                    <Row>
+                                                        <Col md={12}>
+                                                            <FormGroup>
+                                                                <Label>Title <span className="text-danger">*</span></Label>
+                                                                <Input
+                                                                    value={pub.title}
+                                                                    onChange={(e) => handleArrayFieldChange('publications', index, 'title', e.target.value)}
+                                                                    placeholder="Enter publication title"
+                                                                    required
+                                                                />
+                                                            </FormGroup>
+                                                        </Col>
+                                                        <Col md={6}>
+                                                            <FormGroup>
+                                                                <Label>Journal/Conference <span className="text-danger">*</span></Label>
+                                                                <Input
+                                                                    value={pub.journalOrConference}
+                                                                    onChange={(e) => handleArrayFieldChange('publications', index, 'journalOrConference', e.target.value)}
+                                                                    placeholder="Enter journal or conference name"
+                                                                    required
+                                                                />
+                                                            </FormGroup>
+                                                        </Col>
+                                                        <Col md={6}>
+                                                            <FormGroup>
+                                                                <Label>Publication Date <span className="text-danger">*</span></Label>
+                                                                <Input
+                                                                    type="date"
+                                                                    value={pub.publicationDate || ''}
+                                                                    onChange={(e) => handleArrayFieldChange('publications', index, 'publicationDate', e.target.value)}
+                                                                    required
+                                                                />
+                                                            </FormGroup>
+                                                        </Col>
+                                                        <Col md={12}>
+                                                            <Label>Authors</Label>
+                                                            {pub.authors.map((author, aIndex) => (
+                                                                <div key={aIndex} className="d-flex gap-2 mb-2">
+                                                                    <Input
+                                                                        value={author}
+                                                                        onChange={(e) => handleNestedArrayChange('publications', index, 'authors', aIndex, e.target.value)}
+                                                                        placeholder="Enter author name"
+                                                                    />
+                                                                    {pub.authors.length > 1 && (
+                                                                        <Button
+                                                                            color="danger"
+                                                                            size="sm"
+                                                                            onClick={() => removeNestedArrayItem('publications', index, 'authors', aIndex)}
+                                                                        >
+                                                                            <i className="ri-delete-bin-line" />
+                                                                        </Button>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                            <Button
+                                                                color="light"
+                                                                size="sm"
+                                                                onClick={() => addNestedArrayItem('publications', index, 'authors', '')}
+                                                            >
+                                                                <i className="ri-add-line me-1" /> Add Author
                                                             </Button>
-                                                        </div>
-                                                        <p className="mb-1">{pub.journalOrConference}, {new Date(pub.publicationDate).toLocaleDateString()}</p>
-                                                        <p className="mb-1">Authors: {pub.authors.join(', ')}</p>
-                                                        {pub.link && (
-                                                            <p className="mb-0">
-                                                                <a href={pub.link} target="_blank" rel="noopener noreferrer">
-                                                                    View Publication
-                                                                </a>
-                                                            </p>
-                                                        )}
-                                                        {pub.isSelected && <Badge color="success" className="mt-1">Selected</Badge>}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
+                                                        </Col>
+                                                        <Col md={12}>
+                                                            <FormGroup>
+                                                                <Label>Link</Label>
+                                                                <Input
+                                                                    type="url"
+                                                                    value={pub.link}
+                                                                    onChange={(e) => handleArrayFieldChange('publications', index, 'link', e.target.value)}
+                                                                    placeholder="https://example.com/publication"
+                                                                />
+                                                            </FormGroup>
+                                                        </Col>
+                                                        <Col md={12}>
+                                                            <FormGroup check>
+                                                                <Input
+                                                                    type="checkbox"
+                                                                    checked={pub.isSelected}
+                                                                    onChange={(e) => handleArrayFieldChange('publications', index, 'isSelected', e.target.checked)}
+                                                                    id={`selected-${index}`}
+                                                                />
+                                                                <Label for={`selected-${index}`} check>
+                                                                    Featured Publication
+                                                                </Label>
+                                                            </FormGroup>
+                                                        </Col>
+                                                    </Row>
+                                                </CardBody>
+                                            </Card>
+                                        ))}
+                                        <Button
+                                            color="light"
+                                            onClick={() => addArrayItem('publications', {
+                                                title: "",
+                                                journalOrConference: "",
+                                                publicationDate: "",
+                                                authors: [""],
+                                                link: "",
+                                                isSelected: false
+                                            })}
+                                        >
+                                            <i className="ri-add-line me-1" /> Add Another Publication
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <div className="text-center py-4">
+                                        <i className="ri-file-paper-line display-4 text-muted mb-3" />
+                                        <h5>Research Contributor Disabled</h5>
+                                        <p className="text-muted">
+                                            Enable "Research Contributor" to add research interests and publications for this staff member.
+                                        </p>
                                     </div>
-                                </div>
+                                )}
                             </TabPane>
 
-                            {/* Step 6: Awards & Honors */}
-                            <TabPane tabId={6}>
-                                <div className="card border">
-                                    <div className="card-header bg-light">
-                                        <h6 className="card-title mb-0">Awards & Honors</h6>
-                                    </div>
-                                    <div className="card-body">
-                                        <Row className="mb-4">
-                                            <Col md={4}>
-                                                <FormGroup>
-                                                    <Label>Title</Label>
-                                                    <Input
-                                                        placeholder="Title"
-                                                        value={awardItem.title}
-                                                        onChange={(e) => setAwardItem({ ...awardItem, title: e.target.value })}
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={4}>
-                                                <FormGroup>
-                                                    <Label>Awarding Body</Label>
-                                                    <Input
-                                                        placeholder="Awarding Body"
-                                                        value={awardItem.awardingBody}
-                                                        onChange={(e) => setAwardItem({ ...awardItem, awardingBody: e.target.value })}
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={4}>
-                                                <FormGroup>
-                                                    <Label>Year</Label>
-                                                    <Input
-                                                        type="number"
-                                                        placeholder="Year"
-                                                        value={awardItem.year}
-                                                        onChange={(e) => setAwardItem({ ...awardItem, year: e.target.value })}
-                                                        min="1900"
-                                                        max="2100"
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={12}>
-                                                <FormGroup>
-                                                    <Label>Description</Label>
-                                                    <Input
-                                                        placeholder="Description"
-                                                        value={awardItem.description}
-                                                        onChange={(e) => setAwardItem({ ...awardItem, description: e.target.value })}
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={12} className="mt-2">
-                                                <Button color="primary" onClick={addAward} className="btn-lg">
-                                                    <i className="ri-add-line me-1" /> Add Award
+                            {/* Tab 5: Awards */}
+                            <TabPane tabId="5">
+                                {formData.awards.map((award, index) => (
+                                    <Card key={index} className="mb-3">
+                                        <CardHeader className="d-flex justify-content-between align-items-center">
+                                            <h6 className="mb-0">Award #{index + 1}</h6>
+                                            {formData.awards.length > 1 && (
+                                                <Button
+                                                    color="danger"
+                                                    size="sm"
+                                                    onClick={() => removeArrayItem('awards', index)}
+                                                >
+                                                    <i className="ri-delete-bin-line" />
                                                 </Button>
-                                            </Col>
-                                        </Row>
-
-                                        {formData.awards.length > 0 && (
-                                            <div className="mt-4">
-                                                <h6 className="mb-3">Added Awards</h6>
-                                                {formData.awards.map((award, index) => (
-                                                    <div key={index} className="mb-3 p-3 border rounded bg-light">
-                                                        <div className="d-flex justify-content-between align-items-center">
-                                                            <h6 className="mb-1">{award.title}</h6>
-                                                            <Button color="danger" size="sm" onClick={() => removeAward(index)}>
-                                                                <i className="ri-delete-bin-line" />
-                                                            </Button>
-                                                        </div>
-                                                        <p className="mb-1">Awarded by: {award.awardingBody}, {award.year}</p>
-                                                        {award.description && <p className="mb-0">{award.description}</p>}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Additional Information */}
-                                <div className="card border mt-4">
-                                    <div className="card-header bg-light">
-                                        <h6 className="card-title mb-0">Additional Information</h6>
-                                    </div>
-                                    <div className="card-body">
-                                        <Row>
-                                            <Col md={6}>
-                                                <FormGroup>
-                                                    <Label>Order</Label>
-                                                    <Input
-                                                        type="number"
-                                                        name="order"
-                                                        value={formData.order}
-                                                        onChange={handleInputChange}
-                                                        min="0"
-                                                        className="form-control"
-                                                    />
-                                                </FormGroup>
-                                            </Col>
-                                            <Col md={6}>
-                                                <FormGroup check className="mt-4 pt-2">
-                                                    <Input
-                                                        type="checkbox"
-                                                        name="isActive"
-                                                        checked={formData.isActive}
-                                                        onChange={handleInputChange}
-                                                        id="isActive"
-                                                    />
-                                                    <Label for="isActive" check className="fs-5">
-                                                        Active Staff
-                                                    </Label>
-                                                </FormGroup>
-                                            </Col>
-                                        </Row>
-                                    </div>
-                                </div>
+                                            )}
+                                        </CardHeader>
+                                        <CardBody>
+                                            <Row>
+                                                <Col md={6}>
+                                                    <FormGroup>
+                                                        <Label>Title <span className="text-danger">*</span></Label>
+                                                        <Input
+                                                            value={award.title}
+                                                            onChange={(e) => handleArrayFieldChange('awards', index, 'title', e.target.value)}
+                                                            placeholder="Enter award title"
+                                                            required
+                                                        />
+                                                    </FormGroup>
+                                                </Col>
+                                                <Col md={6}>
+                                                    <FormGroup>
+                                                        <Label>Awarding Body <span className="text-danger">*</span></Label>
+                                                        <Input
+                                                            value={award.awardingBody}
+                                                            onChange={(e) => handleArrayFieldChange('awards', index, 'awardingBody', e.target.value)}
+                                                            placeholder="Enter awarding organization"
+                                                            required
+                                                        />
+                                                    </FormGroup>
+                                                </Col>
+                                                <Col md={6}>
+                                                    <FormGroup>
+                                                        <Label>Year <span className="text-danger">*</span></Label>
+                                                        <Input
+                                                            type="number"
+                                                            value={award.year}
+                                                            onChange={(e) => handleArrayFieldChange('awards', index, 'year', parseInt(e.target.value))}
+                                                            min="1900"
+                                                            max={new Date().getFullYear()}
+                                                            required
+                                                        />
+                                                    </FormGroup>
+                                                </Col>
+                                                <Col md={12}>
+                                                    <FormGroup>
+                                                        <Label>Description</Label>
+                                                        <Input
+                                                            type="textarea"
+                                                            value={award.description}
+                                                            onChange={(e) => handleArrayFieldChange('awards', index, 'description', e.target.value)}
+                                                            placeholder="Enter award description"
+                                                            rows="3"
+                                                        />
+                                                    </FormGroup>
+                                                </Col>
+                                            </Row>
+                                        </CardBody>
+                                    </Card>
+                                ))}
+                                <Button
+                                    color="light"
+                                    onClick={() => addArrayItem('awards', {
+                                        title: "",
+                                        awardingBody: "",
+                                        year: new Date().getFullYear(),
+                                        description: ""
+                                    })}
+                                >
+                                    <i className="ri-add-line me-1" /> Add Another Award
+                                </Button>
                             </TabPane>
                         </TabContent>
-
-                        {/* Navigation Buttons */}
-                        <div className="d-flex justify-content-between mt-4">
-                            <Button
-                                color="light"
-                                onClick={() => setActiveStep(activeStep - 1)}
-                                disabled={activeStep === 1}
-                            >
-                                <i className="ri-arrow-left-line me-1"></i> Previous
-                            </Button>
-
-                            {activeStep < 6 ? (
-                                <Button
-                                    color="primary"
-                                    onClick={() => setActiveStep(activeStep + 1)}
-                                >
-                                    Next <i className="ri-arrow-right-line ms-1"></i>
-                                </Button>
-                            ) : (
-                                <Button color="success" type="submit" disabled={loading}>
-                                    {loading ? 'Saving...' : 'Save Changes'}
-                                </Button>
-                            )}
-                        </div>
                     </ModalBody>
+                    <ModalFooter>
+                        <div className="w-100 d-flex justify-content-between">
+                            <div>
+                                {activeTab !== '1' && (
+                                    <Button color="light" onClick={() => setActiveTab((parseInt(activeTab) - 1).toString())}>
+                                        <i className="ri-arrow-left-line me-1" /> Previous
+                                    </Button>
+                                )}
+                            </div>
+                            <div>
+                                {activeTab !== '5' ? (
+                                    <Button color="primary" onClick={() => setActiveTab((parseInt(activeTab) + 1).toString())}>
+                                        Next <i className="ri-arrow-right-line ms-1" />
+                                    </Button>
+                                ) : (
+                                    <Button color="success" type="submit">
+                                        {isEdit ? 'Update Staff' : 'Add Staff'}
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    </ModalFooter>
                 </Form>
             </Modal>
 
-            {/* View Details Modal */}
-            <Modal isOpen={viewModal} toggle={() => setViewModal(false)} size="xl">
+            {/* View Modal */}
+            <Modal isOpen={viewModal} toggle={() => setViewModal(false)} size="xl" scrollable>
                 <ModalHeader toggle={() => setViewModal(false)}>
-                    Staff Details: {selectedStaff?.name}
+                    Staff Details - {selectedStaff?.name}
                 </ModalHeader>
-                <ModalBody>
+                <ModalBody style={{ maxHeight: '70vh', overflowY: 'auto' }}>
                     {selectedStaff && (
-                        <div>
-                            {/* Wizard Navigation */}
-                            <div className="step-arrow-nav mb-4">
-                                <Nav tabs className="nav-pills custom-nav nav-justified" role="tablist">
-                                    <NavItem>
-                                        <NavLink
-                                            className={activeViewTab === '1' ? 'active' : ''}
-                                            onClick={() => setActiveViewTab('1')}
-                                        >
-                                            Basic Info
-                                        </NavLink>
-                                    </NavItem>
-                                    <NavItem>
-                                        <NavLink
-                                            className={activeViewTab === '2' ? 'active' : ''}
-                                            onClick={() => setActiveViewTab('2')}
-                                        >
-                                            Professional
-                                        </NavLink>
-                                    </NavItem>
-                                    <NavItem>
-                                        <NavLink
-                                            className={activeViewTab === '3' ? 'active' : ''}
-                                            onClick={() => setActiveViewTab('3')}
-                                        >
-                                            Education
-                                        </NavLink>
-                                    </NavItem>
-                                    <NavItem>
-                                        <NavLink
-                                            className={activeViewTab === '4' ? 'active' : ''}
-                                            onClick={() => setActiveViewTab('4')}
-                                        >
-                                            Research
-                                        </NavLink>
-                                    </NavItem>
-                                    <NavItem>
-                                        <NavLink
-                                            className={activeViewTab === '5' ? 'active' : ''}
-                                            onClick={() => setActiveViewTab('5')}
-                                        >
-                                            Publications
-                                        </NavLink>
-                                    </NavItem>
-                                    <NavItem>
-                                        <NavLink
-                                            className={activeViewTab === '6' ? 'active' : ''}
-                                            onClick={() => setActiveViewTab('6')}
-                                        >
-                                            Awards
-                                        </NavLink>
-                                    </NavItem>
-                                </Nav>
-                            </div>
+                        <>
+                            {/* Step Navigation for View */}
+                            <Nav pills className="nav-pills-custom mb-4">
+                                <NavItem>
+                                    <NavLink
+                                        className={activeTab === '1' ? 'active' : ''}
+                                        onClick={() => setActiveTab('1')}
+                                    >
+                                        <i className="ri-user-line me-1" /> Basic Info
+                                    </NavLink>
+                                </NavItem>
+                                <NavItem>
+                                    <NavLink
+                                        className={activeTab === '2' ? 'active' : ''}
+                                        onClick={() => setActiveTab('2')}
+                                    >
+                                        <i className="ri-briefcase-line me-1" /> Experience
+                                    </NavLink>
+                                </NavItem>
+                                <NavItem>
+                                    <NavLink
+                                        className={activeTab === '3' ? 'active' : ''}
+                                        onClick={() => setActiveTab('3')}
+                                    >
+                                        <i className="ri-graduation-cap-line me-1" /> Education
+                                    </NavLink>
+                                </NavItem>
+                                <NavItem>
+                                    <NavLink
+                                        className={activeTab === '4' ? 'active' : ''}
+                                        onClick={() => setActiveTab('4')}
+                                    >
+                                        <i className="ri-file-paper-line me-1" /> Research
+                                    </NavLink>
+                                </NavItem>
+                                <NavItem>
+                                    <NavLink
+                                        className={activeTab === '5' ? 'active' : ''}
+                                        onClick={() => setActiveTab('5')}
+                                    >
+                                        <i className="ri-trophy-line me-1" /> Awards
+                                    </NavLink>
+                                </NavItem>
+                            </Nav>
 
-                            {/* Tab Content */}
-                            <TabContent activeTab={activeViewTab}>
-                                {/* Basic Information Tab */}
+                            <TabContent activeTab={activeTab}>
+                                {/* Tab 1: Basic Information */}
                                 <TabPane tabId="1">
                                     <Row>
-                                        <Col md={8}>
-                                            <FormGroup>
-                                                <Label><strong>Name</strong></Label>
-                                                <p>{selectedStaff.name}</p>
-                                            </FormGroup>
+                                        <Col md={3} className="text-center mb-3">
+                                            {selectedStaff.photoUrl ? (
+                                                <img
+                                                    src={selectedStaff.photoUrl}
+                                                    alt={selectedStaff.name}
+                                                    className="rounded-circle img-thumbnail"
+                                                    style={{ width: '150px', height: '150px', objectFit: 'cover' }}
+                                                />
+                                            ) : (
+                                                <div className="avatar-title bg-light text-secondary rounded-circle display-4">
+                                                    <i className="ri-user-line" />
+                                                </div>
+                                            )}
                                         </Col>
-                                        <Col md={4}>
-                                            <FormGroup>
-                                                <Label><strong>Title</strong></Label>
-                                                <p>{selectedStaff.title}</p>
-                                            </FormGroup>
+                                        <Col md={9}>
+                                            <h4>{selectedStaff.name}</h4>
+                                            <h5 className="text-primary">{selectedStaff.title}</h5>
+                                            <Badge color={selectedStaff.isResearchContributor ? 'success' : 'secondary'} className="mb-3">
+                                                {selectedStaff.isResearchContributor ? 'Research Contributor' : 'Staff Member'}
+                                            </Badge>
+
+                                            <div className="mt-3">
+                                                <p><strong>Email:</strong> {selectedStaff.email}</p>
+                                                <p><strong>Phone:</strong> {selectedStaff.phone || 'N/A'}</p>
+                                                <p><strong>Office Location:</strong> {selectedStaff.officeLocation || 'N/A'}</p>
+                                            </div>
                                         </Col>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>Email</strong></Label>
-                                                <p>{selectedStaff.email}</p>
-                                            </FormGroup>
-                                        </Col>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>Phone</strong></Label>
-                                                <p>{selectedStaff.phone || '-'}</p>
-                                            </FormGroup>
-                                        </Col>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>Role</strong></Label>
-                                                <p>{selectedStaff.role}</p>
-                                            </FormGroup>
-                                        </Col>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>Office Location</strong></Label>
-                                                <p>{selectedStaff.officeLocation || '-'}</p>
-                                            </FormGroup>
-                                        </Col>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>School</strong></Label>
-                                                <p>{selectedStaff.school?.name || '-'}</p>
-                                            </FormGroup>
-                                        </Col>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>Department</strong></Label>
-                                                <p>{selectedStaff.department?.name || '-'}</p>
-                                            </FormGroup>
-                                        </Col>
-                                        <Col md={12}>
-                                            <FormGroup>
-                                                <Label><strong>Bio</strong></Label>
-                                                <p>{selectedStaff.bio || '-'}</p>
-                                            </FormGroup>
-                                        </Col>
-                                        <Col md={12}>
-                                            <FormGroup>
-                                                <Label><strong>Message</strong></Label>
-                                                <p>{selectedStaff.message || '-'}</p>
-                                            </FormGroup>
-                                        </Col>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>Status</strong></Label>
-                                                <p>
-                                                    <Badge color={selectedStaff.isActive ? 'success' : 'danger'}>
-                                                        {selectedStaff.isActive ? 'Active' : 'Inactive'}
-                                                    </Badge>
-                                                </p>
-                                            </FormGroup>
-                                        </Col>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>Order</strong></Label>
-                                                <p>{selectedStaff.order || 0}</p>
-                                            </FormGroup>
+                                        <Col md={12} className="mt-3">
+                                            <h6>Biography</h6>
+                                            <p>{selectedStaff.bio}</p>
                                         </Col>
                                     </Row>
                                 </TabPane>
 
-                                {/* Professional Experience Tab */}
+                                {/* Tab 2: Professional Experience */}
                                 <TabPane tabId="2">
-                                    <Row>
-                                        <Col md={12}>
-                                            {selectedStaff.professionalExperience && selectedStaff.professionalExperience.length > 0 ? (
-                                                <>
-                                                    <h6 className="mb-3">Professional Experience</h6>
-                                                    <div className="experience-container" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                                                        {selectedStaff.professionalExperience.map((exp, index) => (
-                                                            <div key={index} className="mb-3 p-2 border rounded">
-                                                                <h6 className="mb-1">{exp.position} at {exp.organization}</h6>
-                                                                <p className="mb-1">
-                                                                    {new Date(exp.startDate).toLocaleDateString()} -
-                                                                    {exp.isCurrent ? ' Present' : ` ${new Date(exp.endDate).toLocaleDateString()}`}
-                                                                </p>
-                                                                <p className="mb-1">{exp.description}</p>
-                                                                {exp.achievements && exp.achievements.length > 0 && (
-                                                                    <div>
-                                                                        <strong>Achievements:</strong>
-                                                                        <ul className="mb-0">
-                                                                            {exp.achievements.map((achievement, i) => (
-                                                                                <li key={i}>{achievement}</li>
-                                                                            ))}
-                                                                        </ul>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <div className="text-center py-4">
-                                                    <p>No professional experience available</p>
-                                                </div>
-                                            )}
-                                        </Col>
-                                    </Row>
+                                    {selectedStaff.professionalExperience?.length > 0 ? (
+                                        selectedStaff.professionalExperience.map((exp, index) => (
+                                            <Card key={index} className="mb-3">
+                                                <CardBody>
+                                                    <h6>{exp.position}</h6>
+                                                    <p className="text-primary mb-2">{exp.organization}</p>
+                                                    <p className="text-muted">
+                                                        {formatDate(exp.startDate)} - {exp.isCurrent ? 'Present' : formatDate(exp.endDate)}
+                                                    </p>
+                                                    {exp.description && (
+                                                        <p>{exp.description}</p>
+                                                    )}
+                                                    {exp.achievements?.length > 0 && (
+                                                        <div>
+                                                            <h6>Achievements:</h6>
+                                                            <ul>
+                                                                {exp.achievements.map((achievement, aIndex) => (
+                                                                    <li key={aIndex}>{achievement}</li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    )}
+                                                </CardBody>
+                                            </Card>
+                                        ))
+                                    ) : (
+                                        <p>No professional experience recorded.</p>
+                                    )}
                                 </TabPane>
 
-                                {/* Education Tab */}
+                                {/* Tab 3: Education */}
                                 <TabPane tabId="3">
-                                    <Row>
-                                        <Col md={12}>
-                                            {selectedStaff.education && selectedStaff.education.length > 0 ? (
-                                                <>
-                                                    <h6 className="mb-3">Education</h6>
-                                                    <div className="education-container" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                                                        {selectedStaff.education.map((edu, index) => (
-                                                            <div key={index} className="mb-3 p-2 border rounded">
-                                                                <h6 className="mb-1">{edu.degree} in {edu.fieldOfStudy}</h6>
-                                                                <p className="mb-1">{edu.institution}, {edu.graduationYear}</p>
-                                                                {edu.country && <p className="mb-1">Country: {edu.country}</p>}
-                                                                {edu.thesisTitle && <p className="mb-0">Thesis: {edu.thesisTitle}</p>}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <div className="text-center py-4">
-                                                    <p>No education information available</p>
-                                                </div>
-                                            )}
-                                        </Col>
-                                    </Row>
+                                    {selectedStaff.education?.length > 0 ? (
+                                        selectedStaff.education.map((edu, index) => (
+                                            <Card key={index} className="mb-3">
+                                                <CardBody>
+                                                    <h6>{edu.degree}</h6>
+                                                    <p className="text-primary mb-1">{edu.fieldOfStudy}</p>
+                                                    <p className="mb-1">{edu.institution}</p>
+                                                    <p className="text-muted mb-1">Graduated: {edu.graduationYear}</p>
+                                                    {edu.country && <p className="mb-1"><strong>Country:</strong> {edu.country}</p>}
+                                                    {edu.thesisTitle && <p className="mb-0"><strong>Thesis:</strong> {edu.thesisTitle}</p>}
+                                                </CardBody>
+                                            </Card>
+                                        ))
+                                    ) : (
+                                        <p>No education information recorded.</p>
+                                    )}
                                 </TabPane>
 
-                                {/* Research Interests Tab */}
+                                {/* Tab 4: Research & Publications */}
+                                {/* Tab 4: Research & Publications */}
                                 <TabPane tabId="4">
-                                    <Row>
-                                        <Col md={12}>
-                                            {selectedStaff.researchInterests && selectedStaff.researchInterests.length > 0 ? (
-                                                <>
-                                                    <h6 className="mb-3">Research Interests</h6>
+                                    {selectedStaff.isResearchContributor ? (
+                                        <>
+                                            {selectedStaff.researchInterests?.length > 0 && (
+                                                <div className="mb-4">
+                                                    <h6>Research Interests</h6>
                                                     <div className="d-flex flex-wrap gap-2">
                                                         {selectedStaff.researchInterests.map((interest, index) => (
-                                                            <Badge key={index} color="primary" className="p-2">
+                                                            <Badge key={index} color="info">
                                                                 {interest}
                                                             </Badge>
                                                         ))}
                                                     </div>
-                                                </>
-                                            ) : (
-                                                <div className="text-center py-4">
-                                                    <p>No research interests available</p>
                                                 </div>
                                             )}
-                                        </Col>
-                                    </Row>
-                                </TabPane>
 
-                                {/* Publications Tab */}
-                                <TabPane tabId="5">
-                                    <Row>
-                                        <Col md={12}>
-                                            {selectedStaff.publications && selectedStaff.publications.length > 0 ? (
-                                                <>
-                                                    <h6 className="mb-3">Publications</h6>
-                                                    <div className="publications-container" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                                                        {selectedStaff.publications.map((pub, index) => (
-                                                            <div key={index} className="mb-3 p-2 border rounded">
-                                                                <h6 className="mb-1">{pub.title}</h6>
-                                                                <p className="mb-1">{pub.journalOrConference}, {new Date(pub.publicationDate).toLocaleDateString()}</p>
-                                                                <p className="mb-1">Authors: {pub.authors.join(', ')}</p>
-                                                                {pub.link && (
-                                                                    <p className="mb-0">
+                                            <h6>Publications</h6>
+                                            {selectedStaff.publications?.length > 0 ? (
+                                                selectedStaff.publications.map((pub, index) => (
+                                                    <Card key={index} className="mb-3">
+                                                        <CardBody>
+                                                            <div className="d-flex justify-content-between align-items-start">
+                                                                <div>
+                                                                    <h6>{pub.title}</h6>
+                                                                    <p className="text-primary mb-1">{pub.journalOrConference}</p>
+                                                                    <p className="text-muted mb-1">
+                                                                        Published: {formatDate(pub.publicationDate)}
+                                                                    </p>
+                                                                    <p className="mb-1">
+                                                                        <strong>Authors:</strong> {pub.authors?.join(', ')}
+                                                                    </p>
+                                                                    {pub.link && (
                                                                         <a href={pub.link} target="_blank" rel="noopener noreferrer">
                                                                             View Publication
                                                                         </a>
-                                                                    </p>
+                                                                    )}
+                                                                </div>
+                                                                {pub.isSelected && (
+                                                                    <Badge color="success">Featured</Badge>
                                                                 )}
-                                                                {pub.isSelected && <Badge color="success" className="mt-1">Selected</Badge>}
                                                             </div>
-                                                        ))}
-                                                    </div>
-                                                </>
+                                                        </CardBody>
+                                                    </Card>
+                                                ))
                                             ) : (
-                                                <div className="text-center py-4">
-                                                    <p>No publications available</p>
-                                                </div>
+                                                <p>No publications recorded.</p>
                                             )}
-                                        </Col>
-                                    </Row>
+                                        </>
+                                    ) : (
+                                        <div className="text-center py-4">
+                                            <i className="ri-file-paper-line display-4 text-muted mb-3" />
+                                            <h5>Not a Research Contributor</h5>
+                                            <p className="text-muted">
+                                                This staff member is not marked as a research contributor.
+                                            </p>
+                                        </div>
+                                    )}
                                 </TabPane>
 
-                                {/* Awards Tab */}
-                                <TabPane tabId="6">
-                                    <Row>
-                                        <Col md={12}>
-                                            {selectedStaff.awards && selectedStaff.awards.length > 0 ? (
-                                                <>
-                                                    <h6 className="mb-3">Awards & Honors</h6>
-                                                    <div className="awards-container" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                                                        {selectedStaff.awards.map((award, index) => (
-                                                            <div key={index} className="mb-3 p-2 border rounded">
-                                                                <h6 className="mb-1">{award.title}</h6>
-                                                                <p className="mb-1">Awarded by: {award.awardingBody}, {award.year}</p>
-                                                                {award.description && <p className="mb-0">{award.description}</p>}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <div className="text-center py-4">
-                                                    <p>No awards available</p>
-                                                </div>
-                                            )}
-                                        </Col>
-                                    </Row>
+                                {/* Tab 5: Awards */}
+                                <TabPane tabId="5">
+                                    {selectedStaff.awards?.length > 0 ? (
+                                        selectedStaff.awards.map((award, index) => (
+                                            <Card key={index} className="mb-3">
+                                                <CardBody>
+                                                    <h6>{award.title}</h6>
+                                                    <p className="text-primary mb-1">{award.awardingBody}</p>
+                                                    <p className="text-muted mb-1">Year: {award.year}</p>
+                                                    {award.description && <p className="mb-0">{award.description}</p>}
+                                                </CardBody>
+                                            </Card>
+                                        ))
+                                    ) : (
+                                        <p>No awards recorded.</p>
+                                    )}
                                 </TabPane>
                             </TabContent>
-                        </div>
+                        </>
                     )}
                 </ModalBody>
                 <ModalFooter>
-
+                    {/* <Button color="primary" onClick={() => handleEdit(selectedStaff)}>
+                        <i className="ri-pencil-line me-1" /> Edit Staff
+                    </Button> */}
                     <Button color="light" onClick={() => setViewModal(false)}>
                         Close
                     </Button>
@@ -1873,4 +1816,4 @@ const Staffs = () => {
     );
 };
 
-export default Staffs;
+export default StaffPage;

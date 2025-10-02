@@ -1,259 +1,296 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import DataTable from "react-data-table-component";
-import Select from "react-select";
 import {
     Card, CardHeader, CardBody,
     Col, Container, Row,
     Form, Input, Label, FormGroup,
     Modal, ModalBody, ModalFooter, ModalHeader,
-    Button, Badge, FormFeedback,
-    Nav,
-    NavItem,
-    NavLink,
-    TabContent,
-    TabPane
+    Button, Badge, Nav, NavItem, NavLink, TabContent, TabPane
 } from "reactstrap";
+import DataTable from "react-data-table-component";
+import Select from "react-select";
+
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import BreadCrumb from "../../../Components/Common/BreadCrumb";
 import DeleteModal from "../../../Components/Common/DeleteModal";
 import Loader from "../../../Components/Common/Loader";
-import { api } from "../../../config";
-import classnames from "classnames";
-const Programs = () => {
+
+// Import FilePond for file uploads
+import { FilePond, registerPlugin } from 'react-filepond';
+import 'filepond/dist/filepond.min.css';
+import FilePondPluginImageExifOrientation from 'filepond-plugin-image-exif-orientation';
+import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
+import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
+
+// Register the plugins
+registerPlugin(FilePondPluginImageExifOrientation, FilePondPluginImagePreview);
+
+import { useDispatch, useSelector } from 'react-redux';
+import { createSelector } from 'reselect';
+
+//redux
+import {
+    getPrograms as onGetPrograms,
+    deleteProgram as onDeleteProgram,
+    CreateOrUpdateProgram as onCreateOrUpdateProgram
+} from "../../../slices/thunks";
+
+// Import other thunks for dropdowns
+import {
+    getSchools as onGetSchools
+} from "../../../slices/thunks";
+
+// Selectors
+const selectProgramsData = createSelector(
+    (state) => state.Setups,
+    (programsData) => programsData.programsData.programs || []
+);
+
+const selectSchoolsData = createSelector(
+    (state) => state.Setups,
+    (schoolsData) => schoolsData.schoolsData.schools || []
+);
+
+const resizeObserverErr = window.ResizeObserver;
+window.ResizeObserver = class extends resizeObserverErr {
+    constructor(callback) {
+        super((...args) => {
+            try {
+                callback(...args);
+            } catch (e) {
+                // ignore ResizeObserver errors
+            }
+        });
+    }
+};
+
+const ProgramsPage = () => {
     document.title = "Programs | simad University";
+
+    const dispatch = useDispatch();
+    const programsData = useSelector(selectProgramsData);
+    const schoolsData = useSelector(selectSchoolsData);
 
     // State management
     const [programs, setPrograms] = useState([]);
-    const [departments, setDepartments] = useState([]);
+    const [schools, setSchools] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
     const [modal, setModal] = useState(false);
+    const [viewModal, setViewModal] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
     const [selectedProgram, setSelectedProgram] = useState(null);
-    const [activeStep, setActiveStep] = useState(1);
-    const [viewModal, setViewModal] = useState(false);
-    const [activeViewTab, setActiveViewTab] = useState('1');
+    const [filteredPrograms, setFilteredPrograms] = useState([]);
+    const [activeTab, setActiveTab] = useState('1');
+
     // Filters state
     const [filters, setFilters] = useState({
         search: '',
-        department: '',
-        status: ''
+        school: ''
     });
 
     // Form state
     const [formData, setFormData] = useState({
         name: "",
         shortName: "",
-        description: "",
-        shortDescription: "",
-        department: "",
-        duration: "",
-        credits: 0,
-        tuition: {
-            domestic: "",
-            international: "",
-            currency: "USD"
-        },
-        intakePeriods: [],
-        applicationDeadline: "",
-        curriculum: [],
-        admissionRequirements: [],
-        careerPaths: [],
+        tagline: "",
+        school: "",
+        about_program_sec_title: "",
+        about_program_sec_icon: "",
+        about_program_sec_info: "",
+        duration: 4,
+        duration_sec_icon: "",
+        duration_sec_title: "",
+        sem_fee: 0,
+        sem_fee_sec_icon: "",
+        sem_fee_sec_title: "",
+        curriculum_sec_icon: "",
+        curriculum_sec_title: "",
+        curriculum_sec_desc: "",
+        curriculum: [{
+            title: "",
+            description: "",
+            icon: "",
+            order: 0
+        }],
+        admissionRequirements_sec_icon: "",
+        admissionRequirements_sec_title: "",
+        admissionRequirements_sec_desc: "",
+        admissionRequirements: [""],
+        careerPaths_sec_icon: "",
+        careerPaths_sec_title: "",
+        careerPaths_sec_desc: "",
+        careerPaths: [{
+            title: "",
+            description: "",
+            icon: "",
+            order: 0
+        }],
         provider: "SIMAD University",
-        iconUrl: "",
+        icon: "",
         coverImage: "",
         externalLink: "",
-        isActive: true,
         order: 0
     });
+    // const [iconFiles, setIconFiles] = useState([]);
+    const [coverImageFiles, setCoverImageFiles] = useState([]);
 
-    // Curriculum item state for modal
-    const [curriculumItem, setCurriculumItem] = useState({
-        title: "",
-        description: "",
-        icon: "",
-        order: 0
-    });
-
-    // Career path item state for modal
-    const [careerPathItem, setCareerPathItem] = useState({
-        title: "",
-        description: "",
-        icon: "",
-        order: 0
-    });
-
-    // Options for selects
-    const statusOptions = [
-        { value: "", label: "All Statuses" },
-        { value: "Active", label: "Active" },
-        { value: "Inactive", label: "Inactive" }
-    ];
-
-    const currencyOptions = [
-        { value: "USD", label: "USD" },
-    ];
-
-    const intakePeriodOptions = [
-        { value: "Summer", label: "Summer" },
-        { value: "Winter", label: "Winter" }
-    ];
-
-
-
-    // Fetch programs with filters
-    const fetchPrograms = async () => {
+    // Fetch data
+    const fetchData = useCallback(async () => {
         setLoading(true);
-        setError(null);
         try {
-            // Build query params
-            const params = new URLSearchParams();
-            if (filters.search) params.append('search', filters.search);
-            if (filters.department) params.append('department', filters.department);
-            if (filters.status) params.append('isActive', filters.status === 'Active');
-
-            const response = await fetch(`${api.API_URL}/programs?${params.toString()}`);
-            const data = await response.json();
-
-            if (!response.ok) throw new Error(data.message || 'Failed to fetch programs');
-
-            setPrograms(data.data.programs || []);
+            await dispatch(onGetPrograms());
+            await dispatch(onGetSchools());
         } catch (error) {
-            setError(error.message);
-            toast.error(`Error loading programs: ${error.message}`);
+            console.error("Error loading data:", error);
+            toast.error("Failed to load data");
         } finally {
             setLoading(false);
         }
-    };
+    }, [dispatch]);
 
-    // Fetch departments for dropdown
-    const fetchDepartments = async () => {
-        try {
-            const response = await fetch(`${api.API_URL}/departments?isActive=true`);
-            const data = await response.json();
+    // Load data
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
-            if (!response.ok) throw new Error(data.message || 'Failed to fetch departments');
+    // Update lists when data changes
+    useEffect(() => {
+        const initialPrograms = Array.isArray(programsData) ? programsData : [];
+        const initialSchools = Array.isArray(schoolsData) ? schoolsData : [];
 
-            setDepartments(data.data.departments || []);
-        } catch (error) {
-            console.error("Error fetching departments:", error);
-            toast.error(`Error loading departments: ${error.message}`);
-        }
+        setPrograms(initialPrograms);
+        setFilteredPrograms(initialPrograms);
+        setSchools(initialSchools);
+    }, [programsData, schoolsData]);
+
+    // Handle filter changes
+    const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        setFilters(prevFilters => ({ ...prevFilters, [name]: value }));
+
+        const filtered = programs.filter(program => {
+            const matchesSearch = !value ||
+                program.name?.toLowerCase().includes(value.toLowerCase()) ||
+                program.shortName?.toLowerCase().includes(value.toLowerCase()) ||
+                program.tagline?.toLowerCase().includes(value.toLowerCase());
+
+            const matchesSchool = !filters.school ||
+                program.school?._id === (name === 'school' ? value : filters.school);
+
+            return matchesSearch && matchesSchool;
+        });
+        setFilteredPrograms(filtered);
     };
 
     // Handle form input changes
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
 
-        if (name.startsWith("tuition.")) {
-            const tuitionField = name.split(".")[1];
+    // Handle array field changes
+    const handleArrayFieldChange = (field, index, subField, value) => {
+        setFormData(prev => {
+            const updatedArray = [...prev[field]];
+            updatedArray[index] = {
+                ...updatedArray[index],
+                [subField]: value
+            };
+            return {
+                ...prev,
+                [field]: updatedArray
+            };
+        });
+    };
+
+    // Handle nested array changes
+    const handleNestedArrayChange = (field, index, subField, subIndex, value) => {
+        setFormData(prev => {
+            const updatedArray = [...prev[field]];
+            const updatedSubArray = [...updatedArray[index][subField]];
+            updatedSubArray[subIndex] = value;
+            updatedArray[index] = {
+                ...updatedArray[index],
+                [subField]: updatedSubArray
+            };
+            return {
+                ...prev,
+                [field]: updatedArray
+            };
+        });
+    };
+
+    // Add new item to array
+    const addArrayItem = (field, template) => {
+        setFormData(prev => ({
+            ...prev,
+            [field]: [...prev[field], { ...template }]
+        }));
+    };
+
+    // Remove item from array
+    const removeArrayItem = (field, index) => {
+        setFormData(prev => ({
+            ...prev,
+            [field]: prev[field].filter((_, i) => i !== index)
+        }));
+    };
+
+    // Add nested array item
+    const addNestedArrayItem = (field, index, subField, template = "") => {
+        setFormData(prev => {
+            const updatedArray = [...prev[field]];
+            updatedArray[index] = {
+                ...updatedArray[index],
+                [subField]: [...updatedArray[index][subField], template]
+            };
+            return {
+                ...prev,
+                [field]: updatedArray
+            };
+        });
+    };
+
+    // Remove nested array item
+    const removeNestedArrayItem = (field, index, subField, subIndex) => {
+        setFormData(prev => {
+            const updatedArray = [...prev[field]];
+            const updatedSubArray = updatedArray[index][subField].filter((_, i) => i !== subIndex);
+            updatedArray[index] = {
+                ...updatedArray[index],
+                [subField]: updatedSubArray
+            };
+            return {
+                ...prev,
+                [field]: updatedArray
+            };
+        });
+    };
+
+
+    // Handle file upload for cover image
+    const handleCoverImageFileUpdate = (fileItems) => {
+        setCoverImageFiles(fileItems);
+        if (fileItems.length > 0) {
             setFormData(prev => ({
                 ...prev,
-                tuition: {
-                    ...prev.tuition,
-                    [tuitionField]: type === 'number' ? parseFloat(value) || 0 : value
-                }
+                coverImage: fileItems[0].file
             }));
         } else {
             setFormData(prev => ({
                 ...prev,
-                [name]: type === 'checkbox' ? checked :
-                    type === 'number' ? parseFloat(value) || 0 : value
+                coverImage: ""
             }));
         }
     };
 
-    // Handle select changes
-    const handleSelectChange = (name, selectedOption) => {
-        setFormData(prev => ({
-            ...prev,
-            [name]: selectedOption?.value || ""
-        }));
-    };
-
-    // Handle multi-select changes
-    const handleMultiSelectChange = (name, selectedOptions) => {
-        setFormData(prev => ({
-            ...prev,
-            [name]: selectedOptions ? selectedOptions.map(opt => opt.value) : []
-        }));
-    };
-
-    // Handle filter changes
-    const handleFilterChange = (e) => {
-        const { name, value } = e.target;
-        setFilters(prev => ({ ...prev, [name]: value }));
-    };
-
-    // Handle select filter changes
-    const handleSelectFilterChange = (name, selectedOption) => {
-        setFilters(prev => ({
-            ...prev,
-            [name]: selectedOption?.value || ""
-        }));
-    };
-
-    // Add curriculum item
-    const addCurriculumItem = () => {
-        if (!curriculumItem.title || !curriculumItem.description) {
-            toast.warning("Please fill in title and description for curriculum item");
-            return;
-        }
-
-        setFormData(prev => ({
-            ...prev,
-            curriculum: [...prev.curriculum, { ...curriculumItem }]
-        }));
-
-        setCurriculumItem({
-            title: "",
-            description: "",
-            icon: "",
-            order: 0
-        });
-    };
-
-    // Remove curriculum item
-    const removeCurriculumItem = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            curriculum: prev.curriculum.filter((_, i) => i !== index)
-        }));
-    };
-
-    // Add career path item
-    const addCareerPathItem = () => {
-        if (!careerPathItem.title || !careerPathItem.description) {
-            toast.warning("Please fill in title and description for career path item");
-            return;
-        }
-
-        setFormData(prev => ({
-            ...prev,
-            careerPaths: [...prev.careerPaths, { ...careerPathItem }]
-        }));
-
-        setCareerPathItem({
-            title: "",
-            description: "",
-            icon: "",
-            order: 0
-        });
-    };
-
-    // Remove career path item
-    const removeCareerPathItem = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            careerPaths: prev.careerPaths.filter((_, i) => i !== index)
-        }));
-    };
-
     // Validate form
     const validateForm = () => {
-        const requiredFields = ['name', 'description', 'department'];
+        const requiredFields = ['name', 'school'];
         const missingFields = requiredFields.filter(field => !formData[field]);
 
         if (missingFields.length > 0) {
@@ -261,75 +298,207 @@ const Programs = () => {
             return false;
         }
 
-        if (formData.order < 0) {
-            toast.warning("Order cannot be negative");
+        // Validate URL format if provided
+        if (formData.externalLink && !/^https?:\/\/.+\..+/.test(formData.externalLink)) {
+            toast.warning('Please enter a valid external link URL');
             return false;
         }
 
         return true;
     };
 
+    // Reset form
+    const resetForm = () => {
+        setFormData({
+            name: "",
+            shortName: "",
+            tagline: "",
+            school: "",
+            about_program_sec_title: "",
+            about_program_sec_icon: "",
+            about_program_sec_info: "",
+            duration: 4,
+            duration_sec_icon: "",
+            duration_sec_title: "",
+            sem_fee: 0,
+            sem_fee_sec_icon: "",
+            sem_fee_sec_title: "",
+            curriculum_sec_icon: "",
+            curriculum_sec_title: "",
+            curriculum_sec_desc: "",
+            curriculum: [{
+                title: "",
+                description: "",
+                icon: "",
+                order: 0
+            }],
+            admissionRequirements_sec_icon: "",
+            admissionRequirements_sec_title: "",
+            admissionRequirements_sec_desc: "",
+            admissionRequirements: [""],
+            careerPaths_sec_icon: "",
+            careerPaths_sec_title: "",
+            careerPaths_sec_desc: "",
+            careerPaths: [{
+                title: "",
+                description: "",
+                icon: "",
+                order: 0
+            }],
+            provider: "SIMAD University",
+            icon: "",
+            coverImage: "",
+            externalLink: "",
+            order: 0
+        });
+
+        setCoverImageFiles([]);
+        setSelectedProgram(null);
+        setActiveTab('1');
+    };
+
     // Create new program
-    const createProgram = async () => {
+    const createProgram = async (e) => {
+        e.preventDefault();
         if (!validateForm()) return;
 
         try {
-            const authUser = JSON.parse(sessionStorage.getItem("authUser"));
-            const programData = {
-                ...formData,
-                createdBy: authUser?.data?.user?.username || "Admin"
-            };
+            const submitData = new FormData();
 
-            const response = await fetch(`${api.API_URL}/programs`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(programData)
+            // Append basic fields
+            const basicFields = [
+                'name', 'shortName', 'tagline', 'school',
+                'about_program_sec_title', 'about_program_sec_icon', 'about_program_sec_info',
+                'duration', 'duration_sec_icon', 'duration_sec_title',
+                'sem_fee', 'sem_fee_sec_icon', 'sem_fee_sec_title',
+                'curriculum_sec_icon', 'curriculum_sec_title', 'curriculum_sec_desc',
+                'admissionRequirements_sec_icon', 'admissionRequirements_sec_title', 'admissionRequirements_sec_desc',
+                'careerPaths_sec_icon', 'careerPaths_sec_title', 'careerPaths_sec_desc',
+                'provider', 'externalLink', 'order'
+            ];
+
+            basicFields.forEach(field => {
+                if (formData[field] !== undefined && formData[field] !== null) {
+                    submitData.append(field, formData[field]);
+                }
             });
 
-            const data = await response.json();
+            // Append curriculum
+            formData.curriculum.forEach((item, index) => {
+                submitData.append(`curriculum[${index}][title]`, item.title || '');
+                submitData.append(`curriculum[${index}][description]`, item.description || '');
+                submitData.append(`curriculum[${index}][icon]`, item.icon || '');
+                submitData.append(`curriculum[${index}][order]`, item.order || 0);
+            });
 
-            if (!response.ok) throw new Error(data.message || 'Failed to create program');
+            // Append admission requirements
+            formData.admissionRequirements.forEach((requirement, index) => {
+                if (requirement.trim()) {
+                    submitData.append(`admissionRequirements[${index}]`, requirement);
+                }
+            });
 
-            toast.success("Program created successfully");
-            fetchPrograms();
-            setModal(false);
+            // Append career paths
+            formData.careerPaths.forEach((item, index) => {
+                submitData.append(`careerPaths[${index}][title]`, item.title || '');
+                submitData.append(`careerPaths[${index}][description]`, item.description || '');
+                submitData.append(`careerPaths[${index}][icon]`, item.icon || '');
+                submitData.append(`careerPaths[${index}][order]`, item.order || 0);
+            });
+
+
+
+            // Append cover image file if exists
+            if (formData.coverImage instanceof File) {
+                submitData.append('coverImage', formData.coverImage);
+            }
+
+            await dispatch(onCreateOrUpdateProgram(submitData));
+
+            handleModalClose();
+            resetForm();
         } catch (error) {
-            toast.error(`Error creating program: ${error.message}`);
+            console.error("Error creating program:", error);
+
         }
     };
 
     // Update program
-    const updateProgram = async () => {
+    const updateProgram = async (e) => {
+        e.preventDefault();
         if (!validateForm() || !selectedProgram) return;
 
         try {
-            const authUser = JSON.parse(sessionStorage.getItem("authUser"));
-            const programData = {
-                ...formData,
-                _id: selectedProgram._id,
-                updatedBy: authUser?.data?.user?.username || "Admin"
-            };
+            const submitData = new FormData();
 
-            const response = await fetch(`${api.API_URL}/programs/${selectedProgram._id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(programData)
+            // Append basic fields
+            const basicFields = [
+                'name', 'shortName', 'icon', 'tagline', 'school',
+                'about_program_sec_title', 'about_program_sec_icon', 'about_program_sec_info',
+                'duration', 'duration_sec_icon', 'duration_sec_title',
+                'sem_fee', 'sem_fee_sec_icon', 'sem_fee_sec_title',
+                'curriculum_sec_icon', 'curriculum_sec_title', 'curriculum_sec_desc',
+                'admissionRequirements_sec_icon', 'admissionRequirements_sec_title', 'admissionRequirements_sec_desc',
+                'careerPaths_sec_icon', 'careerPaths_sec_title', 'careerPaths_sec_desc',
+                'provider', 'externalLink', 'order'
+            ];
+
+            basicFields.forEach(field => {
+                if (formData[field] !== undefined && formData[field] !== null) {
+                    submitData.append(field, formData[field]);
+                }
             });
 
-            const data = await response.json();
+            // Append curriculum
+            formData.curriculum.forEach((item, index) => {
+                submitData.append(`curriculum[${index}][title]`, item.title || '');
+                submitData.append(`curriculum[${index}][description]`, item.description || '');
+                submitData.append(`curriculum[${index}][icon]`, item.icon || '');
+                submitData.append(`curriculum[${index}][order]`, item.order || 0);
+            });
 
-            if (!response.ok) throw new Error(data.message || 'Failed to update program');
+            // Append admission requirements
+            formData.admissionRequirements.forEach((requirement, index) => {
+                if (requirement.trim()) {
+                    submitData.append(`admissionRequirements[${index}]`, requirement);
+                }
+            });
 
-            toast.success("Program updated successfully");
-            fetchPrograms();
-            setModal(false);
+            // Append career paths
+            formData.careerPaths.forEach((item, index) => {
+                submitData.append(`careerPaths[${index}][title]`, item.title || '');
+                submitData.append(`careerPaths[${index}][description]`, item.description || '');
+                submitData.append(`careerPaths[${index}][icon]`, item.icon || '');
+                submitData.append(`careerPaths[${index}][order]`, item.order || 0);
+            });
+
+            // Append icon file if exists
+            // if (formData.icon instanceof File) {
+            //     submitData.append('icon', formData.icon);
+            // }
+
+            // Append cover image file if exists
+            if (formData.coverImage instanceof File) {
+                submitData.append('coverImage', formData.coverImage);
+            }
+
+            // Append ID for update
+            submitData.append('_id', selectedProgram._id);
+
+            await dispatch(onCreateOrUpdateProgram(submitData));
+
+            handleModalClose();
+            resetForm();
         } catch (error) {
-            toast.error(`Error updating program: ${error.message}`);
+            console.error("Error updating program:", error);
+
         }
+    };
+
+    const handleModalClose = () => {
+        // setIconFiles([]);
+        setCoverImageFiles([]);
+        setModal(false);
     };
 
     // Delete program
@@ -337,177 +506,184 @@ const Programs = () => {
         if (!selectedProgram) return;
 
         try {
-            const response = await fetch(`${api.API_URL}/programs/${selectedProgram._id}`, {
-                method: 'DELETE'
-            });
+            await dispatch(onDeleteProgram(selectedProgram._id));
 
-            const data = await response.json();
-
-            if (!response.ok) throw new Error(data.message || 'Failed to delete program');
-
-            toast.success("Program deleted successfully");
             setDeleteModal(false);
-            fetchPrograms();
+            fetchData();
         } catch (error) {
-            toast.error(`Error deleting program: ${error.message}`);
+            console.error("Error deleting program:", error);
+
         }
     };
 
     // Open modal for edit
     const handleEdit = (program) => {
         setSelectedProgram(program);
+
         setFormData({
-            name: program.name,
+            name: program.name || "",
             shortName: program.shortName || "",
-            description: program.description,
-            shortDescription: program.shortDescription || "",
-            department: program.department?._id || program.department || "",
-            duration: program.duration || "",
-            credits: program.credits || 0,
-            tuition: program.tuition || {
-                domestic: 0,
-                international: 0,
-                currency: "USD"
-            },
-            intakePeriods: program.intakePeriods || [],
-            applicationDeadline: program.applicationDeadline ?
-                new Date(program.applicationDeadline).toISOString().split('T')[0] : "",
-            curriculum: program.curriculum || [],
-            admissionRequirements: program.admissionRequirements || [],
-            careerPaths: program.careerPaths || [],
+            tagline: program.tagline || "",
+            school: program.school?._id || "",
+            about_program_sec_title: program.about_program_sec_title || "",
+            about_program_sec_icon: program.about_program_sec_icon || "",
+            about_program_sec_info: program.about_program_sec_info || "",
+            duration: program.duration || 4,
+            duration_sec_icon: program.duration_sec_icon || "",
+            duration_sec_title: program.duration_sec_title || "",
+            sem_fee: program.sem_fee || 0,
+            sem_fee_sec_icon: program.sem_fee_sec_icon || "",
+            sem_fee_sec_title: program.sem_fee_sec_title || "",
+            curriculum_sec_icon: program.curriculum_sec_icon || "",
+            curriculum_sec_title: program.curriculum_sec_title || "",
+            curriculum_sec_desc: program.curriculum_sec_desc || "",
+            curriculum: program.curriculum?.length > 0 ? program.curriculum : [{
+                title: "",
+                description: "",
+                icon: "",
+                order: 0
+            }],
+            admissionRequirements_sec_icon: program.admissionRequirements_sec_icon || "",
+            admissionRequirements_sec_title: program.admissionRequirements_sec_title || "",
+            admissionRequirements_sec_desc: program.admissionRequirements_sec_desc || "",
+            admissionRequirements: program.admissionRequirements?.length > 0 ? program.admissionRequirements : [""],
+            careerPaths_sec_icon: program.careerPaths_sec_icon || "",
+            careerPaths_sec_title: program.careerPaths_sec_title || "",
+            careerPaths_sec_desc: program.careerPaths_sec_desc || "",
+            careerPaths: program.careerPaths?.length > 0 ? program.careerPaths : [{
+                title: "",
+                description: "",
+                icon: "",
+                order: 0
+            }],
             provider: program.provider || "SIMAD University",
-            iconUrl: program.iconUrl || "",
+            icon: program.icon || "",
             coverImage: program.coverImage || "",
             externalLink: program.externalLink || "",
-            isActive: program.isActive,
             order: program.order || 0
         });
+
         setIsEdit(true);
         setModal(true);
+        setActiveTab('1');
+    };
+
+    // Open modal for view
+    const handleView = (program) => {
+        setSelectedProgram(program);
+        setViewModal(true);
+        setActiveTab('1');
     };
 
     // Open modal for create
     const handleCreate = () => {
         setSelectedProgram(null);
-        setFormData({
-            name: "",
-            shortName: "",
-            description: "",
-            shortDescription: "",
-            department: "",
-            duration: "",
-            credits: 0,
-            tuition: {
-                domestic: "",
-                international: "",
-                currency: "USD"
-            },
-            intakePeriods: [],
-            applicationDeadline: "",
-            curriculum: [],
-            admissionRequirements: [],
-            careerPaths: [],
-            provider: "SIMAD University",
-            iconUrl: "",
-            coverImage: "",
-            externalLink: "",
-            isActive: true,
-            order: 0
-        });
-        setCurriculumItem({
-            title: "",
-            description: "",
-            icon: "",
-            order: 0
-        });
-        setCareerPathItem({
-            title: "",
-            description: "",
-            icon: "",
-            order: 0
-        });
+        resetForm();
         setIsEdit(false);
         setModal(true);
     };
+
+    const handleSimpleArrayChange = (field, index, value) => {
+        setFormData(prev => {
+            const updatedArray = [...prev[field]];
+            updatedArray[index] = value;
+            return {
+                ...prev,
+                [field]: updatedArray
+            };
+        });
+    };
+
+    // Format options for dropdowns
+    const schoolOptions = schools.map(school => ({
+        value: school._id,
+        label: school.name
+    }));
 
     // Table columns
     const columns = [
         {
             name: '#',
             cell: (row, index) => index + 1,
-
         },
         {
-            name: 'Name',
+            name: 'Icon',
+            cell: (row) => (
+                <div className="avatar-xs">
+                    {row.icon ? (
+                        <div className="avatar-title bg-light text-primary rounded-circle">
+                            <i className={row.icon} />
+                        </div>
+                    ) : (
+                        <div className="avatar-title bg-light text-secondary rounded-circle">
+                            <i className="ri-book-line" />
+                        </div>
+                    )}
+                </div>
+            ),
+            width: '70px'
+        },
+        {
+            name: 'Program Name',
             selector: row => row.name,
             sortable: true,
-
         },
         {
             name: 'Short Name',
-            selector: row => row.shortName || '-',
-            sortable: true,
-
+            selector: row => row.shortName || 'N/A',
         },
         {
-            name: 'Department',
-            selector: row => row.department?.name || '-',
-            sortable: true,
-
+            name: 'School',
+            cell: row => row.school?.name || 'N/A',
         },
         {
             name: 'Duration',
-            selector: row => row.duration || '-',
-            width: '100px'
+            cell: row => `${row.duration || 0} years`,
         },
         {
-            name: 'Credits',
-            selector: row => row.credits || 0,
-            sortable: true,
-
+            name: 'Semester Fee',
+            cell: row => row.sem_fee ? `$${row.sem_fee}` : 'N/A',
         },
         {
-            name: 'Status',
-            cell: row => (
-                <Badge color={row.isActive ? 'success' : 'danger'}>
-                    {row.isActive ? 'Active' : 'Inactive'}
-                </Badge>
-            ),
+            name: 'Order',
+            selector: row => row.order,
             sortable: true,
-
         },
         {
             name: 'Actions',
             cell: row => (
                 <div className="d-flex gap-2">
-
-                    {/* View Button */}
-                    <Button color="soft-info" size="sm" onClick={() => {
-                        setSelectedProgram(row);
-                        setViewModal(true);
-                    }}>
+                    <Button
+                        color="soft-info"
+                        size="sm"
+                        onClick={() => handleView(row)}
+                        title="View Details"
+                    >
                         <i className="ri-eye-line" />
                     </Button>
-                    <Button color="soft-primary" size="sm" onClick={() => handleEdit(row)}>
+                    <Button
+                        color="soft-primary"
+                        size="sm"
+                        onClick={() => handleEdit(row)}
+                        title="Edit"
+                    >
                         <i className="ri-pencil-line" />
                     </Button>
-                    <Button color="soft-danger" size="sm" onClick={() => {
-                        setSelectedProgram(row);
-                        setDeleteModal(true);
-                    }}>
+                    <Button
+                        color="soft-danger"
+                        size="sm"
+                        onClick={() => {
+                            setSelectedProgram(row);
+                            setDeleteModal(true);
+                        }}
+                        title="Delete"
+                    >
                         <i className="ri-delete-bin-line" />
                     </Button>
                 </div>
             ),
-
         }
     ];
-
-    // Initial data load
-    useEffect(() => {
-        fetchPrograms();
-        fetchDepartments();
-    }, [filters]);
 
     return (
         <div className="page-content">
@@ -518,52 +694,41 @@ const Programs = () => {
                 <Card className="mb-3">
                     <CardBody>
                         <Row>
-                            <Col md={3}>
+                            <Col md={4}>
                                 <FormGroup>
                                     <Label>Search</Label>
                                     <Input
                                         type="text"
                                         name="search"
-                                        placeholder="Search by name"
+                                        placeholder="Search by program name, short name, or tagline"
                                         value={filters.search}
                                         onChange={handleFilterChange}
                                     />
                                 </FormGroup>
                             </Col>
-                            <Col md={3}>
+                            {/* <Col md={4}>
                                 <FormGroup>
-                                    <Label>Department</Label>
-                                    <Select
-                                        options={departments.map(dept => ({ value: dept._id, label: dept.name }))}
-                                        value={departments.find(dept => dept._id === filters.department) ?
-                                            { value: filters.department, label: departments.find(dept => dept._id === filters.department).name } : null}
-                                        onChange={(opt) => handleSelectFilterChange('department', opt)}
-                                        isClearable
-                                        placeholder="Select department"
-                                    />
+                                    <Label>School</Label>
+                                    <Input
+                                        type="select"
+                                        name="school"
+                                        value={filters.school}
+                                        onChange={handleFilterChange}
+                                    >
+                                        <option value="">All Schools</option>
+                                        {schoolOptions.map(option => (
+                                            <option key={option.value} value={option.value}>
+                                                {option.label}
+                                            </option>
+                                        ))}
+                                    </Input>
                                 </FormGroup>
-                            </Col>
-                            <Col md={3}>
-                                <FormGroup>
-                                    <Label>Status</Label>
-                                    <Select
-                                        options={statusOptions}
-                                        value={statusOptions.find(opt => opt.value === filters.status)}
-                                        onChange={(opt) => handleSelectFilterChange('status', opt)}
-                                        isClearable
-                                    />
-                                </FormGroup>
-                            </Col>
-                            <Col md={3} className="d-flex align-items-end mb-3">
-                                <Button color="primary" onClick={fetchPrograms} disabled={loading}>
-                                    {loading ? 'Filtering...' : 'Apply Filters'}
-                                </Button>
-                            </Col>
+                            </Col> */}
                         </Row>
                     </CardBody>
                 </Card>
 
-                {/* Data Table */}
+                {/* Programs Table */}
                 <Card>
                     <CardHeader className="d-flex justify-content-between align-items-center">
                         <h5 className="mb-0">Programs List</h5>
@@ -574,12 +739,10 @@ const Programs = () => {
                     <CardBody>
                         {loading ? (
                             <Loader />
-                        ) : error ? (
-                            <div className="text-danger">{error}</div>
                         ) : (
                             <DataTable
                                 columns={columns}
-                                data={programs}
+                                data={filteredPrograms}
                                 pagination
                                 highlightOnHover
                                 responsive
@@ -591,333 +754,150 @@ const Programs = () => {
             </Container>
 
             {/* Add/Edit Modal */}
-            <Modal
-                isOpen={modal}
-                toggle={() => setModal(false)}
-                size="xl"
-                style={{ maxWidth: '1200px', width: '90%' }}
-            >
-                <ModalHeader toggle={() => setModal(false)}>
+            <Modal isOpen={modal} toggle={handleModalClose} unmountOnClose={false} size="xl" scrollable>
+                <ModalHeader toggle={handleModalClose}>
                     {isEdit ? 'Edit Program' : 'Add New Program'}
                 </ModalHeader>
-
-                <Form
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        isEdit ? updateProgram() : createProgram();
-                    }}
-                >
+                <Form onSubmit={isEdit ? updateProgram : createProgram}>
                     <ModalBody style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-
                         {/* Step Navigation */}
-                        <div className="step-arrow-nav mb-4">
-                            <Nav className="nav-pills custom-nav nav-justified" role="tablist">
-                                <NavItem>
-                                    <NavLink
-                                        href="#"
-                                        className={classnames({ active: activeStep === 1 })}
-                                        onClick={() => setActiveStep(1)}
-                                    >
-                                        General Info
-                                    </NavLink>
-                                </NavItem>
-                                <NavItem>
-                                    <NavLink
-                                        href="#"
-                                        className={classnames({ active: activeStep === 2 })}
-                                        onClick={() => setActiveStep(2)}
-                                    >
-                                        Tuition & Intake
-                                    </NavLink>
-                                </NavItem>
-                                <NavItem>
-                                    <NavLink
-                                        href="#"
-                                        className={classnames({ active: activeStep === 3 })}
-                                        onClick={() => setActiveStep(3)}
-                                    >
-                                        Curriculum & Careers
-                                    </NavLink>
-                                </NavItem>
-                                <NavItem>
-                                    <NavLink
-                                        href="#"
-                                        className={classnames({ active: activeStep === 4 })}
-                                        onClick={() => setActiveStep(4)}
-                                    >
-                                        Additional Info
-                                    </NavLink>
-                                </NavItem>
-                            </Nav>
-                        </div>
+                        <Nav pills className="nav-pills-custom mb-4">
+                            <NavItem>
+                                <NavLink
+                                    className={activeTab === '1' ? 'active' : ''}
+                                    onClick={() => setActiveTab('1')}
+                                >
+                                    <i className="ri-book-line me-1" /> Basic Info
+                                </NavLink>
+                            </NavItem>
+                            <NavItem>
+                                <NavLink
+                                    className={activeTab === '2' ? 'active' : ''}
+                                    onClick={() => setActiveTab('2')}
+                                >
+                                    <i className="ri-information-line me-1" /> Program Details
+                                </NavLink>
+                            </NavItem>
+                            <NavItem>
+                                <NavLink
+                                    className={activeTab === '3' ? 'active' : ''}
+                                    onClick={() => setActiveTab('3')}
+                                >
+                                    <i className="ri-file-list-line me-1" /> Curriculum
+                                </NavLink>
+                            </NavItem>
+                            <NavItem>
+                                <NavLink
+                                    className={activeTab === '4' ? 'active' : ''}
+                                    onClick={() => setActiveTab('4')}
+                                >
+                                    <i className="ri-clipboard-line me-1" /> Admission
+                                </NavLink>
+                            </NavItem>
+                            <NavItem>
+                                <NavLink
+                                    className={activeTab === '5' ? 'active' : ''}
+                                    onClick={() => setActiveTab('5')}
+                                >
+                                    <i className="ri-briefcase-line me-1" /> Career Paths
+                                </NavLink>
+                            </NavItem>
+                        </Nav>
 
-                        {/* Step Content */}
-                        <TabContent activeTab={activeStep}>
-
-                            {/* STEP 1: General Info */}
-                            <TabPane tabId={1}>
+                        <TabContent activeTab={activeTab}>
+                            {/* Tab 1: Basic Information */}
+                            <TabPane tabId="1">
                                 <Row>
-                                    <Col md={8}>
+                                    <Col md={12}>
+                                        <FormGroup>
+                                            <Label>Program Icon Class</Label>
+                                            <Input
+                                                name="icon"
+                                                value={formData.icon}
+                                                onChange={handleInputChange}
+                                                placeholder="ri-book-line"
+                                            />
+                                            <small className="text-muted">
+                                                Enter Remix Icon class name (e.g., ri-book-line, ri-computer-line)
+                                            </small>
+                                            {formData.icon && (
+                                                <div className="mt-2">
+                                                    <Label>Icon Preview:</Label>
+                                                    <div className="d-flex align-items-center gap-2 mt-1">
+                                                        <i className={formData.icon + " fs-4 text-primary"} />
+                                                        <span>{formData.icon}</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={12}>
+                                        <FormGroup>
+                                            <Label>Cover Image</Label>
+                                            <FilePond
+                                                files={coverImageFiles}
+                                                onupdatefiles={handleCoverImageFileUpdate}
+                                                allowMultiple={false}
+                                                maxFiles={1}
+                                                name="coverImage"
+                                                labelIdle='Drag & Drop cover image or <span class="filepond--label-action">Browse</span>'
+                                                acceptedFileTypes={['image/*']}
+                                                imagePreviewHeight={100}
+                                                credits={false}
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={6}>
                                         <FormGroup>
                                             <Label>Program Name <span className="text-danger">*</span></Label>
-                                            <Input name="name" value={formData.name} onChange={handleInputChange} required />
-                                        </FormGroup>
-                                    </Col>
-                                    <Col md={4}>
-                                        <FormGroup>
-                                            <Label>Short Name</Label>
-                                            <Input name="shortName" value={formData.shortName} onChange={handleInputChange} />
-                                        </FormGroup>
-                                    </Col>
-                                    <Col md={12}>
-                                        <FormGroup>
-                                            <Label>Description <span className="text-danger">*</span></Label>
-                                            <Input type="textarea" name="description" value={formData.description} onChange={handleInputChange} required rows="3" />
-                                        </FormGroup>
-                                    </Col>
-                                    <Col md={12} style={{ display: "none" }}>
-                                        <FormGroup>
-                                            <Label>Short Description</Label>
                                             <Input
-                                                type="textarea"
-                                                name="shortDescription"
-                                                value={formData.shortDescription}
+                                                name="name"
+                                                value={formData.name}
                                                 onChange={handleInputChange}
-                                                rows="2"
-                                            />
-                                        </FormGroup>
-                                    </Col>
-                                </Row>
-                            </TabPane>
-
-                            {/* STEP 2: Tuition & Intake */}
-                            <TabPane tabId={2}>
-                                <Row>
-                                    <Col md={6}>
-                                        <FormGroup>
-                                            <Label>Department</Label>
-                                            <Select
-                                                options={departments.map(d => ({ value: d._id, label: d.name }))}
-                                                value={departments.find(d => d._id === formData.department) ?
-                                                    { value: formData.department, label: departments.find(d => d._id === formData.department).name } : null}
-                                                onChange={(opt) => handleSelectChange('department', opt)}
-                                            />
-                                        </FormGroup>
-                                    </Col>
-                                    <Col md={6}>
-                                        <FormGroup>
-                                            <Label for="programDuration">
-                                                Duration <span className="text-muted">(in years)</span>
-                                            </Label>
-                                            <Input
-                                                id="programDuration"
-                                                type="text"
-                                                name="duration"
-                                                value={formData.duration}
-                                                onChange={handleInputChange}
-                                                min="1"
-                                                step="1"
-                                                placeholder="e.g., 4"
+                                                placeholder="Enter program name"
                                                 required
                                             />
-
-                                        </FormGroup>
-
-                                    </Col>
-                                    <Col md={12}><h6 className="mt-3 mb-3">Tuition Info</h6></Col>
-                                    <Col md={4}>
-                                        <FormGroup>
-                                            <Label>Sem Tution Fee</Label>
-                                            <Input type="text" name="tuition.domestic" value={formData.tuition.domestic} onChange={handleInputChange} placeholder="Semester Tuition" />
-
                                         </FormGroup>
                                     </Col>
-                                    <Col md={4}>
+                                    <Col md={6}>
                                         <FormGroup>
-                                            <Label>Tution Per Month</Label>
-                                            <Input type="text" name="tuition.international" value={formData.tuition.international} onChange={handleInputChange} placeholder="Tuition Per Month" />
-                                        </FormGroup>
-                                    </Col>
-                                    <Col md={3} style={{ display: "none" }}>
-                                        <FormGroup>
-                                            <Label>Credits</Label>
+                                            <Label>Short Name</Label>
                                             <Input
-                                                type="number"
-                                                name="credits"
-                                                value={formData.credits}
+                                                name="shortName"
+                                                value={formData.shortName}
                                                 onChange={handleInputChange}
-                                                min="0"
+                                                placeholder="Enter short name (e.g., BSC, MBA)"
                                             />
                                         </FormGroup>
                                     </Col>
-                                    <Col md={4}>
+                                    <Col md={6}>
                                         <FormGroup>
-                                            <Label>Currency</Label>
+                                            <Label>School <span className="text-danger">*</span></Label>
                                             <Select
-                                                options={currencyOptions}
-                                                value={currencyOptions.find(opt => opt.value === formData.tuition.currency)}
-                                                onChange={(opt) => setFormData(prev => ({
+                                                value={schoolOptions.find(option => option.value === formData.school) || null}
+                                                onChange={(selected) => setFormData(prev => ({
                                                     ...prev,
-                                                    tuition: { ...prev.tuition, currency: opt?.value || "USD" }
+                                                    school: selected ? selected.value : ""
                                                 }))}
-
-                                            />
-                                        </FormGroup>
-                                    </Col>
-                                    {/* Intake Information */}
-                                    <Col md={12}>
-                                        <h6 className="mt-3 mb-3">Intake Information</h6>
-                                    </Col>
-                                    <Col md={6}>
-                                        <FormGroup>
-                                            <Label>Intake Periods</Label>
-                                            <Select
-                                                isMulti
-                                                options={intakePeriodOptions}
-                                                value={intakePeriodOptions.filter(opt =>
-                                                    formData.intakePeriods.includes(opt.value)
-                                                )}
-                                                onChange={(opts) => handleMultiSelectChange('intakePeriods', opts)}
+                                                options={schoolOptions}
+                                                placeholder="Select school"
+                                                isClearable
+                                                required
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label>Application Deadline</Label>
+                                            <Label>Provider</Label>
                                             <Input
-                                                type="date"
-                                                name="applicationDeadline"
-                                                value={formData.applicationDeadline}
+                                                name="provider"
+                                                value={formData.provider}
                                                 onChange={handleInputChange}
+                                                placeholder="Program provider"
                                             />
-                                        </FormGroup>
-                                    </Col>
-                                </Row>
-                            </TabPane>
-
-                            {/* STEP 3: Curriculum & Careers */}
-                            <TabPane tabId={3}>
-                                {/* Curriculum */}
-                                <Col md={12}>
-                                    <h6 className="mb-3">Curriculum</h6>
-                                    <Row className="mb-2 align-items-end">
-                                        <Col md={4}>
-                                            <Input
-                                                placeholder="Title"
-                                                value={curriculumItem.title}
-                                                onChange={(e) => setCurriculumItem({ ...curriculumItem, title: e.target.value })}
-                                            />
-                                        </Col>
-                                        <Col md={5}>
-                                            <Input
-                                                placeholder="Description"
-                                                value={curriculumItem.description}
-                                                onChange={(e) => setCurriculumItem({ ...curriculumItem, description: e.target.value })}
-                                            />
-                                        </Col>
-                                        <Col md={2}>
-                                            <Input
-                                                type="number"
-                                                placeholder="Order"
-                                                value={curriculumItem.order}
-                                                onChange={(e) => setCurriculumItem({ ...curriculumItem, order: parseInt(e.target.value) || 0 })}
-                                                min="0"
-                                            />
-                                        </Col>
-                                        <Col md={1} className="d-flex justify-content-end align-items-end">
-                                            <Button color="primary" onClick={addCurriculumItem}>
-                                                <i className="ri-add-line" />
-                                            </Button>
-                                        </Col>
-
-                                    </Row>
-                                    {formData.curriculum.map((item, index) => (
-                                        <div key={index} className="d-flex align-items-center mb-2 p-2 border rounded">
-                                            <Badge color="primary" className="me-2">{index + 1}</Badge>
-                                            <div className="flex-grow-1">
-                                                <strong>{item.title}</strong>: {item.description} (Order: {item.order})
-                                            </div>
-                                            <Button color="danger" size="sm" onClick={() => removeCurriculumItem(index)}>
-                                                <i className="ri-delete-bin-line" />
-                                            </Button>
-                                        </div>
-                                    ))}
-                                </Col>
-
-                                {/* Career Paths */}
-                                <Col md={12}>
-                                    <h6 className="mb-3 mt-3">Career Paths</h6>
-                                    <Row className="mb-2 align-items-end">
-                                        <Col md={4}>
-                                            <Input
-                                                placeholder="Title"
-                                                value={careerPathItem.title}
-                                                onChange={(e) => setCareerPathItem({ ...careerPathItem, title: e.target.value })}
-                                            />
-                                        </Col>
-                                        <Col md={5}>
-                                            <Input
-                                                placeholder="Description"
-                                                value={careerPathItem.description}
-                                                onChange={(e) => setCareerPathItem({ ...careerPathItem, description: e.target.value })}
-                                            />
-                                        </Col>
-                                        <Col md={2}>
-                                            <Input
-                                                type="number"
-                                                placeholder="Order"
-                                                value={careerPathItem.order}
-                                                onChange={(e) => setCareerPathItem({ ...careerPathItem, order: parseInt(e.target.value) || 0 })}
-                                                min="0"
-                                            />
-                                        </Col>
-                                        <Col md={1} className="d-flex justify-content-end align-items-end">
-                                            <Button color="primary" onClick={addCareerPathItem}>
-                                                <i className="ri-add-line" />
-                                            </Button>
-                                        </Col>
-                                    </Row>
-                                    {formData.careerPaths.map((item, index) => (
-                                        <div key={index} className="d-flex align-items-center mb-2 p-2 border rounded">
-                                            <Badge color="primary" className="me-2">{index + 1}</Badge>
-                                            <div className="flex-grow-1">
-                                                <strong>{item.title}</strong>: {item.description} (Order: {item.order})
-                                            </div>
-                                            <Button color="danger" size="sm" onClick={() => removeCareerPathItem(index)}>
-                                                <i className="ri-delete-bin-line" />
-                                            </Button>
-                                        </div>
-                                    ))}
-                                </Col>
-                            </TabPane>
-
-                            {/* STEP 4: Additional Info */}
-                            <TabPane tabId={4}>
-                                <Row>
-                                    <Col md={6}>
-                                        <FormGroup>
-                                            <Label>Icon URL</Label>
-                                            <Input name="iconUrl" value={formData.iconUrl} onChange={handleInputChange} />
                                         </FormGroup>
                                     </Col>
                                     <Col md={6}>
-                                        <FormGroup>
-                                            <Label>Cover Image URL</Label>
-                                            <Input name="coverImage" value={formData.coverImage} onChange={handleInputChange} />
-                                        </FormGroup>
-                                    </Col>
-                                    <Col md={6}>
-                                        <FormGroup>
-                                            <Label>External Link</Label>
-                                            <Input
-                                                name="externalLink"
-                                                value={formData.externalLink}
-                                                onChange={handleInputChange}
-                                                placeholder="External program page URL"
-                                            />
-                                        </FormGroup>
-                                    </Col>
-                                    <Col md={3}>
                                         <FormGroup>
                                             <Label>Order</Label>
                                             <Input
@@ -926,50 +906,729 @@ const Programs = () => {
                                                 value={formData.order}
                                                 onChange={handleInputChange}
                                                 min="0"
+                                                placeholder="Display order"
                                             />
                                         </FormGroup>
                                     </Col>
-                                    <Col md={3}>
-                                        <FormGroup check className="mt-4 pt-2">
+                                    <Col md={6}>
+                                        <FormGroup>
+                                            <Label>External Link</Label>
                                             <Input
-                                                type="checkbox"
-                                                name="isActive"
-                                                checked={formData.isActive}
+                                                type="url"
+                                                name="externalLink"
+                                                value={formData.externalLink}
                                                 onChange={handleInputChange}
-                                                id="isActive"
+                                                placeholder="https://example.com/program"
                                             />
-                                            <Label for="isActive" check>
-                                                Active Program
-                                            </Label>
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={12}>
+                                        <FormGroup>
+                                            <Label>Tagline</Label>
+                                            <Input
+                                                name="tagline"
+                                                value={formData.tagline}
+                                                onChange={handleInputChange}
+                                                placeholder="Enter program tagline"
+                                            />
                                         </FormGroup>
                                     </Col>
                                 </Row>
                             </TabPane>
 
+                            {/* Tab 2: Program Details */}
+                            <TabPane tabId="2">
+                                <Row>
+                                    <Col md={12}>
+                                        <h6>About Program Section</h6>
+                                    </Col>
+                                    <Col md={4}>
+                                        <FormGroup>
+                                            <Label>Section Title</Label>
+                                            <Input
+                                                name="about_program_sec_title"
+                                                value={formData.about_program_sec_title}
+                                                onChange={handleInputChange}
+                                                placeholder="About Program"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={4}>
+                                        <FormGroup>
+                                            <Label>Section Icon</Label>
+                                            <Input
+                                                name="about_program_sec_icon"
+                                                value={formData.about_program_sec_icon}
+                                                onChange={handleInputChange}
+                                                placeholder="ri-information-line"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={12}>
+                                        <FormGroup>
+                                            <Label>Program Information</Label>
+                                            <Input
+                                                type="textarea"
+                                                name="about_program_sec_info"
+                                                value={formData.about_program_sec_info}
+                                                onChange={handleInputChange}
+                                                placeholder="Enter detailed program information"
+                                                rows="4"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+
+                                    <Col md={12} className="mt-4">
+                                        <h6>Duration Section</h6>
+                                    </Col>
+                                    <Col md={4}>
+                                        <FormGroup>
+                                            <Label>Duration (Years)</Label>
+                                            <Input
+                                                type="number"
+                                                name="duration"
+                                                value={formData.duration}
+                                                onChange={handleInputChange}
+                                                min="1"
+                                                max="10"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={4}>
+                                        <FormGroup>
+                                            <Label>Section Title</Label>
+                                            <Input
+                                                name="duration_sec_title"
+                                                value={formData.duration_sec_title}
+                                                onChange={handleInputChange}
+                                                placeholder="Program Duration"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={4}>
+                                        <FormGroup>
+                                            <Label>Section Icon</Label>
+                                            <Input
+                                                name="duration_sec_icon"
+                                                value={formData.duration_sec_icon}
+                                                onChange={handleInputChange}
+                                                placeholder="ri-time-line"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+
+                                    <Col md={12} className="mt-4">
+                                        <h6>Semester Fee Section</h6>
+                                    </Col>
+                                    <Col md={4}>
+                                        <FormGroup>
+                                            <Label>Semester Fee ($)</Label>
+                                            <Input
+                                                type="number"
+                                                name="sem_fee"
+                                                value={formData.sem_fee}
+                                                onChange={handleInputChange}
+                                                min="0"
+                                                step="0.01"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={4}>
+                                        <FormGroup>
+                                            <Label>Section Title</Label>
+                                            <Input
+                                                name="sem_fee_sec_title"
+                                                value={formData.sem_fee_sec_title}
+                                                onChange={handleInputChange}
+                                                placeholder="Tuition Fees"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={4}>
+                                        <FormGroup>
+                                            <Label>Section Icon</Label>
+                                            <Input
+                                                name="sem_fee_sec_icon"
+                                                value={formData.sem_fee_sec_icon}
+                                                onChange={handleInputChange}
+                                                placeholder="ri-money-dollar-circle-line"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                </Row>
+                            </TabPane>
+
+                            {/* Tab 3: Curriculum */}
+                            <TabPane tabId="3">
+                                <Row>
+                                    <Col md={12}>
+                                        <h6>Curriculum Section Settings</h6>
+                                    </Col>
+                                    <Col md={4}>
+                                        <FormGroup>
+                                            <Label>Section Title</Label>
+                                            <Input
+                                                name="curriculum_sec_title"
+                                                value={formData.curriculum_sec_title}
+                                                onChange={handleInputChange}
+                                                placeholder="Curriculum"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={4}>
+                                        <FormGroup>
+                                            <Label>Section Icon</Label>
+                                            <Input
+                                                name="curriculum_sec_icon"
+                                                value={formData.curriculum_sec_icon}
+                                                onChange={handleInputChange}
+                                                placeholder="ri-book-open-line"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={12}>
+                                        <FormGroup>
+                                            <Label>Section Description</Label>
+                                            <Input
+                                                type="textarea"
+                                                name="curriculum_sec_desc"
+                                                value={formData.curriculum_sec_desc}
+                                                onChange={handleInputChange}
+                                                placeholder="Enter curriculum section description"
+                                                rows="3"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+
+                                    <Col md={12} className="mt-4">
+                                        <h6>Curriculum Items</h6>
+                                        {formData.curriculum.map((item, index) => (
+                                            <Card key={index} className="mb-3">
+                                                <CardHeader className="d-flex justify-content-between align-items-center">
+                                                    <h6 className="mb-0">Curriculum Item #{index + 1}</h6>
+                                                    {formData.curriculum.length > 1 && (
+                                                        <Button
+                                                            color="danger"
+                                                            size="sm"
+                                                            onClick={() => removeArrayItem('curriculum', index)}
+                                                        >
+                                                            <i className="ri-delete-bin-line" />
+                                                        </Button>
+                                                    )}
+                                                </CardHeader>
+                                                <CardBody>
+                                                    <Row>
+                                                        <Col md={6}>
+                                                            <FormGroup>
+                                                                <Label>Title <span className="text-danger">*</span></Label>
+                                                                <Input
+                                                                    value={item.title}
+                                                                    onChange={(e) => handleArrayFieldChange('curriculum', index, 'title', e.target.value)}
+                                                                    placeholder="Enter curriculum title"
+                                                                    required
+                                                                />
+                                                            </FormGroup>
+                                                        </Col>
+                                                        <Col md={6}>
+                                                            <FormGroup>
+                                                                <Label>Icon Class</Label>
+                                                                <Input
+                                                                    value={item.icon}
+                                                                    onChange={(e) => handleArrayFieldChange('curriculum', index, 'icon', e.target.value)}
+                                                                    placeholder="ri-book-2-line"
+                                                                />
+                                                            </FormGroup>
+                                                        </Col>
+                                                        <Col md={6}>
+                                                            <FormGroup>
+                                                                <Label>Order</Label>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={item.order}
+                                                                    onChange={(e) => handleArrayFieldChange('curriculum', index, 'order', parseInt(e.target.value))}
+                                                                    min="0"
+                                                                />
+                                                            </FormGroup>
+                                                        </Col>
+                                                        <Col md={12}>
+                                                            <FormGroup>
+                                                                <Label>Description <span className="text-danger">*</span></Label>
+                                                                <Input
+                                                                    type="textarea"
+                                                                    value={item.description}
+                                                                    onChange={(e) => handleArrayFieldChange('curriculum', index, 'description', e.target.value)}
+                                                                    placeholder="Enter curriculum description"
+                                                                    rows="3"
+                                                                    required
+                                                                />
+                                                            </FormGroup>
+                                                        </Col>
+                                                    </Row>
+                                                </CardBody>
+                                            </Card>
+                                        ))}
+                                        <Button
+                                            color="light"
+                                            onClick={() => addArrayItem('curriculum', {
+                                                title: "",
+                                                description: "",
+                                                icon: "",
+                                                order: 0
+                                            })}
+                                        >
+                                            <i className="ri-add-line me-1" /> Add Curriculum Item
+                                        </Button>
+                                    </Col>
+                                </Row>
+                            </TabPane>
+
+                            {/* Tab 4: Admission Requirements */}
+                            <TabPane tabId="4">
+                                <Row>
+                                    <Col md={12}>
+                                        <h6>Admission Requirements Section Settings</h6>
+                                    </Col>
+                                    <Col md={4}>
+                                        <FormGroup>
+                                            <Label>Section Title</Label>
+                                            <Input
+                                                name="admissionRequirements_sec_title"
+                                                value={formData.admissionRequirements_sec_title}
+                                                onChange={handleInputChange}
+                                                placeholder="Admission Requirements"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={4}>
+                                        <FormGroup>
+                                            <Label>Section Icon</Label>
+                                            <Input
+                                                name="admissionRequirements_sec_icon"
+                                                value={formData.admissionRequirements_sec_icon}
+                                                onChange={handleInputChange}
+                                                placeholder="ri-clipboard-line"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={12}>
+                                        <FormGroup>
+                                            <Label>Section Description</Label>
+                                            <Input
+                                                type="textarea"
+                                                name="admissionRequirements_sec_desc"
+                                                value={formData.admissionRequirements_sec_desc}
+                                                onChange={handleInputChange}
+                                                placeholder="Enter admission requirements section description"
+                                                rows="3"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+
+                                    <Col md={12} className="mt-4">
+                                        <h6>Admission Requirements</h6>
+                                        {formData.admissionRequirements.map((requirement, index) => (
+                                            <div key={index} className="d-flex gap-2 mb-2">
+                                                <Input
+                                                    value={requirement}
+                                                    onChange={(e) => handleSimpleArrayChange('admissionRequirements', index, e.target.value)}
+                                                    placeholder="Enter admission requirement"
+                                                />
+                                                {formData.admissionRequirements.length > 1 && (
+                                                    <Button
+                                                        color="danger"
+                                                        size="sm"
+                                                        onClick={() => removeArrayItem('admissionRequirements', index)}
+                                                    >
+                                                        <i className="ri-delete-bin-line" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        ))}
+                                        <Button
+                                            color="light"
+                                            onClick={() => addArrayItem('admissionRequirements', "")}
+                                        >
+                                            <i className="ri-add-line me-1" /> Add Requirement
+                                        </Button>
+                                    </Col>
+                                </Row>
+                            </TabPane>
+
+                            {/* Tab 5: Career Paths */}
+                            <TabPane tabId="5">
+                                <Row>
+                                    <Col md={12}>
+                                        <h6>Career Paths Section Settings</h6>
+                                    </Col>
+                                    <Col md={4}>
+                                        <FormGroup>
+                                            <Label>Section Title</Label>
+                                            <Input
+                                                name="careerPaths_sec_title"
+                                                value={formData.careerPaths_sec_title}
+                                                onChange={handleInputChange}
+                                                placeholder="Career Paths"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={4}>
+                                        <FormGroup>
+                                            <Label>Section Icon</Label>
+                                            <Input
+                                                name="careerPaths_sec_icon"
+                                                value={formData.careerPaths_sec_icon}
+                                                onChange={handleInputChange}
+                                                placeholder="ri-briefcase-line"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md={12}>
+                                        <FormGroup>
+                                            <Label>Section Description</Label>
+                                            <Input
+                                                type="textarea"
+                                                name="careerPaths_sec_desc"
+                                                value={formData.careerPaths_sec_desc}
+                                                onChange={handleInputChange}
+                                                placeholder="Enter career paths section description"
+                                                rows="3"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+
+                                    <Col md={12} className="mt-4">
+                                        <h6>Career Path Items</h6>
+                                        {formData.careerPaths.map((item, index) => (
+                                            <Card key={index} className="mb-3">
+                                                <CardHeader className="d-flex justify-content-between align-items-center">
+                                                    <h6 className="mb-0">Career Path #{index + 1}</h6>
+                                                    {formData.careerPaths.length > 1 && (
+                                                        <Button
+                                                            color="danger"
+                                                            size="sm"
+                                                            onClick={() => removeArrayItem('careerPaths', index)}
+                                                        >
+                                                            <i className="ri-delete-bin-line" />
+                                                        </Button>
+                                                    )}
+                                                </CardHeader>
+                                                <CardBody>
+                                                    <Row>
+                                                        <Col md={6}>
+                                                            <FormGroup>
+                                                                <Label>Title <span className="text-danger">*</span></Label>
+                                                                <Input
+                                                                    value={item.title}
+                                                                    onChange={(e) => handleArrayFieldChange('careerPaths', index, 'title', e.target.value)}
+                                                                    placeholder="Enter career path title"
+                                                                    required
+                                                                />
+                                                            </FormGroup>
+                                                        </Col>
+                                                        <Col md={6}>
+                                                            <FormGroup>
+                                                                <Label>Icon Class</Label>
+                                                                <Input
+                                                                    value={item.icon}
+                                                                    onChange={(e) => handleArrayFieldChange('careerPaths', index, 'icon', e.target.value)}
+                                                                    placeholder="ri-briefcase-4-line"
+                                                                />
+                                                            </FormGroup>
+                                                        </Col>
+                                                        <Col md={6}>
+                                                            <FormGroup>
+                                                                <Label>Order</Label>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={item.order}
+                                                                    onChange={(e) => handleArrayFieldChange('careerPaths', index, 'order', parseInt(e.target.value))}
+                                                                    min="0"
+                                                                />
+                                                            </FormGroup>
+                                                        </Col>
+                                                        <Col md={12}>
+                                                            <FormGroup>
+                                                                <Label>Description <span className="text-danger">*</span></Label>
+                                                                <Input
+                                                                    type="textarea"
+                                                                    value={item.description}
+                                                                    onChange={(e) => handleArrayFieldChange('careerPaths', index, 'description', e.target.value)}
+                                                                    placeholder="Enter career path description"
+                                                                    rows="3"
+                                                                    required
+                                                                />
+                                                            </FormGroup>
+                                                        </Col>
+                                                    </Row>
+                                                </CardBody>
+                                            </Card>
+                                        ))}
+                                        <Button
+                                            color="light"
+                                            onClick={() => addArrayItem('careerPaths', {
+                                                title: "",
+                                                description: "",
+                                                icon: "",
+                                                order: 0
+                                            })}
+                                        >
+                                            <i className="ri-add-line me-1" /> Add Career Path
+                                        </Button>
+                                    </Col>
+                                </Row>
+                            </TabPane>
                         </TabContent>
-
-                        {/* Step Navigation Buttons */}
-                        <div className="d-flex justify-content-between mt-4">
-                            {activeStep > 1 && (
-                                <Button color="light" onClick={() => setActiveStep(activeStep - 1)}>
-                                    <i className="ri-arrow-left-line me-2"></i> Previous
-                                </Button>
-                            )}
-                            {activeStep < 4 ? (
-                                <Button color="success" onClick={() => setActiveStep(activeStep + 1)}>
-                                    Next <i className="ri-arrow-right-line ms-2"></i>
-                                </Button>
-                            ) : (
-                                <Button color="primary" type="submit" disabled={loading}>
-                                    {loading ? 'Saving...' : 'Save Changes'}
-                                </Button>
-                            )}
-                        </div>
-
                     </ModalBody>
+                    <ModalFooter>
+                        <div className="w-100 d-flex justify-content-between">
+                            <div>
+                                {activeTab !== '1' && (
+                                    <Button color="light" onClick={() => setActiveTab((parseInt(activeTab) - 1).toString())}>
+                                        <i className="ri-arrow-left-line me-1" /> Previous
+                                    </Button>
+                                )}
+                            </div>
+                            <div>
+                                {activeTab !== '5' ? (
+                                    <Button color="primary" onClick={() => setActiveTab((parseInt(activeTab) + 1).toString())}>
+                                        Next <i className="ri-arrow-right-line ms-1" />
+                                    </Button>
+                                ) : (
+                                    <Button color="success" type="submit">
+                                        {isEdit ? 'Update Program' : 'Add Program'}
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    </ModalFooter>
                 </Form>
             </Modal>
 
+            {/* View Modal */}
+            <Modal isOpen={viewModal} toggle={() => setViewModal(false)} size="xl" scrollable>
+                <ModalHeader toggle={() => setViewModal(false)}>
+                    Program Details - {selectedProgram?.name}
+                </ModalHeader>
+                <ModalBody style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                    {selectedProgram && (
+                        <>
+                            {/* Step Navigation for View */}
+                            <Nav pills className="nav-pills-custom mb-4">
+                                <NavItem>
+                                    <NavLink
+                                        className={activeTab === '1' ? 'active' : ''}
+                                        onClick={() => setActiveTab('1')}
+                                    >
+                                        <i className="ri-book-line me-1" /> Basic Info
+                                    </NavLink>
+                                </NavItem>
+                                <NavItem>
+                                    <NavLink
+                                        className={activeTab === '2' ? 'active' : ''}
+                                        onClick={() => setActiveTab('2')}
+                                    >
+                                        <i className="ri-information-line me-1" /> Program Details
+                                    </NavLink>
+                                </NavItem>
+                                <NavItem>
+                                    <NavLink
+                                        className={activeTab === '3' ? 'active' : ''}
+                                        onClick={() => setActiveTab('3')}
+                                    >
+                                        <i className="ri-file-list-line me-1" /> Curriculum
+                                    </NavLink>
+                                </NavItem>
+                                <NavItem>
+                                    <NavLink
+                                        className={activeTab === '4' ? 'active' : ''}
+                                        onClick={() => setActiveTab('4')}
+                                    >
+                                        <i className="ri-clipboard-line me-1" /> Admission
+                                    </NavLink>
+                                </NavItem>
+                                <NavItem>
+                                    <NavLink
+                                        className={activeTab === '5' ? 'active' : ''}
+                                        onClick={() => setActiveTab('5')}
+                                    >
+                                        <i className="ri-briefcase-line me-1" /> Career Paths
+                                    </NavLink>
+                                </NavItem>
+                            </Nav>
+
+                            <TabContent activeTab={activeTab}>
+                                {/* Tab 1: Basic Information */}
+                                <TabPane tabId="1">
+                                    <Row>
+                                        <Col md={4} className="text-center mb-3">
+                                            {selectedProgram.icon ? (
+                                                <div className="avatar-title bg-light text-primary rounded-circle display-4 mb-3">
+                                                    <i className={selectedProgram.icon} />
+                                                </div>
+                                            ) : (
+                                                <div className="avatar-title bg-light text-secondary rounded-circle display-4 mb-3">
+                                                    <i className="ri-book-line" />
+                                                </div>
+                                            )}
+                                            <h6 className="mt-2">Program Icon</h6>
+                                            {selectedProgram.icon && (
+                                                <p className="text-muted small">{selectedProgram.icon}</p>
+                                            )}
+                                        </Col>
+                                        <Col md={8}>
+                                            <h4>{selectedProgram.name}</h4>
+                                            {selectedProgram.shortName && (
+                                                <h5 className="text-primary">({selectedProgram.shortName})</h5>
+                                            )}
+                                            {selectedProgram.tagline && (
+                                                <p className="text-muted">{selectedProgram.tagline}</p>
+                                            )}
+                                            <div className="mt-3">
+                                                <p><strong>School:</strong> {selectedProgram.school?.name || 'N/A'}</p>
+                                                <p><strong>Provider:</strong> {selectedProgram.provider}</p>
+                                                <p><strong>Order:</strong> {selectedProgram.order}</p>
+                                                {selectedProgram.externalLink && (
+                                                    <p>
+                                                        <strong>External Link:</strong>{' '}
+                                                        <a href={selectedProgram.externalLink} target="_blank" rel="noopener noreferrer">
+                                                            {selectedProgram.externalLink}
+                                                        </a>
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </Col>
+                                        <Col md={12} className="mt-3">
+                                            {selectedProgram.coverImage && (
+                                                <div className="mb-3">
+                                                    <img
+                                                        src={selectedProgram.coverImage}
+                                                        alt="Cover"
+                                                        className="img-fluid rounded"
+                                                        style={{ maxHeight: '200px', objectFit: 'cover', width: '100%' }}
+                                                    />
+                                                    <h6 className="text-center mt-2">Cover Image</h6>
+                                                </div>
+                                            )}
+                                        </Col>
+                                    </Row>
+                                </TabPane>
+
+                                {/* Tab 2: Program Details */}
+                                <TabPane tabId="2">
+                                    <Row>
+                                        <Col md={6}>
+                                            <h6>About Program</h6>
+                                            <p><strong>Section Title:</strong> {selectedProgram.about_program_sec_title || 'N/A'}</p>
+                                            <p><strong>Section Icon:</strong> {selectedProgram.about_program_sec_icon || 'N/A'}</p>
+                                            <p><strong>Information:</strong> {selectedProgram.about_program_sec_info || 'N/A'}</p>
+                                        </Col>
+                                        <Col md={6}>
+                                            <h6>Duration & Fees</h6>
+                                            <p><strong>Duration:</strong> {selectedProgram.duration} years</p>
+                                            <p><strong>Duration Section Title:</strong> {selectedProgram.duration_sec_title || 'N/A'}</p>
+                                            <p><strong>Duration Section Icon:</strong> {selectedProgram.duration_sec_icon || 'N/A'}</p>
+                                            <p><strong>Semester Fee:</strong> ${selectedProgram.sem_fee || 'N/A'}</p>
+                                            <p><strong>Fee Section Title:</strong> {selectedProgram.sem_fee_sec_title || 'N/A'}</p>
+                                            <p><strong>Fee Section Icon:</strong> {selectedProgram.sem_fee_sec_icon || 'N/A'}</p>
+                                        </Col>
+                                    </Row>
+                                </TabPane>
+
+                                {/* Tab 3: Curriculum */}
+                                <TabPane tabId="3">
+                                    <Row>
+                                        <Col md={12}>
+                                            <h6>Curriculum Section</h6>
+                                            <p><strong>Title:</strong> {selectedProgram.curriculum_sec_title || 'N/A'}</p>
+                                            <p><strong>Icon:</strong> {selectedProgram.curriculum_sec_icon || 'N/A'}</p>
+                                            <p><strong>Description:</strong> {selectedProgram.curriculum_sec_desc || 'N/A'}</p>
+                                        </Col>
+                                        <Col md={12} className="mt-3">
+                                            <h6>Curriculum Items</h6>
+                                            {selectedProgram.curriculum?.length > 0 ? (
+                                                selectedProgram.curriculum.map((item, index) => (
+                                                    <Card key={index} className="mb-3">
+                                                        <CardBody>
+                                                            <h6>{item.title}</h6>
+                                                            {item.icon && (
+                                                                <p><i className={item.icon} /> {item.icon}</p>
+                                                            )}
+                                                            <p className="mb-2">{item.description}</p>
+                                                            <small className="text-muted">Order: {item.order}</small>
+                                                        </CardBody>
+                                                    </Card>
+                                                ))
+                                            ) : (
+                                                <p>No curriculum items recorded.</p>
+                                            )}
+                                        </Col>
+                                    </Row>
+                                </TabPane>
+
+                                {/* Tab 4: Admission Requirements */}
+                                <TabPane tabId="4">
+                                    <Row>
+                                        <Col md={12}>
+                                            <h6>Admission Requirements Section</h6>
+                                            <p><strong>Title:</strong> {selectedProgram.admissionRequirements_sec_title || 'N/A'}</p>
+                                            <p><strong>Icon:</strong> {selectedProgram.admissionRequirements_sec_icon || 'N/A'}</p>
+                                            <p><strong>Description:</strong> {selectedProgram.admissionRequirements_sec_desc || 'N/A'}</p>
+                                        </Col>
+                                        <Col md={12} className="mt-3">
+                                            <h6>Admission Requirements</h6>
+                                            {selectedProgram.admissionRequirements?.length > 0 ? (
+                                                <ul>
+                                                    {selectedProgram.admissionRequirements.map((requirement, index) => (
+                                                        <li key={index}>{requirement}</li>
+                                                    ))}
+                                                </ul>
+                                            ) : (
+                                                <p>No admission requirements recorded.</p>
+                                            )}
+                                        </Col>
+                                    </Row>
+                                </TabPane>
+
+                                {/* Tab 5: Career Paths */}
+                                <TabPane tabId="5">
+                                    <Row>
+                                        <Col md={12}>
+                                            <h6>Career Paths Section</h6>
+                                            <p><strong>Title:</strong> {selectedProgram.careerPaths_sec_title || 'N/A'}</p>
+                                            <p><strong>Icon:</strong> {selectedProgram.careerPaths_sec_icon || 'N/A'}</p>
+                                            <p><strong>Description:</strong> {selectedProgram.careerPaths_sec_desc || 'N/A'}</p>
+                                        </Col>
+                                        <Col md={12} className="mt-3">
+                                            <h6>Career Path Items</h6>
+                                            {selectedProgram.careerPaths?.length > 0 ? (
+                                                selectedProgram.careerPaths.map((item, index) => (
+                                                    <Card key={index} className="mb-3">
+                                                        <CardBody>
+                                                            <h6>{item.title}</h6>
+                                                            {item.icon && (
+                                                                <p><i className={item.icon} /> {item.icon}</p>
+                                                            )}
+                                                            <p className="mb-2">{item.description}</p>
+                                                            <small className="text-muted">Order: {item.order}</small>
+                                                        </CardBody>
+                                                    </Card>
+                                                ))
+                                            ) : (
+                                                <p>No career paths recorded.</p>
+                                            )}
+                                        </Col>
+                                    </Row>
+                                </TabPane>
+                            </TabContent>
+                        </>
+                    )}
+                </ModalBody>
+                <ModalFooter>
+                    <Button color="light" onClick={() => setViewModal(false)}>
+                        Close
+                    </Button>
+                </ModalFooter>
+            </Modal>
 
             {/* Delete Confirmation Modal */}
             <DeleteModal
@@ -977,289 +1636,10 @@ const Programs = () => {
                 onDeleteClick={deleteProgram}
                 onCloseClick={() => setDeleteModal(false)}
             />
-            {/* View Details Modal */}
-            <Modal isOpen={viewModal} toggle={() => setViewModal(false)} size="xl" style={{ maxWidth: '1200px', width: '90%' }}>
-                <ModalHeader toggle={() => setViewModal(false)}>
-                    Program Details: {selectedProgram?.name}
-                </ModalHeader>
-                <ModalBody style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                    {selectedProgram && (
-                        <div>
-                            {/* Wizard Navigation */}
-                            <div className="step-arrow-nav mb-4">
-                                <Nav tabs className="nav-pills custom-nav nav-justified" role="tablist">
-                                    <NavItem>
-                                        <NavLink
-                                            className={activeViewTab === '1' ? 'active' : ''}
-                                            onClick={() => setActiveViewTab('1')}
-                                        >
-                                            Basic Info
-                                        </NavLink>
-                                    </NavItem>
-                                    <NavItem>
-                                        <NavLink
-                                            className={activeViewTab === '2' ? 'active' : ''}
-                                            onClick={() => setActiveViewTab('2')}
-                                        >
-                                            Tuition & Dates
-                                        </NavLink>
-                                    </NavItem>
-                                    <NavItem>
-                                        <NavLink
-                                            className={activeViewTab === '3' ? 'active' : ''}
-                                            onClick={() => setActiveViewTab('3')}
-                                        >
-                                            Curriculum
-                                        </NavLink>
-                                    </NavItem>
-                                    <NavItem>
-                                        <NavLink
-                                            className={activeViewTab === '4' ? 'active' : ''}
-                                            onClick={() => setActiveViewTab('4')}
-                                        >
-                                            Career Paths
-                                        </NavLink>
-                                    </NavItem>
-                                    <NavItem>
-                                        <NavLink
-                                            className={activeViewTab === '5' ? 'active' : ''}
-                                            onClick={() => setActiveViewTab('5')}
-                                        >
-                                            Additional Info
-                                        </NavLink>
-                                    </NavItem>
-                                </Nav>
-                            </div>
 
-                            {/* Tab Content */}
-                            <TabContent activeTab={activeViewTab}>
-                                {/* Basic Information Tab */}
-                                <TabPane tabId="1">
-                                    <Row>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>Name</strong></Label>
-                                                <p>{selectedProgram.name}</p>
-                                            </FormGroup>
-                                        </Col>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>Short Name</strong></Label>
-                                                <p>{selectedProgram.shortName || '-'}</p>
-                                            </FormGroup>
-                                        </Col>
-                                        <Col md={12}>
-                                            <FormGroup>
-                                                <Label><strong>Description</strong></Label>
-                                                <p>{selectedProgram.description}</p>
-                                            </FormGroup>
-                                        </Col>
-                                        <Col md={12}>
-                                            <FormGroup>
-                                                <Label><strong>Short Description</strong></Label>
-                                                <p>{selectedProgram.shortDescription || '-'}</p>
-                                            </FormGroup>
-                                        </Col>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>Department</strong></Label>
-                                                <p>{selectedProgram.department?.name || '-'}</p>
-                                            </FormGroup>
-                                        </Col>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>Duration</strong></Label>
-                                                <p>{selectedProgram.duration || '-'}</p>
-                                            </FormGroup>
-                                        </Col>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>Credits</strong></Label>
-                                                <p>{selectedProgram.credits || 0}</p>
-                                            </FormGroup>
-                                        </Col>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>Status</strong></Label>
-                                                <p>
-                                                    <Badge color={selectedProgram.isActive ? 'success' : 'danger'}>
-                                                        {selectedProgram.isActive ? 'Active' : 'Inactive'}
-                                                    </Badge>
-                                                </p>
-                                            </FormGroup>
-                                        </Col>
-                                    </Row>
-                                </TabPane>
-
-                                {/* Tuition & Dates Tab */}
-                                <TabPane tabId="2">
-                                    <Row>
-                                        <Col md={12}>
-                                            <h6 className="mb-3">Tuition Information</h6>
-                                        </Col>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>Domestic Tuition</strong></Label>
-                                                <p>{selectedProgram.tuition?.domestic ? `${selectedProgram.tuition.domestic} ${selectedProgram.tuition.currency || 'USD'}` : '-'}</p>
-                                            </FormGroup>
-                                        </Col>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>International Tuition</strong></Label>
-                                                <p>{selectedProgram.tuition?.international ? `${selectedProgram.tuition.international} ${selectedProgram.tuition.currency || 'USD'}` : '-'}</p>
-                                            </FormGroup>
-                                        </Col>
-
-                                        <Col md={12}>
-                                            <h6 className="mb-3 mt-4">Intake Information</h6>
-                                        </Col>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>Intake Periods</strong></Label>
-                                                <p>
-                                                    {selectedProgram.intakePeriods && selectedProgram.intakePeriods.length > 0
-                                                        ? selectedProgram.intakePeriods.join(', ')
-                                                        : '-'
-                                                    }
-                                                </p>
-                                            </FormGroup>
-                                        </Col>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>Application Deadline</strong></Label>
-                                                <p>
-                                                    {selectedProgram.applicationDeadline
-                                                        ? new Date(selectedProgram.applicationDeadline).toLocaleDateString()
-                                                        : '-'
-                                                    }
-                                                </p>
-                                            </FormGroup>
-                                        </Col>
-                                    </Row>
-                                </TabPane>
-
-                                {/* Curriculum Tab */}
-                                <TabPane tabId="3">
-                                    <Row>
-                                        <Col md={12}>
-                                            {selectedProgram.curriculum && selectedProgram.curriculum.length > 0 ? (
-                                                <>
-                                                    <h6 className="mb-3">Curriculum</h6>
-                                                    <div className="curriculum-container" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                                                        {selectedProgram.curriculum.map((item, index) => (
-                                                            <div key={index} className="mb-2 p-2 border rounded">
-                                                                <strong>{item.title}</strong>
-                                                                <p className="mb-1">{item.description}</p>
-                                                                <small className="text-muted">Order: {item.order || 0}</small>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <div className="text-center py-4">
-                                                    <p>No curriculum information available</p>
-                                                </div>
-                                            )}
-                                        </Col>
-                                    </Row>
-                                </TabPane>
-
-                                {/* Career Paths Tab */}
-                                <TabPane tabId="4">
-                                    <Row>
-                                        <Col md={12}>
-                                            {selectedProgram.careerPaths && selectedProgram.careerPaths.length > 0 ? (
-                                                <>
-                                                    <h6 className="mb-3">Career Paths</h6>
-                                                    <div className="career-paths-container" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                                                        {selectedProgram.careerPaths.map((item, index) => (
-                                                            <div key={index} className="mb-2 p-2 border rounded">
-                                                                <strong>{item.title}</strong>
-                                                                <p className="mb-1">{item.description}</p>
-                                                                <small className="text-muted">Order: {item.order || 0}</small>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <div className="text-center py-4">
-                                                    <p>No career paths information available</p>
-                                                </div>
-                                            )}
-                                        </Col>
-                                    </Row>
-                                </TabPane>
-
-                                {/* Additional Information Tab */}
-                                <TabPane tabId="5">
-                                    <Row>
-                                        <Col md={12}>
-                                            <h6 className="mb-3">Additional Information</h6>
-                                        </Col>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>Provider</strong></Label>
-                                                <p>{selectedProgram.provider || 'SIMAD University'}</p>
-                                            </FormGroup>
-                                        </Col>
-                                        <Col md={6}>
-                                            <FormGroup>
-                                                <Label><strong>Order</strong></Label>
-                                                <p>{selectedProgram.order || 0}</p>
-                                            </FormGroup>
-                                        </Col>
-                                        {selectedProgram.iconUrl && (
-                                            <Col md={6}>
-                                                <FormGroup>
-                                                    <Label><strong>Icon URL</strong></Label>
-                                                    <p>
-                                                        <a href={selectedProgram.iconUrl} target="_blank" rel="noopener noreferrer">
-                                                            View Icon
-                                                        </a>
-                                                    </p>
-                                                </FormGroup>
-                                            </Col>
-                                        )}
-                                        {selectedProgram.coverImage && (
-                                            <Col md={6}>
-                                                <FormGroup>
-                                                    <Label><strong>Cover Image URL</strong></Label>
-                                                    <p>
-                                                        <a href={selectedProgram.coverImage} target="_blank" rel="noopener noreferrer">
-                                                            View Cover Image
-                                                        </a>
-                                                    </p>
-                                                </FormGroup>
-                                            </Col>
-                                        )}
-                                        {selectedProgram.externalLink && (
-                                            <Col md={6}>
-                                                <FormGroup>
-                                                    <Label><strong>External Link</strong></Label>
-                                                    <p>
-                                                        <a href={selectedProgram.externalLink} target="_blank" rel="noopener noreferrer">
-                                                            Visit External Page
-                                                        </a>
-                                                    </p>
-                                                </FormGroup>
-                                            </Col>
-                                        )}
-                                    </Row>
-                                </TabPane>
-                            </TabContent>
-                        </div>
-                    )}
-                </ModalBody>
-                <ModalFooter>
-
-                    <Button color="light" onClick={() => setViewModal(false)}>
-                        Close
-                    </Button>
-                </ModalFooter>
-            </Modal>
             <ToastContainer />
         </div>
     );
 };
 
-export default Programs;
+export default ProgramsPage;

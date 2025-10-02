@@ -3,7 +3,6 @@ import { createSlice } from "@reduxjs/toolkit";
 import {
     getProgramsCategories,
     getSchools,
-    getDepartments,
     getPrograms,
     getStaffs,
     getPartnersInfo,
@@ -13,9 +12,8 @@ import {
 export const initialState = {
     pr_categoriesData: [],
     schoolsData: [],
-    departmentsData: [],
     programsData: [],
-    staffsData: [],
+    staffData: [],
     partner_categoriesData: [],
     partnersData: [],
 
@@ -42,13 +40,6 @@ const SetupSlice = createSlice({
             state.error = action.payload?.error || null;
         });
 
-        // === Departments ===
-        builder.addCase(getDepartments.fulfilled, (state, action) => {
-            state.departmentsData = action.payload;
-        });
-        builder.addCase(getDepartments.rejected, (state, action) => {
-            state.error = action.payload?.error || null;
-        });
 
         // === Programs ===
         builder.addCase(getPrograms.fulfilled, (state, action) => {
@@ -60,7 +51,7 @@ const SetupSlice = createSlice({
 
         // === Staffs ===
         builder.addCase(getStaffs.fulfilled, (state, action) => {
-            state.staffsData = action.payload;
+            state.staffData = action.payload;
         });
         builder.addCase(getStaffs.rejected, (state, action) => {
             state.error = action.payload?.error || null;
@@ -80,8 +71,6 @@ const SetupSlice = createSlice({
         builder.addCase(getPartnerCategories.rejected, (state, action) => {
             state.error = action.payload?.error || null;
         });
-
-
 
     }
 });
