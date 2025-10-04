@@ -188,6 +188,8 @@ const Navdata = () => {
       subItems: [
         { id: "events", label: "Events", link: "/content/events", parentId: "content-management" },
         { id: "news", label: "News", link: "/content/news", parentId: "content-management" },
+        { id: "facilities", label: "Facilities", link: "/content/facilities", parentId: "content-management" },
+
         { id: "media-gallery", label: "Media Gallery", link: "/content/media-gallery", parentId: "content-management" },
       ],
     },

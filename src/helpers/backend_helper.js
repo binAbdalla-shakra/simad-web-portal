@@ -151,5 +151,20 @@ export const EventsAPI = {
 };
 
 
+
+export const FacilitiesAPI = {
+    list: () => api.get(url.FACILITIES),
+    createOrupdate: (payload) => {
+        // For FormData, use post with multipart/form-data headers
+        return axios.post(url.FACILITIES, payload, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
+    delete: (id) => api.delete(`${url.FACILITIES}/${id}`)
+};
+
+
 // // ================================== END OF SETUPS URL ===================================================
 

@@ -24,6 +24,9 @@ import PartnerCategories from '../pages/Setup/PartnerCategories';
 import Events from '../pages/ContentManagement/Events';
 import News from '../pages/ContentManagement/News';
 
+import Facilities from '../pages/ContentManagement/Facilities';
+
+
 
 
 
@@ -69,6 +72,9 @@ const authProtectedRoutes = [
 
   { path: "/content/events", component: <Events /> },
   { path: "/content/news", component: <News /> },
+  { path: "/content/facilities", component: <Facilities /> },
+
+
 
   // this route should be at the end of all other routes
   // eslint-disable-next-line react/display-name

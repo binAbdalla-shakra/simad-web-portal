@@ -2,14 +2,15 @@
 import { createSlice } from "@reduxjs/toolkit";
 import {
     getEvents,
-    getNews
+    getNews,
+    getFacilities
 } from "./thunk";
 
 export const initialState = {
 
     eventsData: [],
     newsData: [],
-
+    facilitiesData: [],
     error: {},
 };
 const ContentManagementSlice = createSlice({
@@ -30,6 +31,14 @@ const ContentManagementSlice = createSlice({
             state.newsData = action.payload;
         });
         builder.addCase(getNews.rejected, (state, action) => {
+            state.error = action.payload?.error || null;
+        });
+
+
+        builder.addCase(getFacilities.fulfilled, (state, action) => {
+            state.facilitiesData = action.payload;
+        });
+        builder.addCase(getFacilities.rejected, (state, action) => {
             state.error = action.payload?.error || null;
         });
 

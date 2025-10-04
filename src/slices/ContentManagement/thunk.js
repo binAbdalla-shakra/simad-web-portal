@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { EventsAPI, NewsAPI } from "../../helpers/backend_helper";
+import { EventsAPI, FacilitiesAPI, NewsAPI } from "../../helpers/backend_helper";
 import { makeCRUDThunks } from "../../helpers/thunk_factory";
 import { toast } from "react-toastify";
 
@@ -22,13 +22,6 @@ export const CreateOrUpdateNews = createAsyncThunk(
             // Handle axios error response
             const errorMessage = error.response?.data?.message || error.message || 'Failed to take an action';
             toast.error(errorMessage);
-
-            // Return error structure to handle in the reducer
-            return {
-                success: false,
-                message: errorMessage,
-                errors: error.response?.data?.errors || []
-            };
         }
     }
 );
@@ -53,13 +46,34 @@ export const CreateOrUpdateEvent = createAsyncThunk(
             // Handle axios error response
             const errorMessage = error.response?.data?.message || error.message || 'Failed to take an action';
             toast.error(errorMessage);
-
-            // Return error structure to handle in the reducer
-            return {
-                success: false,
-                message: errorMessage,
-                errors: error.response?.data?.errors || []
-            };
         }
     }
 );
+
+
+
+
+export const {
+    list: getFacilities,
+    delete: deleteFacility,
+} = makeCRUDThunks("ContentManagement/facility", FacilitiesAPI);
+
+export const CreateOrUpdateFacility = createAsyncThunk(
+    "ContentManagement/facility",
+    async (data, { dispatch }) => {
+        try {
+            const res = await FacilitiesAPI.createOrupdate(data);
+            if (!res.success) throw res;
+            toast.success(res.message);
+            dispatch(getFacilities());
+            return res;
+        } catch (error) {
+            // Handle axios error response
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to take an action';
+            toast.error(errorMessage);
+        }
+    }
+);
+
+
+
