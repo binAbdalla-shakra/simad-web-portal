@@ -240,18 +240,18 @@ const Navdata = () => {
           parentId: "system-settings",
         },
         // Future expansion
-        {
-          id: "menus",
-          label: "Menus",
-          link: "/setting-menus",
-          parentId: "system-settings",
-        },
-        {
-          id: "permissions",
-          label: "Permissions",
-          link: "/setting-permissions",
-          parentId: "system-settings",
-        },
+        // {
+        //   id: "menus",
+        //   label: "Menus",
+        //   link: "/setting-menus",
+        //   parentId: "system-settings",
+        // },
+        // {
+        //   id: "permissions",
+        //   label: "Permissions",
+        //   link: "/setting-permissions",
+        //   parentId: "system-settings",
+        // },
       ],
     },
 
