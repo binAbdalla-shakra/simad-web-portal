@@ -9,7 +9,7 @@ module.exports = {
   },
   api: {
     // API_URL: "http://localhost:4000/api/v1/admin",
-    API_URL: "https://simad-portal-api.vercel.app/api/v1",
+    API_URL: "https://simad-portal-api.vercel.app/api/v1/admin",
 
   }
 };
