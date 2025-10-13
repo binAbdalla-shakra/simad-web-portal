@@ -296,7 +296,7 @@ const PartnersPage = () => {
     return (
         <div className="page-content">
             <Container fluid>
-                <BreadCrumb title="Partners" pageTitle="Partners" />
+                <BreadCrumb title="Partners" pageTitle="Organizations" />
 
                 {/* Filter Controls */}
                 <Card className="mb-3">

@@ -342,7 +342,7 @@ const NewsPage = () => {
                                     />
                                 </FormGroup>
                             </Col>
-                            <Col md={4}>
+                            <Col md={4} style={{ display: "none" }}>
                                 <FormGroup>
                                     <Label>Date</Label>
                                     <Input

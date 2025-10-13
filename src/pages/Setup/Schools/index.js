@@ -752,52 +752,58 @@ const SchoolsPage = () => {
                 <ModalHeader toggle={handleModalClose}>
                     {isEdit ? 'Edit School' : 'Add New School'}
                 </ModalHeader>
-                <Form onSubmit={isEdit ? updateSchool : createSchool}>
+                <Form noValidate onSubmit={isEdit ? updateSchool : createSchool}>
                     <ModalBody style={{ maxHeight: '70vh', overflowY: 'auto' }}>
                         {/* Step Navigation */}
-                        <Nav pills className="nav-pills-custom mb-4">
-                            <NavItem>
-                                <NavLink
-                                    className={activeTab === '1' ? 'active' : ''}
-                                    onClick={() => setActiveTab('1')}
-                                >
-                                    <i className="ri-building-line me-1" /> Basic Info
-                                </NavLink>
-                            </NavItem>
-                            <NavItem>
-                                <NavLink
-                                    className={activeTab === '2' ? 'active' : ''}
-                                    onClick={() => setActiveTab('2')}
-                                >
-                                    <i className="ri-contacts-line me-1" /> Contact & Facts
-                                </NavLink>
-                            </NavItem>
-                            <NavItem>
-                                <NavLink
-                                    className={activeTab === '3' ? 'active' : ''}
-                                    onClick={() => setActiveTab('3')}
-                                >
-                                    <i className="ri-file-paper-line me-1" /> Mission & Vision
-                                </NavLink>
-                            </NavItem>
-                            <NavItem>
-                                <NavLink
-                                    className={activeTab === '4' ? 'active' : ''}
-                                    onClick={() => setActiveTab('4')}
-                                >
-                                    <i className="ri-chat-quote-line me-1" /> Testimonials
-                                </NavLink>
-                            </NavItem>
-                            <NavItem>
-                                <NavLink
-                                    className={activeTab === '5' ? 'active' : ''}
-                                    onClick={() => setActiveTab('5')}
-                                >
-                                    <i className="ri-settings-3-line me-1" /> Section Settings
-                                </NavLink>
-                            </NavItem>
-                        </Nav>
+                        <div className="step-arrow-nav mb-4">
 
+
+
+                            <Nav className="nav-pills custom-nav nav-justified" role="tablist">
+
+                                <NavItem>
+                                    <NavLink
+                                        className={activeTab === '1' ? 'active' : ''}
+                                        onClick={() => setActiveTab('1')}
+                                    >
+                                        <i className="ri-building-line me-1" /> Basic Info
+                                    </NavLink>
+                                </NavItem>
+                                <NavItem>
+                                    <NavLink
+                                        className={activeTab === '2' ? 'active' : ''}
+                                        onClick={() => setActiveTab('2')}
+                                    >
+                                        <i className="ri-contacts-line me-1" /> Contact & Facts
+                                    </NavLink>
+                                </NavItem>
+                                <NavItem>
+                                    <NavLink
+                                        className={activeTab === '3' ? 'active' : ''}
+                                        onClick={() => setActiveTab('3')}
+                                    >
+                                        <i className="ri-file-paper-line me-1" /> Mission & Vision
+                                    </NavLink>
+                                </NavItem>
+                                <NavItem>
+                                    <NavLink
+                                        className={activeTab === '4' ? 'active' : ''}
+                                        onClick={() => setActiveTab('4')}
+                                    >
+                                        <i className="ri-chat-quote-line me-1" /> Testimonials
+                                    </NavLink>
+                                </NavItem>
+                                <NavItem>
+                                    <NavLink
+                                        className={activeTab === '5' ? 'active' : ''}
+                                        onClick={() => setActiveTab('5')}
+                                    >
+                                        <i className="ri-settings-3-line me-1" /> Section Settings
+                                    </NavLink>
+                                </NavItem>
+
+                            </Nav>
+                        </div>
                         <TabContent activeTab={activeTab}>
                             {/* Tab 1: Basic Information */}
                             <TabPane tabId="1">
@@ -1377,49 +1383,53 @@ const SchoolsPage = () => {
                     {selectedSchool && (
                         <>
                             {/* Step Navigation for View */}
-                            <Nav pills className="nav-pills-custom mb-4">
-                                <NavItem>
-                                    <NavLink
-                                        className={activeTab === '1' ? 'active' : ''}
-                                        onClick={() => setActiveTab('1')}
-                                    >
-                                        <i className="ri-building-line me-1" /> Basic Info
-                                    </NavLink>
-                                </NavItem>
-                                <NavItem>
-                                    <NavLink
-                                        className={activeTab === '2' ? 'active' : ''}
-                                        onClick={() => setActiveTab('2')}
-                                    >
-                                        <i className="ri-contacts-line me-1" /> Contact & Facts
-                                    </NavLink>
-                                </NavItem>
-                                <NavItem>
-                                    <NavLink
-                                        className={activeTab === '3' ? 'active' : ''}
-                                        onClick={() => setActiveTab('3')}
-                                    >
-                                        <i className="ri-file-paper-line me-1" /> Mission & Vision
-                                    </NavLink>
-                                </NavItem>
-                                <NavItem>
-                                    <NavLink
-                                        className={activeTab === '4' ? 'active' : ''}
-                                        onClick={() => setActiveTab('4')}
-                                    >
-                                        <i className="ri-chat-quote-line me-1" /> Testimonials
-                                    </NavLink>
-                                </NavItem>
-                                <NavItem>
-                                    <NavLink
-                                        className={activeTab === '5' ? 'active' : ''}
-                                        onClick={() => setActiveTab('5')}
-                                    >
-                                        <i className="ri-settings-3-line me-1" /> Section Settings
-                                    </NavLink>
-                                </NavItem>
-                            </Nav>
+                            <div className="step-arrow-nav mb-4">
 
+
+
+                                <Nav className="nav-pills custom-nav nav-justified" role="tablist">
+                                    <NavItem>
+                                        <NavLink
+                                            className={activeTab === '1' ? 'active' : ''}
+                                            onClick={() => setActiveTab('1')}
+                                        >
+                                            <i className="ri-building-line me-1" /> Basic Info
+                                        </NavLink>
+                                    </NavItem>
+                                    <NavItem>
+                                        <NavLink
+                                            className={activeTab === '2' ? 'active' : ''}
+                                            onClick={() => setActiveTab('2')}
+                                        >
+                                            <i className="ri-contacts-line me-1" /> Contact & Facts
+                                        </NavLink>
+                                    </NavItem>
+                                    <NavItem>
+                                        <NavLink
+                                            className={activeTab === '3' ? 'active' : ''}
+                                            onClick={() => setActiveTab('3')}
+                                        >
+                                            <i className="ri-file-paper-line me-1" /> Mission & Vision
+                                        </NavLink>
+                                    </NavItem>
+                                    <NavItem>
+                                        <NavLink
+                                            className={activeTab === '4' ? 'active' : ''}
+                                            onClick={() => setActiveTab('4')}
+                                        >
+                                            <i className="ri-chat-quote-line me-1" /> Testimonials
+                                        </NavLink>
+                                    </NavItem>
+                                    <NavItem>
+                                        <NavLink
+                                            className={activeTab === '5' ? 'active' : ''}
+                                            onClick={() => setActiveTab('5')}
+                                        >
+                                            <i className="ri-settings-3-line me-1" /> Section Settings
+                                        </NavLink>
+                                    </NavItem>
+                                </Nav>
+                            </div>
                             <TabContent activeTab={activeTab}>
                                 {/* Tab 1: Basic Information */}
                                 <TabPane tabId="1">

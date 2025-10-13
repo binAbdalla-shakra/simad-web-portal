@@ -102,7 +102,7 @@ const Navdata = () => {
     {
       id: "setups",
       label: "Academic Setups",
-      icon: "ri-apps-2-line",
+      icon: "ri-graduation-cap-line",
       link: "/#",
       stateVariables: menuStates["Setups"] || false,
       click: function (e) {
@@ -139,7 +139,7 @@ const Navdata = () => {
     {
       id: "organization",
       label: "Organizations",
-      icon: "ri-apps-2-line",
+      icon: "ri-building-line",
       link: "/#",
       stateVariables: menuStates["Organizations"] || false,
       click: function (e) {
@@ -190,7 +190,7 @@ const Navdata = () => {
         { id: "news", label: "News", link: "/content/news", parentId: "content-management" },
         { id: "facilities", label: "Facilities", link: "/content/facilities", parentId: "content-management" },
 
-        { id: "media-gallery", label: "Media Gallery", link: "/content/media-gallery", parentId: "content-management" },
+        // { id: "media-gallery", label: "Media Gallery", link: "/content/media-gallery", parentId: "content-management" },
       ],
     },
 

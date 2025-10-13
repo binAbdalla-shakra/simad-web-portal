@@ -190,7 +190,7 @@ const PartnerCategories = () => {
     return (
         <div className="page-content">
             <Container fluid>
-                <BreadCrumb title="Partner Categories" pageTitle="Partners" />
+                <BreadCrumb title="Partner Categories" pageTitle="Organizations" />
 
                 <Card className="mb-3">
                     <CardBody>

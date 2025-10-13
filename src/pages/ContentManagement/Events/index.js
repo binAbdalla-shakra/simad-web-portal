@@ -402,7 +402,7 @@ const EventsPage = () => {
                                     />
                                 </FormGroup>
                             </Col>
-                            <Col md={3}>
+                            <Col md={3} style={{ display: "none" }}>
                                 <FormGroup>
                                     <Label>Date</Label>
                                     <Input
@@ -413,7 +413,7 @@ const EventsPage = () => {
                                     />
                                 </FormGroup>
                             </Col>
-                            <Col md={3}>
+                            <Col md={3} style={{ display: "none" }}>
                                 <FormGroup>
                                     <Label>Location</Label>
                                     <Input
