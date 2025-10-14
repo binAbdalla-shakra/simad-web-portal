@@ -615,7 +615,7 @@ const InstitutionsPage = () => {
     return (
         <div className="page-content">
             <Container fluid>
-                <BreadCrumb title="Institutions" pageTitle="Academic Management" />
+                <BreadCrumb title="Institutions" pageTitle="Academics" />
 
                 {/* Alert */}
                 {/* {formAlert.show && (
