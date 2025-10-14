@@ -43,7 +43,29 @@ const Sidebar = ({ layoutType }) => {
               <img src={logoSm} alt="" height="26" />
             </span>
             <span className="logo-lg">
-              <img src={logoDark} alt="" height="17" />
+              <span
+                style={{
+                  // backgroundColor: 'white',
+                  // borderRadius: '50%',
+                  // width: '100px',
+                  height: '110px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  // boxShadow: '0 0 5px rgba(0,0,0,0.2)',
+                  marginTop: '10px',
+                  marginBottom: '10px'
+                }}
+              >
+                <div className="col-auto">
+                  <div className="avatar-lg">
+                    <img src={logoLight} alt="user-img"
+                      className="img-thumbnail rounded-circle" />
+                  </div>
+                </div>
+              </span>
+
             </span>
           </Link>
 
