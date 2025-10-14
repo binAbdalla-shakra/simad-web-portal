@@ -132,7 +132,12 @@ const Navdata = () => {
           link: "/setup/programs",
           parentId: "setups",
         },
-
+        {
+          id: "institutions",
+          label: "Institutions",
+          link: "/setup/institutions",
+          parentId: "setups",
+        },
 
       ],
     },

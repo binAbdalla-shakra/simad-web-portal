@@ -601,6 +601,7 @@ const SchoolsPage = () => {
         {
             name: '#',
             cell: (row, index) => index + 1,
+
         },
         {
             name: 'Logo',
@@ -620,16 +621,20 @@ const SchoolsPage = () => {
                     )}
                 </div>
             ),
+
         },
         {
-            name: 'Name',
+            name: 'School Name',
             selector: row => row.name,
-            sortable: true,
+            wrap: true,
         },
         {
             name: 'Tagline',
-            selector: row => row.tagline || 'N/A',
-            wrap: true,
+            cell: row => (
+                <div className="text-truncate" style={{ maxWidth: '150px' }}>
+                    {row.tagline || 'N/A'}
+                </div>
+            ),
         },
         {
             name: 'Category',
@@ -646,31 +651,34 @@ const SchoolsPage = () => {
         {
             name: 'Actions',
             cell: row => (
-                <div className="d-flex gap-2">
+                <div className="d-flex gap-1">
                     <Button
-                        color="soft-info"
+                        color="outline-info"
                         size="sm"
                         onClick={() => handleView(row)}
                         title="View Details"
+                        className="btn-icon"
                     >
                         <i className="ri-eye-line" />
                     </Button>
                     <Button
-                        color="soft-primary"
+                        color="outline-primary"
                         size="sm"
                         onClick={() => handleEdit(row)}
                         title="Edit"
+                        className="btn-icon"
                     >
                         <i className="ri-pencil-line" />
                     </Button>
                     <Button
-                        color="soft-danger"
+                        color="outline-danger"
                         size="sm"
                         onClick={() => {
                             setSelectedSchool(row);
                             setDeleteModal(true);
                         }}
                         title="Delete"
+                        className="btn-icon"
                     >
                         <i className="ri-delete-bin-line" />
                     </Button>
@@ -684,50 +692,152 @@ const SchoolsPage = () => {
             <Container fluid>
                 <BreadCrumb title="Schools" pageTitle="Academics" />
 
+                {/* Stats Cards */}
+                <Row className="mb-4">
+                    <Col xl={3} md={6}>
+                        <Card className="card-animate">
+                            <CardBody>
+                                <div className="d-flex align-items-center">
+                                    <div className="flex-grow-1">
+                                        <p className="text-uppercase fw-medium text-muted mb-0">Total Schools</p>
+                                        <h4 className="mb-0">{schools.length}</h4>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                        <div className="avatar-sm">
+                                            <span className="avatar-title bg-primary-subtle text-primary rounded-circle fs-2">
+                                                <i className="ri-building-line"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                    <Col xl={3} md={6}>
+                        <Card className="card-animate">
+                            <CardBody>
+                                <div className="d-flex align-items-center">
+                                    <div className="flex-grow-1">
+                                        <p className="text-uppercase fw-medium text-muted mb-0">Active Categories</p>
+                                        <h4 className="mb-0">{new Set(schools.map(s => s.category?._id)).size}</h4>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                        <div className="avatar-sm">
+                                            <span className="avatar-title bg-success-subtle text-success rounded-circle fs-2">
+                                                <i className="ri-bookmark-line"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                    <Col xl={3} md={6}>
+                        <Card className="card-animate">
+                            <CardBody>
+                                <div className="d-flex align-items-center">
+                                    <div className="flex-grow-1">
+                                        <p className="text-uppercase fw-medium text-muted mb-0">With Deans</p>
+                                        <h4 className="mb-0">
+                                            {schools.filter(s => s.dean).length}
+                                        </h4>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                        <div className="avatar-sm">
+                                            <span className="avatar-title bg-info-subtle text-info rounded-circle fs-2">
+                                                <i className="ri-user-line"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                    <Col xl={3} md={6}>
+                        <Card className="card-animate">
+                            <CardBody>
+                                <div className="d-flex align-items-center">
+                                    <div className="flex-grow-1">
+                                        <p className="text-uppercase fw-medium text-muted mb-0">With Testimonials</p>
+                                        <h4 className="mb-0">
+                                            {schools.filter(s => s.student_testimonials?.length > 0).length}
+                                        </h4>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                        <div className="avatar-sm">
+                                            <span className="avatar-title bg-warning-subtle text-warning rounded-circle fs-2">
+                                                <i className="ri-chat-quote-line"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                </Row>
+
                 {/* Filter Controls */}
-                <Card className="mb-3">
-                    <CardBody>
-                        <Row>
-                            <Col md={4}>
-                                <FormGroup>
-                                    <Label>Search</Label>
+                <Card className="mb-4">
+                    <CardBody className="p-3">
+                        <Row className="g-3 align-items-end">
+                            <Col md={6}>
+                                <FormGroup className="mb-0">
+                                    <Label className="form-label">Search Schools</Label>
                                     <Input
                                         type="text"
                                         name="search"
-                                        placeholder="Search by name, tagline, or description"
+                                        placeholder="Search by name, tagline, or description..."
                                         value={filters.search}
                                         onChange={handleFilterChange}
+                                        className="form-control"
                                     />
                                 </FormGroup>
                             </Col>
-                            {/* <Col md={4}>
-                                <FormGroup>
-                                    <Label>Category</Label>
-                                    <Input
-                                        type="select"
-                                        name="category"
-                                        value={filters.category}
-                                        onChange={handleFilterChange}
-                                    >
-                                        <option value="">All Categories</option>
-                                        {categoryOptions.map(option => (
-                                            <option key={option.value} value={option.value}>
-                                                {option.label}
-                                            </option>
-                                        ))}
-                                    </Input>
+                            <Col md={4}>
+                                <FormGroup className="mb-0">
+                                    <Label className="form-label">Category</Label>
+                                    <Select
+                                        options={categoryOptions}
+                                        value={categoryOptions.find(option => option.value === filters.category)}
+                                        onChange={(selected) => setFilters(prev => ({
+                                            ...prev,
+                                            category: selected ? selected.value : ""
+                                        }))}
+                                        isClearable
+                                        placeholder="Filter by category..."
+                                        className="react-select"
+                                        classNamePrefix="select"
+                                    />
                                 </FormGroup>
-                            </Col> */}
+                            </Col>
+                            <Col md={2}>
+                                <Button
+                                    color="primary"
+                                    className="w-100 mb-3"
+                                    onClick={() => setFilters({
+                                        search: '',
+                                        category: ''
+                                    })}
+                                >
+                                    <i className="ri-refresh-line me-1"></i>
+                                    Reset
+                                </Button>
+                            </Col>
                         </Row>
                     </CardBody>
                 </Card>
 
                 {/* Schools Table */}
                 <Card>
-                    <CardHeader className="d-flex justify-content-between align-items-center">
-                        <h5 className="mb-0">Schools List</h5>
-                        <Button color="primary" onClick={handleCreate}>
-                            <i className="ri-add-line me-1" /> Add School
+                    <CardHeader className="d-flex justify-content-between align-items-center bg-light">
+                        <h5 className="card-title mb-0 flex-grow-1">
+                            <i className="ri-building-line align-middle me-2"></i>
+                            Schools List
+                            <Badge color="primary" className="ms-2">{filteredSchools.length}</Badge>
+                        </h5>
+                        <Button color="primary" onClick={handleCreate} className="shadow-sm">
+                            <i className="ri-add-line me-1 align-middle"></i>
+                            Add School
                         </Button>
                     </CardHeader>
                     <CardBody>
@@ -738,9 +848,31 @@ const SchoolsPage = () => {
                                 columns={columns}
                                 data={filteredSchools}
                                 pagination
-                                highlightOnHover
+                                // highlightOnHover
                                 responsive
-                                noDataComponent="No schools found matching your criteria"
+                                // striped
+                                noDataComponent={
+                                    <div className="text-center py-5">
+                                        <i className="ri-inbox-line display-4 text-muted"></i>
+                                        <h5 className="mt-3">No schools found</h5>
+                                        <p className="text-muted">Try adjusting your search criteria or add a new school.</p>
+                                    </div>
+                                }
+                                customStyles={{
+                                    headCells: {
+                                        style: {
+                                            // backgroundColor: '#f8f9fa',
+                                            fontWeight: '600',
+                                            fontSize: '0.875rem',
+                                        },
+                                    },
+                                    cells: {
+                                        style: {
+                                            fontSize: '0.875rem',
+                                            padding: '12px 8px',
+                                        },
+                                    },
+                                }}
                             />
                         )}
                     </CardBody>
@@ -749,8 +881,9 @@ const SchoolsPage = () => {
 
             {/* Add/Edit Modal */}
             <Modal isOpen={modal} toggle={handleModalClose} unmountOnClose={false} size="xl" scrollable>
-                <ModalHeader toggle={handleModalClose}>
-                    {isEdit ? 'Edit School' : 'Add New School'}
+                <ModalHeader toggle={handleModalClose} className="bg-light">
+                    <i className={`ri-${isEdit ? 'pencil' : 'add'}-line me-2`}></i>
+                    {isEdit ? 'Edit School' : 'Create New School'}
                 </ModalHeader>
                 <Form noValidate onSubmit={isEdit ? updateSchool : createSchool}>
                     <ModalBody style={{ maxHeight: '70vh', overflowY: 'auto' }}>
@@ -1375,211 +1508,527 @@ const SchoolsPage = () => {
             </Modal>
 
             {/* View Modal */}
-            <Modal isOpen={viewModal} toggle={() => setViewModal(false)} size="xl" scrollable>
-                <ModalHeader toggle={() => setViewModal(false)}>
-                    School Details - {selectedSchool?.name}
+            <Modal isOpen={viewModal} toggle={() => setViewModal(false)} size="xl" centered className="modal-fullscreen-lg-down">
+                <ModalHeader toggle={() => setViewModal(false)} className="bg-light border-bottom">
+                    <div className="d-flex align-items-center">
+                        <div className="flex-shrink-0">
+                            {selectedSchool?.logoUrl ? (
+                                <img
+                                    src={selectedSchool.logoUrl}
+                                    alt={selectedSchool.name}
+                                    className="rounded me-3"
+                                    style={{ width: '40px', height: '40px', objectFit: 'cover' }}
+                                />
+                            ) : (
+                                <div className="avatar-title bg-primary bg-opacity-10 text-primary rounded me-3">
+                                    <i className="ri-building-line fs-5" />
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex-grow-1">
+                            <h5 className="modal-title mb-0">{selectedSchool?.name}</h5>
+                            <small className="text-muted">School Details</small>
+                        </div>
+                    </div>
                 </ModalHeader>
-                <ModalBody style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                <ModalBody className="p-0">
                     {selectedSchool && (
-                        <>
-                            {/* Step Navigation for View */}
-                            <div className="step-arrow-nav mb-4">
+                        <div className="school-details-container">
+                            {/* Header Section with Cover Image */}
+                            {selectedSchool.coverImage && (
+                                <div className="school-cover-section position-relative">
+                                    <img
+                                        src={selectedSchool.coverImage}
+                                        alt="Cover"
+                                        className="img-fluid w-100"
+                                        style={{ height: '200px', width: '100%', objectFit: 'cover' }}
+                                    />
+                                    <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-25 d-flex align-items-center justify-content-center">
+                                        <div className="text-center text-white">
+                                            <h3 className="mb-1 text-white">{selectedSchool.name}</h3>
+                                            {selectedSchool.tagline && (
+                                                <p className="mb-0 fs-5">{selectedSchool.tagline}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
-
-
+                            {/* Step Navigation */}
+                            <div className="step-arrow-nav border-bottom bg-white sticky-top" style={{ top: 0, zIndex: 1020 }}>
                                 <Nav className="nav-pills custom-nav nav-justified" role="tablist">
                                     <NavItem>
                                         <NavLink
-                                            className={activeTab === '1' ? 'active' : ''}
+                                            className={`d-flex align-items-center justify-content-center py-3 ${activeTab === '1' ? 'active' : ''}`}
                                             onClick={() => setActiveTab('1')}
                                         >
-                                            <i className="ri-building-line me-1" /> Basic Info
+                                            <i className="ri-building-line me-2 fs-5"></i>
+                                            <span>Basic Info</span>
                                         </NavLink>
                                     </NavItem>
                                     <NavItem>
                                         <NavLink
-                                            className={activeTab === '2' ? 'active' : ''}
+                                            className={`d-flex align-items-center justify-content-center py-3 ${activeTab === '2' ? 'active' : ''}`}
                                             onClick={() => setActiveTab('2')}
                                         >
-                                            <i className="ri-contacts-line me-1" /> Contact & Facts
+                                            <i className="ri-contacts-line me-2 fs-5"></i>
+                                            <span>Contact & Facts</span>
                                         </NavLink>
                                     </NavItem>
                                     <NavItem>
                                         <NavLink
-                                            className={activeTab === '3' ? 'active' : ''}
+                                            className={`d-flex align-items-center justify-content-center py-3 ${activeTab === '3' ? 'active' : ''}`}
                                             onClick={() => setActiveTab('3')}
                                         >
-                                            <i className="ri-file-paper-line me-1" /> Mission & Vision
+                                            <i className="ri-file-paper-line me-2 fs-5"></i>
+                                            <span>Mission & Vision</span>
                                         </NavLink>
                                     </NavItem>
                                     <NavItem>
                                         <NavLink
-                                            className={activeTab === '4' ? 'active' : ''}
+                                            className={`d-flex align-items-center justify-content-center py-3 ${activeTab === '4' ? 'active' : ''}`}
                                             onClick={() => setActiveTab('4')}
                                         >
-                                            <i className="ri-chat-quote-line me-1" /> Testimonials
+                                            <i className="ri-chat-quote-line me-2 fs-5"></i>
+                                            <span>Testimonials</span>
                                         </NavLink>
                                     </NavItem>
                                     <NavItem>
                                         <NavLink
-                                            className={activeTab === '5' ? 'active' : ''}
+                                            className={`d-flex align-items-center justify-content-center py-3 ${activeTab === '5' ? 'active' : ''}`}
                                             onClick={() => setActiveTab('5')}
                                         >
-                                            <i className="ri-settings-3-line me-1" /> Section Settings
+                                            <i className="ri-settings-3-line me-2 fs-5"></i>
+                                            <span>Section Settings</span>
                                         </NavLink>
                                     </NavItem>
                                 </Nav>
                             </div>
-                            <TabContent activeTab={activeTab}>
-                                {/* Tab 1: Basic Information */}
-                                <TabPane tabId="1">
-                                    <Row>
-                                        <Col md={4} className="text-center mb-3">
-                                            {selectedSchool.logoUrl ? (
-                                                <img
-                                                    src={selectedSchool.logoUrl}
-                                                    alt={selectedSchool.name}
-                                                    className="img-thumbnail"
-                                                    style={{ width: '150px', height: '150px', objectFit: 'cover' }}
-                                                />
-                                            ) : (
-                                                <div className="avatar-title bg-light text-secondary rounded-circle display-4">
-                                                    <i className="ri-building-line" />
-                                                </div>
-                                            )}
-                                            <h6 className="mt-2">School Logo</h6>
-                                        </Col>
-                                        <Col md={8}>
-                                            <h4>{selectedSchool.name}</h4>
-                                            {selectedSchool.tagline && (
-                                                <h5 className="text-primary">{selectedSchool.tagline}</h5>
-                                            )}
-                                            <div className="mt-3">
-                                                <p><strong>Category:</strong> {selectedSchool.category?.name || 'N/A'}</p>
-                                                <p><strong>Dean:</strong> {selectedSchool.dean?.name || 'N/A'}</p>
-                                                <p><strong>Order:</strong> {selectedSchool.order}</p>
-                                            </div>
-                                        </Col>
-                                        <Col md={12} className="mt-3">
-                                            {selectedSchool.coverImage && (
-                                                <div className="mb-3">
-                                                    <img
-                                                        src={selectedSchool.coverImage}
-                                                        alt="Cover"
-                                                        className="img-fluid rounded"
-                                                        style={{ maxHeight: '200px', objectFit: 'cover', width: '100%' }}
-                                                    />
-                                                    <h6 className="text-center mt-2">Cover Image</h6>
-                                                </div>
-                                            )}
-                                            {selectedSchool.shortDescription && (
-                                                <div>
-                                                    <h6>Description</h6>
-                                                    <p>{selectedSchool.shortDescription}</p>
-                                                </div>
-                                            )}
-                                        </Col>
-                                    </Row>
-                                </TabPane>
 
-                                {/* Tab 2: Contact & Facts */}
-                                <TabPane tabId="2">
-                                    <Row>
-                                        <Col md={6}>
-                                            <h6>Contact Information</h6>
-                                            <p><strong>Phone:</strong> {selectedSchool.contactInfo?.phone || 'N/A'}</p>
-                                            <p><strong>Email:</strong> {selectedSchool.contactInfo?.email || 'N/A'}</p>
-                                            <p><strong>Location:</strong> {selectedSchool.contactInfo?.location || 'N/A'}</p>
-                                            <p><strong>Website:</strong> {selectedSchool.contactInfo?.website || 'N/A'}</p>
-                                        </Col>
-                                        <Col md={6}>
-                                            <h6>Facts & Figures</h6>
-                                            <p><strong>Academic Staff:</strong> {selectedSchool.facts_and_figures?.academic_staff || 'N/A'}</p>
-                                            <p><strong>Student Population:</strong> {selectedSchool.facts_and_figures?.student_population || 'N/A'}</p>
-                                            <p><strong>Founded Year:</strong> {selectedSchool.facts_and_figures?.founded_year || 'N/A'}</p>
-                                        </Col>
-                                    </Row>
-                                </TabPane>
+                            {/* Tab Content */}
+                            <div className="tab-content p-4" style={{ maxHeight: 'calc(70vh - 140px)', overflowY: 'auto' }}>
+                                <TabContent activeTab={activeTab}>
+                                    {/* Tab 1: Basic Information */}
+                                    <TabPane tabId="1">
+                                        <Row className="g-4">
+                                            <Col lg={4}>
+                                                <Card className="border-0 shadow-sm">
+                                                    <CardBody className="text-center p-4">
+                                                        {selectedSchool.logoUrl ? (
+                                                            <img
+                                                                src={selectedSchool.logoUrl}
+                                                                alt={selectedSchool.name}
+                                                                className="rounded-circle mb-3 img-thumbnail border"
+                                                                style={{ width: '120px', height: '120px', objectFit: 'cover' }}
+                                                            />
+                                                        ) : (
+                                                            <div className="avatar-title bg-light text-secondary rounded-circle display-4 mb-3" style={{ width: '120px', height: '120px', lineHeight: '120px' }}>
+                                                                <i className="ri-building-line" />
+                                                            </div>
+                                                        )}
+                                                        <h5 className="mb-2">{selectedSchool.name}</h5>
+                                                        {selectedSchool.tagline && (
+                                                            <p className="text-primary mb-3">{selectedSchool.tagline}</p>
+                                                        )}
+                                                        <div className="d-flex justify-content-center gap-2 mb-3">
+                                                            <Badge color="primary" className="fs-6">Order: {selectedSchool.order}</Badge>
+                                                            {selectedSchool.category && (
+                                                                <Badge color="success" className="fs-6">{selectedSchool.category.name}</Badge>
+                                                            )}
+                                                        </div>
+                                                    </CardBody>
+                                                </Card>
+                                            </Col>
+                                            <Col lg={8}>
+                                                <Card className="border-0 shadow-sm">
+                                                    <CardHeader className="bg-light">
+                                                        <h6 className="mb-0">
+                                                            <i className="ri-information-line me-2"></i>
+                                                            School Information
+                                                        </h6>
+                                                    </CardHeader>
+                                                    <CardBody>
+                                                        <Row className="g-3">
+                                                            <Col sm={6}>
+                                                                <div className="d-flex align-items-center">
+                                                                    <i className="ri-bookmark-line text-primary me-3 fs-5"></i>
+                                                                    <div>
+                                                                        <small className="text-muted d-block">Category</small>
+                                                                        <strong>{selectedSchool.category?.name || 'Not specified'}</strong>
+                                                                    </div>
+                                                                </div>
+                                                            </Col>
+                                                            <Col sm={6}>
+                                                                <div className="d-flex align-items-center">
+                                                                    <i className="ri-user-line text-primary me-3 fs-5"></i>
+                                                                    <div>
+                                                                        <small className="text-muted d-block">Dean</small>
+                                                                        <strong>{selectedSchool.dean?.name || 'Not assigned'}</strong>
+                                                                    </div>
+                                                                </div>
+                                                            </Col>
+                                                            <Col sm={6}>
+                                                                <div className="d-flex align-items-center">
+                                                                    <i className="ri-list-ordered text-primary me-3 fs-5"></i>
+                                                                    <div>
+                                                                        <small className="text-muted d-block">Display Order</small>
+                                                                        <strong>{selectedSchool.order}</strong>
+                                                                    </div>
+                                                                </div>
+                                                            </Col>
+                                                            {selectedSchool.facts_and_figures?.founded_year && (
+                                                                <Col sm={6}>
+                                                                    <div className="d-flex align-items-center">
+                                                                        <i className="ri-calendar-line text-primary me-3 fs-5"></i>
+                                                                        <div>
+                                                                            <small className="text-muted d-block">Founded</small>
+                                                                            <strong>{selectedSchool.facts_and_figures.founded_year}</strong>
+                                                                        </div>
+                                                                    </div>
+                                                                </Col>
+                                                            )}
+                                                        </Row>
+                                                    </CardBody>
+                                                </Card>
 
-                                {/* Tab 3: Mission & Vision */}
-                                <TabPane tabId="3">
-                                    <Row>
-                                        <Col md={6}>
-                                            <h6>Mission</h6>
-                                            <p>{selectedSchool.mission || 'No mission provided'}</p>
-                                        </Col>
-                                        <Col md={6}>
-                                            <h6>Vision</h6>
-                                            <p>{selectedSchool.vision || 'No vision provided'}</p>
-                                        </Col>
-                                    </Row>
-                                </TabPane>
+                                                {selectedSchool.shortDescription && (
+                                                    <Card className="border-0 shadow-sm mt-3">
+                                                        <CardHeader className="bg-light">
+                                                            <h6 className="mb-0">
+                                                                <i className="ri-file-text-line me-2"></i>
+                                                                Description
+                                                            </h6>
+                                                        </CardHeader>
+                                                        <CardBody>
+                                                            <p className="mb-0">{selectedSchool.shortDescription}</p>
+                                                        </CardBody>
+                                                    </Card>
+                                                )}
+                                            </Col>
+                                        </Row>
+                                    </TabPane>
 
-                                {/* Tab 4: Testimonials */}
-                                <TabPane tabId="4">
-                                    {selectedSchool.student_testimonials?.length > 0 ? (
-                                        selectedSchool.student_testimonials.map((testimonial, index) => (
-                                            <Card key={index} className="mb-3">
-                                                <CardBody>
-                                                    <h6>{testimonial.student_name}</h6>
-                                                    <p className="text-primary mb-2">{testimonial.student_program_shortName}</p>
-                                                    <p className="fst-italic">"{testimonial.message}"</p>
+                                    {/* Tab 2: Contact & Facts */}
+                                    <TabPane tabId="2">
+                                        <Row className="g-4">
+                                            <Col lg={6}>
+                                                <Card className="border-0 shadow-sm h-100">
+                                                    <CardHeader className="bg-light">
+                                                        <h6 className="mb-0">
+                                                            <i className="ri-contacts-line me-2"></i>
+                                                            Contact Information
+                                                        </h6>
+                                                    </CardHeader>
+                                                    <CardBody>
+                                                        <div className="space-y-3">
+                                                            {selectedSchool.contactInfo?.phone && (
+                                                                <div className="d-flex align-items-center">
+                                                                    <i className="ri-phone-line text-success me-3 fs-5"></i>
+                                                                    <div>
+                                                                        <small className="text-muted d-block">Phone</small>
+                                                                        <strong>{selectedSchool.contactInfo.phone}</strong>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            {selectedSchool.contactInfo?.email && (
+                                                                <div className="d-flex align-items-center">
+                                                                    <i className="ri-mail-line text-success me-3 fs-5"></i>
+                                                                    <div>
+                                                                        <small className="text-muted d-block">Email</small>
+                                                                        <strong>{selectedSchool.contactInfo.email}</strong>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            {selectedSchool.contactInfo?.location && (
+                                                                <div className="d-flex align-items-center">
+                                                                    <i className="ri-map-pin-line text-success me-3 fs-5"></i>
+                                                                    <div>
+                                                                        <small className="text-muted d-block">Location</small>
+                                                                        <strong>{selectedSchool.contactInfo.location}</strong>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            {selectedSchool.contactInfo?.website && (
+                                                                <div className="d-flex align-items-center">
+                                                                    <i className="ri-global-line text-success me-3 fs-5"></i>
+                                                                    <div>
+                                                                        <small className="text-muted d-block">Website</small>
+                                                                        <a href={selectedSchool.contactInfo.website} target="_blank" rel="noopener noreferrer" className="text-decoration-none">
+                                                                            <strong>{selectedSchool.contactInfo.website}</strong>
+                                                                        </a>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            {!selectedSchool.contactInfo?.phone && !selectedSchool.contactInfo?.email &&
+                                                                !selectedSchool.contactInfo?.location && !selectedSchool.contactInfo?.website && (
+                                                                    <div className="text-center text-muted py-4">
+                                                                        <i className="ri-information-line display-4"></i>
+                                                                        <p className="mt-2 mb-0">No contact information available</p>
+                                                                    </div>
+                                                                )}
+                                                        </div>
+                                                    </CardBody>
+                                                </Card>
+                                            </Col>
+                                            <Col lg={6}>
+                                                <Card className="border-0 shadow-sm h-100">
+                                                    <CardHeader className="bg-light">
+                                                        <h6 className="mb-0">
+                                                            <i className="ri-bar-chart-line me-2"></i>
+                                                            Facts & Figures
+                                                        </h6>
+                                                    </CardHeader>
+                                                    <CardBody>
+                                                        <div className="space-y-3">
+                                                            {selectedSchool.facts_and_figures?.academic_staff && (
+                                                                <div className="d-flex align-items-center">
+                                                                    <i className="ri-user-star-line text-warning me-3 fs-5"></i>
+                                                                    <div>
+                                                                        <small className="text-muted d-block">Academic Staff</small>
+                                                                        <strong>{selectedSchool.facts_and_figures.academic_staff}</strong>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            {selectedSchool.facts_and_figures?.student_population && (
+                                                                <div className="d-flex align-items-center">
+                                                                    <i className="ri-group-line text-warning me-3 fs-5"></i>
+                                                                    <div>
+                                                                        <small className="text-muted d-block">Student Population</small>
+                                                                        <strong>{selectedSchool.facts_and_figures.student_population}</strong>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            {selectedSchool.facts_and_figures?.founded_year && (
+                                                                <div className="d-flex align-items-center">
+                                                                    <i className="ri-calendar-line text-warning me-3 fs-5"></i>
+                                                                    <div>
+                                                                        <small className="text-muted d-block">Founded Year</small>
+                                                                        <strong>{selectedSchool.facts_and_figures.founded_year}</strong>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            {!selectedSchool.facts_and_figures?.academic_staff &&
+                                                                !selectedSchool.facts_and_figures?.student_population &&
+                                                                !selectedSchool.facts_and_figures?.founded_year && (
+                                                                    <div className="text-center text-muted py-4">
+                                                                        <i className="ri-bar-chart-line display-4"></i>
+                                                                        <p className="mt-2 mb-0">No facts & figures available</p>
+                                                                    </div>
+                                                                )}
+                                                        </div>
+                                                    </CardBody>
+                                                </Card>
+                                            </Col>
+                                        </Row>
+                                    </TabPane>
+
+                                    {/* Tab 3: Mission & Vision */}
+                                    <TabPane tabId="3">
+                                        <Row className="g-4">
+                                            <Col lg={6}>
+                                                <Card className="border-0 shadow-sm h-100">
+                                                    <CardHeader className="bg-light">
+                                                        <h6 className="mb-0">
+                                                            <i className="ri-target-line text-info me-2"></i>
+                                                            Mission Statement
+                                                        </h6>
+                                                    </CardHeader>
+                                                    <CardBody>
+                                                        {selectedSchool.mission ? (
+                                                            <div className="mission-content">
+                                                                {selectedSchool.mission.split('\n').map((paragraph, index) => (
+                                                                    <p key={index} className="mb-3">{paragraph}</p>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="text-center text-muted py-4">
+                                                                <i className="ri-information-line display-4"></i>
+                                                                <p className="mt-2 mb-0">No mission statement provided</p>
+                                                            </div>
+                                                        )}
+                                                    </CardBody>
+                                                </Card>
+                                            </Col>
+                                            <Col lg={6}>
+                                                <Card className="border-0 shadow-sm h-100">
+                                                    <CardHeader className="bg-light">
+                                                        <h6 className="mb-0">
+                                                            <i className="ri-eye-line text-info me-2"></i>
+                                                            Vision Statement
+                                                        </h6>
+                                                    </CardHeader>
+                                                    <CardBody>
+                                                        {selectedSchool.vision ? (
+                                                            <div className="vision-content">
+                                                                {selectedSchool.vision.split('\n').map((paragraph, index) => (
+                                                                    <p key={index} className="mb-3">{paragraph}</p>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="text-center text-muted py-4">
+                                                                <i className="ri-information-line display-4"></i>
+                                                                <p className="mt-2 mb-0">No vision statement provided</p>
+                                                            </div>
+                                                        )}
+                                                    </CardBody>
+                                                </Card>
+                                            </Col>
+                                        </Row>
+                                    </TabPane>
+
+                                    {/* Tab 4: Testimonials */}
+                                    <TabPane tabId="4">
+                                        {selectedSchool.student_testimonials?.length > 0 ? (
+                                            <Row className="g-4">
+                                                {selectedSchool.student_testimonials.map((testimonial, index) => (
+                                                    <Col lg={6} key={index}>
+                                                        <Card className="border-0 shadow-sm testimonial-card h-100">
+                                                            <CardBody className="p-4">
+                                                                <div className="d-flex align-items-start mb-3">
+                                                                    <div className="flex-shrink-0">
+                                                                        <div className="avatar-sm">
+                                                                            <div className="avatar-title bg-primary bg-opacity-10 text-primary rounded-circle">
+                                                                                <i className="ri-user-line"></i>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex-grow-1 ms-3">
+                                                                        <h6 className="mb-1">{testimonial.student_name}</h6>
+                                                                        <p className="text-primary mb-0 small">{testimonial.student_program_shortName}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <blockquote className="mb-0">
+                                                                    <i className="ri-double-quotes-l text-muted me-1"></i>
+                                                                    <span className="fst-italic">{testimonial.message}</span>
+                                                                    <i className="ri-double-quotes-r text-muted ms-1"></i>
+                                                                </blockquote>
+                                                            </CardBody>
+                                                        </Card>
+                                                    </Col>
+                                                ))}
+                                            </Row>
+                                        ) : (
+                                            <Card className="border-0 shadow-sm">
+                                                <CardBody className="text-center py-5">
+                                                    <i className="ri-chat-quote-line display-4 text-muted"></i>
+                                                    <h5 className="mt-3 text-muted">No Testimonials</h5>
+                                                    <p className="text-muted mb-0">No student testimonials have been added for this school.</p>
                                                 </CardBody>
                                             </Card>
-                                        ))
-                                    ) : (
-                                        <p>No testimonials recorded.</p>
-                                    )}
-                                </TabPane>
+                                        )}
+                                    </TabPane>
 
-                                {/* Tab 5: Section Settings */}
-                                <TabPane tabId="5">
-                                    <Row>
-                                        <Col md={6}>
-                                            <h6>Programs Section</h6>
-                                            <p><strong>Title:</strong> {selectedSchool.programs_sec_title || 'N/A'}</p>
-                                            <p><strong>Icon:</strong> {selectedSchool.programs_sec_icon || 'N/A'}</p>
-                                            <p><strong>Subtitle:</strong> {selectedSchool.programs_sec_subtitle || 'N/A'}</p>
-                                        </Col>
-                                        <Col md={6}>
-                                            <h6>Vision & Mission Section</h6>
-                                            <p><strong>Title:</strong> {selectedSchool.vison_and_mission_sec_title || 'N/A'}</p>
-                                            <p><strong>Icon:</strong> {selectedSchool.vison_and_mission_sec_icon || 'N/A'}</p>
-                                            <p><strong>Subtitle:</strong> {selectedSchool.vison_and_mission_sec_subtitle || 'N/A'}</p>
-                                        </Col>
-                                        <Col md={6} className="mt-3">
-                                            <h6>Dean's Message Section</h6>
-                                            <p><strong>Title:</strong> {selectedSchool.dean_message_sec_title || 'N/A'}</p>
-                                            <p><strong>Icon:</strong> {selectedSchool.dean_message_sec_icon || 'N/A'}</p>
-                                            <p><strong>Subtitle:</strong> {selectedSchool.dean_message_sec_subtitle || 'N/A'}</p>
-                                            <p><strong>Message:</strong> {selectedSchool.dean_message_sec_text || 'N/A'}</p>
-                                        </Col>
-                                        <Col md={6} className="mt-3">
-                                            <h6>Facts Section</h6>
-                                            <p><strong>Title:</strong> {selectedSchool.facts_message_sec_title || 'N/A'}</p>
-                                            <p><strong>Icon:</strong> {selectedSchool.facts_message_sec_icon || 'N/A'}</p>
-                                            <p><strong>Subtitle:</strong> {selectedSchool.facts_message_sec_subtitle || 'N/A'}</p>
-                                        </Col>
-                                        <Col md={6} className="mt-3">
-                                            <h6>Testimonials Section</h6>
-                                            <p><strong>Title:</strong> {selectedSchool.testimonials_message_sec_title || 'N/A'}</p>
-                                            <p><strong>Icon:</strong> {selectedSchool.testimonials_message_sec_icon || 'N/A'}</p>
-                                            <p><strong>Subtitle:</strong> {selectedSchool.testimonials_message_sec_subtitle || 'N/A'}</p>
-                                        </Col>
-                                        <Col md={6} className="mt-3">
-                                            <h6>Contact Section</h6>
-                                            <p><strong>Title:</strong> {selectedSchool.contact_message_sec_title || 'N/A'}</p>
-                                            <p><strong>Icon:</strong> {selectedSchool.contact_message_sec_icon || 'N/A'}</p>
-                                            <p><strong>Subtitle:</strong> {selectedSchool.contact_message_sec_subtitle || 'N/A'}</p>
-                                        </Col>
-                                    </Row>
-                                </TabPane>
-                            </TabContent>
-                        </>
+                                    {/* Tab 5: Section Settings */}
+                                    <TabPane tabId="5">
+                                        <Row className="g-4">
+                                            {[
+                                                {
+                                                    title: 'Programs Section',
+                                                    data: selectedSchool.programs_sec_title || selectedSchool.programs_sec_icon || selectedSchool.programs_sec_subtitle,
+                                                    fields: [
+                                                        { label: 'Title', value: selectedSchool.programs_sec_title },
+                                                        { label: 'Icon', value: selectedSchool.programs_sec_icon },
+                                                        { label: 'Subtitle', value: selectedSchool.programs_sec_subtitle }
+                                                    ],
+                                                    icon: 'ri-book-line',
+                                                    color: 'primary'
+                                                },
+                                                {
+                                                    title: 'Vision & Mission Section',
+                                                    data: selectedSchool.vison_and_mission_sec_title || selectedSchool.vison_and_mission_sec_icon || selectedSchool.vison_and_mission_sec_subtitle,
+                                                    fields: [
+                                                        { label: 'Title', value: selectedSchool.vison_and_mission_sec_title },
+                                                        { label: 'Icon', value: selectedSchool.vison_and_mission_sec_icon },
+                                                        { label: 'Subtitle', value: selectedSchool.vison_and_mission_sec_subtitle }
+                                                    ],
+                                                    icon: 'ri-eye-line',
+                                                    color: 'success'
+                                                },
+                                                {
+                                                    title: 'Dean\'s Message Section',
+                                                    data: selectedSchool.dean_message_sec_title || selectedSchool.dean_message_sec_icon || selectedSchool.dean_message_sec_subtitle || selectedSchool.dean_message_sec_text,
+                                                    fields: [
+                                                        { label: 'Title', value: selectedSchool.dean_message_sec_title },
+                                                        { label: 'Icon', value: selectedSchool.dean_message_sec_icon },
+                                                        { label: 'Subtitle', value: selectedSchool.dean_message_sec_subtitle },
+                                                        { label: 'Message', value: selectedSchool.dean_message_sec_text }
+                                                    ],
+                                                    icon: 'ri-user-line',
+                                                    color: 'info'
+                                                },
+                                                {
+                                                    title: 'Facts Section',
+                                                    data: selectedSchool.facts_message_sec_title || selectedSchool.facts_message_sec_icon || selectedSchool.facts_message_sec_subtitle,
+                                                    fields: [
+                                                        { label: 'Title', value: selectedSchool.facts_message_sec_title },
+                                                        { label: 'Icon', value: selectedSchool.facts_message_sec_icon },
+                                                        { label: 'Subtitle', value: selectedSchool.facts_message_sec_subtitle }
+                                                    ],
+                                                    icon: 'ri-bar-chart-line',
+                                                    color: 'warning'
+                                                },
+                                                {
+                                                    title: 'Testimonials Section',
+                                                    data: selectedSchool.testimonials_message_sec_title || selectedSchool.testimonials_message_sec_icon || selectedSchool.testimonials_message_sec_subtitle,
+                                                    fields: [
+                                                        { label: 'Title', value: selectedSchool.testimonials_message_sec_title },
+                                                        { label: 'Icon', value: selectedSchool.testimonials_message_sec_icon },
+                                                        { label: 'Subtitle', value: selectedSchool.testimonials_message_sec_subtitle }
+                                                    ],
+                                                    icon: 'ri-chat-quote-line',
+                                                    color: 'danger'
+                                                },
+                                                {
+                                                    title: 'Contact Section',
+                                                    data: selectedSchool.contact_message_sec_title || selectedSchool.contact_message_sec_icon || selectedSchool.contact_message_sec_subtitle,
+                                                    fields: [
+                                                        { label: 'Title', value: selectedSchool.contact_message_sec_title },
+                                                        { label: 'Icon', value: selectedSchool.contact_message_sec_icon },
+                                                        { label: 'Subtitle', value: selectedSchool.contact_message_sec_subtitle }
+                                                    ],
+                                                    icon: 'ri-contacts-line',
+                                                    color: 'secondary'
+                                                }
+                                            ].map((section, index) => (
+                                                <Col lg={6} key={index}>
+                                                    <Card className={`border-0 shadow-sm border-${section.data ? section.color : 'light'}`}>
+                                                        <CardHeader className={`bg-${section.color} bg-opacity-10 border-0`}>
+                                                            <h6 className="mb-0">
+                                                                <i className={`${section.icon} text-${section.color} me-2`}></i>
+                                                                {section.title}
+                                                            </h6>
+                                                        </CardHeader>
+                                                        <CardBody>
+                                                            {section.data ? (
+                                                                <div className="space-y-2">
+                                                                    {section.fields.map((field, fieldIndex) => (
+                                                                        field.value && (
+                                                                            <div key={fieldIndex}>
+                                                                                <small className="text-muted d-block">{field.label}</small>
+                                                                                <strong>{field.value}</strong>
+                                                                            </div>
+                                                                        )
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="text-center text-muted py-2">
+                                                                    <small>No settings configured</small>
+                                                                </div>
+                                                            )}
+                                                        </CardBody>
+                                                    </Card>
+                                                </Col>
+                                            ))}
+                                        </Row>
+                                    </TabPane>
+                                </TabContent>
+                            </div>
+                        </div>
                     )}
                 </ModalBody>
-                <ModalFooter>
-                    <Button color="light" onClick={() => setViewModal(false)}>
+                <ModalFooter className="bg-light border-top">
+                    <Button color="light" onClick={() => setViewModal(false)} className="d-flex align-items-center">
+                        <i className="ri-close-line me-2"></i>
                         Close
                     </Button>
                 </ModalFooter>
@@ -1598,864 +2047,3 @@ const SchoolsPage = () => {
 };
 
 export default SchoolsPage;
-
-// import React, { useState, useEffect } from 'react';
-// import DataTable, { createTheme } from "react-data-table-component";
-// import Select from "react-select";
-// import {
-//     Card, CardHeader, CardBody,
-//     Col, Container, Row,
-//     Form, Input, Label, FormGroup,
-//     Modal, ModalBody, ModalFooter, ModalHeader,
-//     Button, Badge
-// } from "reactstrap";
-// import { ToastContainer, toast } from 'react-toastify';
-// import 'react-toastify/dist/ReactToastify.css';
-// import BreadCrumb from "../../../Components/Common/BreadCrumb";
-// import DeleteModal from "../../../Components/Common/DeleteModal";
-// import Loader from "../../../Components/Common/Loader";
-// import * as Yup from 'yup';
-// import { useFormik } from 'formik';
-// import { api } from "../../../config";
-// import { createSelector } from 'reselect';
-// import { useSelector } from 'react-redux';
-
-// const Schools = () => {
-//     document.title = "Schools | simad University";
-
-//     const selectLayoutState = (state) => state.Layout;
-//     const selectLayoutProperties = createSelector(
-//         selectLayoutState,
-//         (layout) => ({
-//             layoutThemeType: layout.layoutThemeType,
-//             layoutModeType: layout.layoutModeType,
-//         })
-//     );
-//     // Inside your component
-//     const {
-//         layoutModeType,
-//         layoutThemeType,
-//     } = useSelector(selectLayoutProperties);
-
-//     createTheme('customDark', {
-//         text: {
-//             primary: '#ffffff',
-//             secondary: '#9e9e9e',
-//         },
-//         background: {
-//             default: '#212529',
-//         },
-//         context: {
-//             background: '#333',
-//             text: '#FFFFFF',
-//         },
-//         divider: {
-//             default: '#444',
-//         },
-//     }, 'dark'); // 'dark' makes it inherit dark base
-
-
-
-//     // State management
-//     const [schools, setSchools] = useState([]);
-//     const [categories, setCategories] = useState([]);
-//     const [staff, setStaff] = useState([]);
-//     const [loading, setLoading] = useState(false);
-//     const [modal, setModal] = useState(false);
-//     const [viewModal, setViewModal] = useState(false);
-//     const [deleteModal, setDeleteModal] = useState(false);
-//     const [isEdit, setIsEdit] = useState(false);
-//     const [selectedSchool, setSelectedSchool] = useState(null);
-
-//     // Filters state
-//     const [filters, setFilters] = useState({
-//         search: '',
-//         status: ''
-//     });
-
-//     // Options for selects
-//     const statusOptions = [
-//         { value: "", label: "All Statuses" },
-//         { value: "Active", label: "Active" },
-//         { value: "Inactive", label: "Inactive" }
-//     ];
-
-//     // Validation schema with Yup
-//     const validationSchema = Yup.object().shape({
-//         name: Yup.string()
-//             .required("School name is required")
-//             .min(3, "School name must be at least 3 characters")
-//             .max(100, "School name must be less than 100 characters"),
-//         tagline: Yup.string()
-//             .max(200, "Tagline must be less than 200 characters"),
-//         description: Yup.string(),
-//         shortDescription: Yup.string()
-//             .max(300, "Short description must be less than 300 characters"),
-//         logoUrl: Yup.string(),
-//         // .url("Logo URL must be a valid URL"),
-//         coverImage: Yup.string(),
-//         // .url("Cover image URL must be a valid URL"),
-//         dean: Yup.string(),
-//         category: Yup.string()
-//             .required("Category is required"),
-//         contactInfo: Yup.object().shape({
-//             phone: Yup.string(),
-//             email: Yup.string()
-//                 .email("Contact email must be a valid email"),
-//             location: Yup.string(),
-//             website: Yup.string(),
-//             // .url("Website must be a valid URL")
-//         }),
-//         mission: Yup.string(),
-//         vision: Yup.string(),
-//         isActive: Yup.boolean(),
-//         order: Yup.number()
-//             .min(0, "Order must be a positive number")
-//             .integer("Order must be an integer")
-//     });
-
-//     // Formik setup
-//     const formik = useFormik({
-//         initialValues: {
-//             name: "",
-//             tagline: "",
-//             description: "",
-//             shortDescription: "",
-//             logoUrl: "",
-//             coverImage: "",
-//             dean: "",
-//             category: "",
-//             contactInfo: {
-//                 phone: "",
-//                 email: "",
-//                 location: "",
-//                 website: ""
-//             },
-//             mission: "",
-//             vision: "",
-//             facilities: [],
-//             isActive: true,
-//             order: 0
-//         },
-//         validationSchema,
-//         onSubmit: (values) => {
-//             if (isEdit) {
-//                 updateSchool(values);
-//             } else {
-//                 createSchool(values);
-//             }
-//         }
-//     });
-
-//     // Fetch schools from API
-//     const fetchSchools = async () => {
-//         setLoading(true);
-//         try {
-//             const response = await fetch(`${api.API_URL}/schools`);
-//             if (!response.ok) {
-//                 throw new Error(`HTTP error! status: ${response.status}`);
-//             }
-//             const data = await response.json();
-//             setSchools(data.data.schools || data);
-//         } catch (error) {
-//             console.error("Error fetching schools:", error);
-//             toast.error(`Error loading schools: ${error.message}`);
-//         } finally {
-//             setLoading(false);
-//         }
-//     };
-
-//     // Fetch categories from API
-//     const fetchCategories = async () => {
-//         try {
-//             const response = await fetch(`${api.API_URL}/program-categories`);
-//             if (!response.ok) {
-//                 throw new Error(`HTTP error! status: ${response.status}`);
-//             }
-//             const data = await response.json();
-//             setCategories(data.data.categories || data);
-//         } catch (error) {
-//             console.error("Error fetching categories:", error);
-//             toast.error(`Error loading categories: ${error.message}`);
-//         }
-//     };
-
-//     // Fetch staff from API
-//     const fetchStaff = async () => {
-//         try {
-//             const response = await fetch(`${api.API_URL}/staff`);
-//             if (!response.ok) {
-//                 throw new Error(`HTTP error! status: ${response.status}`);
-//             }
-//             const data = await response.json();
-//             setStaff(data.data.staff || data);
-//         } catch (error) {
-//             console.error("Error fetching staff:", error);
-//             toast.error(`Error loading staff: ${error.message}`);
-//         }
-//     };
-
-//     // Create new school
-//     const createSchool = async (schoolData) => {
-//         try {
-//             const authUser = JSON.parse(sessionStorage.getItem("authUser"));
-//             const dataToSend = {
-//                 ...schoolData,
-//                 createdBy: authUser?.username || "Admin"
-//             };
-
-//             const response = await fetch(`${api.API_URL}/schools`, {
-//                 method: 'POST',
-//                 headers: {
-//                     'Content-Type': 'application/json',
-//                 },
-//                 body: JSON.stringify(dataToSend)
-//             });
-
-//             if (!response.ok) {
-//                 const errorData = await response.json();
-//                 throw new Error(errorData.message || 'Failed to create school');
-//             }
-
-//             toast.success("School created successfully");
-//             fetchSchools();
-//             setModal(false);
-//             formik.resetForm();
-//         } catch (error) {
-//             toast.error(`Error creating school: ${error.message}`);
-//         }
-//     };
-
-//     // Update school
-//     const updateSchool = async (schoolData) => {
-//         if (!selectedSchool) return;
-
-//         try {
-//             const authUser = JSON.parse(sessionStorage.getItem("authUser"));
-//             const dataToSend = {
-//                 ...schoolData,
-//                 _id: selectedSchool._id,
-//                 updatedBy: authUser?.username || "Admin"
-//             };
-
-//             const response = await fetch(`${api.API_URL}/schools/${selectedSchool._id}`, {
-//                 method: 'PUT',
-//                 headers: {
-//                     'Content-Type': 'application/json',
-//                 },
-//                 body: JSON.stringify(dataToSend)
-//             });
-
-//             if (!response.ok) {
-//                 const errorData = await response.json();
-//                 throw new Error(errorData.message || 'Failed to update school');
-//             }
-
-//             toast.success("School updated successfully");
-//             fetchSchools();
-//             setModal(false);
-//         } catch (error) {
-//             toast.error(`Error updating school: ${error.message}`);
-//         }
-//     };
-
-//     // Delete school
-//     const deleteSchool = async () => {
-//         if (!selectedSchool) return;
-
-//         try {
-//             const response = await fetch(`${api.API_URL}/schools/${selectedSchool._id}`, {
-//                 method: 'DELETE'
-//             });
-
-//             if (!response.ok) {
-//                 const errorData = await response.json();
-//                 throw new Error(errorData.message || 'Failed to delete school');
-//             }
-
-//             toast.success("School deleted successfully");
-//             setDeleteModal(false);
-//             fetchSchools();
-//         } catch (error) {
-//             toast.error(`Error deleting school: ${error.message}`);
-//         }
-//     };
-
-//     // Open modal for edit
-//     const handleEdit = (school) => {
-//         setSelectedSchool(school);
-//         formik.setValues({
-//             name: school.name || "",
-//             tagline: school.tagline || "",
-//             description: school.description || "",
-//             shortDescription: school.shortDescription || "",
-//             logoUrl: school.logoUrl || "",
-//             coverImage: school.coverImage || "",
-//             dean: school.dean?._id || school.dean || "",
-//             category: school.category?._id || school.category || "",
-//             contactInfo: {
-//                 phone: school.contactInfo?.phone || "",
-//                 email: school.contactInfo?.email || "",
-//                 location: school.contactInfo?.location || "",
-//                 website: school.contactInfo?.website || ""
-//             },
-//             mission: school.mission || "",
-//             vision: school.vision || "",
-//             facilities: school.facilities || [],
-//             isActive: school.isActive || true,
-//             order: school.order || 0
-//         });
-//         setIsEdit(true);
-//         setModal(true);
-//     };
-
-//     // Open modal for view
-//     const handleView = (school) => {
-//         setSelectedSchool(school);
-//         setViewModal(true);
-//     };
-
-//     // Open modal for create
-//     const handleCreate = () => {
-//         setSelectedSchool(null);
-//         formik.resetForm();
-//         setIsEdit(false);
-//         setModal(true);
-//     };
-
-//     // Handle filter changes
-//     const handleFilterChange = (e) => {
-//         const { name, value } = e.target;
-//         setFilters(prev => ({ ...prev, [name]: value }));
-//     };
-
-//     // Handle select filter changes
-//     const handleSelectFilterChange = (name, selectedOption) => {
-//         setFilters(prev => ({
-//             ...prev,
-//             [name]: selectedOption?.value || ""
-//         }));
-//     };
-
-//     // Filter schools based on filters
-//     const filteredSchools = schools.filter(school => {
-//         return (
-//             (filters.search === '' ||
-//                 school.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-//                 (school.tagline && school.tagline.toLowerCase().includes(filters.search.toLowerCase())) ||
-//                 (school.shortDescription && school.shortDescription.toLowerCase().includes(filters.search.toLowerCase()))) &&
-//             (filters.status === '' ||
-//                 (filters.status === 'Active' ? school.isActive : !school.isActive))
-//         );
-//     });
-
-//     // Table columns
-//     const columns = [
-//         {
-//             name: '#',
-//             cell: (row, index) => index + 1,
-//             // width: '60px'
-//         },
-//         {
-//             name: 'Name',
-//             selector: row => row.name,
-
-//         },
-//         {
-//             name: 'Tagline',
-//             selector: row => row.tagline || '-',
-//             wrap: true
-//         },
-//         {
-//             name: 'Category',
-//             selector: row => row.category?.name || '-',
-//         },
-//         {
-//             name: 'Dean',
-//             selector: row => row.dean?.name || '-',
-//         },
-//         {
-//             name: 'Status',
-//             cell: row => (
-//                 <Badge color={row.isActive ? 'success' : 'danger'}>
-//                     {row.isActive ? 'Active' : 'Inactive'}
-//                 </Badge>
-//             ),
-//         },
-//         {
-//             name: 'Actions',
-//             cell: row => (
-//                 <div className="d-flex gap-2">
-//                     <Button color="soft-info" size="sm" onClick={() => handleView(row)}>
-//                         <i className="ri-eye-line" />
-//                     </Button>
-//                     <Button color="soft-primary" size="sm" onClick={() => handleEdit(row)}>
-//                         <i className="ri-pencil-line" />
-//                     </Button>
-//                     <Button color="soft-danger" size="sm" onClick={() => {
-//                         setSelectedSchool(row);
-//                         setDeleteModal(true);
-//                     }}>
-//                         <i className="ri-delete-bin-line" />
-//                     </Button>
-//                 </div>
-//             ),
-//             // width: '140px'
-//         }
-//     ];
-
-//     // Initial data load
-//     useEffect(() => {
-//         fetchSchools();
-//         fetchCategories();
-//         fetchStaff();
-//     }, []);
-
-//     return (
-//         <div className="page-content">
-//             <Container fluid>
-//                 <BreadCrumb title="Schools" pageTitle="Academics" />
-
-//                 {/* Filter Controls */}
-//                 <Card className="mb-3">
-//                     <CardBody>
-//                         <Row>
-//                             <Col md={4}>
-//                                 <FormGroup>
-//                                     <Label>Search</Label>
-//                                     <Input
-//                                         type="text"
-//                                         name="search"
-//                                         placeholder="Search by name, tagline or description"
-//                                         value={filters.search}
-//                                         onChange={handleFilterChange}
-//                                     />
-//                                 </FormGroup>
-//                             </Col>
-//                             <Col md={3}>
-//                                 <FormGroup>
-//                                     <Label>Status</Label>
-//                                     <Select
-//                                         options={statusOptions}
-//                                         value={statusOptions.find(opt => opt.value === filters.status)}
-//                                         onChange={(opt) => handleSelectFilterChange('status', opt)}
-//                                         isClearable
-//                                     />
-//                                 </FormGroup>
-//                             </Col>
-//                             <Col md={3} className="d-flex align-items-end mb-3">
-//                                 <Button color="primary" onClick={fetchSchools} disabled={loading}>
-//                                     {loading ? 'Refreshing...' : 'Refresh Data'}
-//                                 </Button>
-//                             </Col>
-//                         </Row>
-//                     </CardBody>
-//                 </Card>
-
-//                 {/* Data Table */}
-//                 <Card>
-//                     <CardHeader className="d-flex justify-content-between align-items-center">
-//                         <h5 className="mb-0">Schools List</h5>
-//                         <Button color="primary" onClick={handleCreate}>
-//                             <i className="ri-add-line me-1" /> Add School
-//                         </Button>
-//                     </CardHeader>
-//                     <CardBody className='card-body'>
-//                         {loading ? (
-//                             <Loader />
-//                         ) : (
-//                             <DataTable
-//                                 columns={columns}
-//                                 data={filteredSchools}
-//                                 pagination
-//                                 responsive
-//                                 noDataComponent="No schools found matching your criteria"
-//                                 theme={layoutModeType == "dark" ? 'customDark' : 'default'}
-//                             />
-//                         )}
-//                     </CardBody>
-//                 </Card>
-//             </Container>
-
-//             {/* Add/Edit Modal */}
-//             <Modal isOpen={modal} toggle={() => setModal(false)} size="xl" className="border-0">
-//                 <ModalHeader toggle={() => setModal(false)}>
-//                     {isEdit ? 'Edit School' : 'Add New School'}
-//                 </ModalHeader>
-//                 <Form onSubmit={formik.handleSubmit}>
-//                     <ModalBody className="modal-body">
-//                         <Row>
-
-//                             <Col md={8}>
-//                                 <FormGroup>
-//                                     <Label>Name <span className="text-danger">*</span></Label>
-//                                     <Input
-//                                         name="name"
-//                                         className="form-control"
-//                                         placeholder="school name"
-
-//                                         value={formik.values.name}
-//                                         onChange={formik.handleChange}
-//                                         onBlur={formik.handleBlur}
-//                                         invalid={formik.touched.name && !!formik.errors.name}
-//                                     />
-//                                     {formik.touched.name && formik.errors.name && (
-//                                         <div className="text-danger small">{formik.errors.name}</div>
-//                                     )}
-//                                 </FormGroup>
-//                             </Col>
-//                             <Col md={4}>
-//                                 <FormGroup>
-//                                     <Label>Order</Label>
-//                                     <Input
-//                                         type="number"
-//                                         name="order"
-//                                         value={formik.values.order}
-//                                         onChange={formik.handleChange}
-//                                         onBlur={formik.handleBlur}
-//                                         min="0"
-//                                         invalid={formik.touched.order && !!formik.errors.order}
-//                                     />
-//                                     {formik.touched.order && formik.errors.order && (
-//                                         <div className="text-danger small">{formik.errors.order}</div>
-//                                     )}
-//                                 </FormGroup>
-//                             </Col>
-//                             <Col md={12}>
-//                                 <FormGroup>
-//                                     <Label>Tagline</Label>
-//                                     <Input
-//                                         name="tagline"
-//                                         value={formik.values.tagline}
-//                                         onChange={formik.handleChange}
-//                                         onBlur={formik.handleBlur}
-//                                         invalid={formik.touched.tagline && !!formik.errors.tagline}
-//                                     />
-//                                     {formik.touched.tagline && formik.errors.tagline && (
-//                                         <div className="text-danger small">{formik.errors.tagline}</div>
-//                                     )}
-//                                 </FormGroup>
-//                             </Col>
-//                             <Col md={12} style={{ display: "none" }}>
-//                                 <FormGroup>
-//                                     <Label>Short Description</Label>
-//                                     <Input
-//                                         type="textarea"
-//                                         name="shortDescription"
-//                                         value={formik.values.shortDescription}
-//                                         onChange={formik.handleChange}
-//                                         onBlur={formik.handleBlur}
-//                                         rows="2"
-//                                         invalid={formik.touched.shortDescription && !!formik.errors.shortDescription}
-//                                     />
-//                                     {formik.touched.shortDescription && formik.errors.shortDescription && (
-//                                         <div className="text-danger small">{formik.errors.shortDescription}</div>
-//                                     )}
-//                                 </FormGroup>
-//                             </Col>
-//                             <Col md={12} style={{ display: "none" }}>
-//                                 <FormGroup>
-//                                     <Label>Description</Label>
-//                                     <Input
-//                                         type="textarea"
-//                                         name="description"
-//                                         value={formik.values.description}
-//                                         onChange={formik.handleChange}
-//                                         onBlur={formik.handleBlur}
-//                                         rows="3"
-//                                         invalid={formik.touched.description && !!formik.errors.description}
-//                                     />
-//                                     {formik.touched.description && formik.errors.description && (
-//                                         <div className="text-danger small">{formik.errors.description}</div>
-//                                     )}
-//                                 </FormGroup>
-//                             </Col>
-//                             <Col md={6}>
-//                                 <FormGroup>
-//                                     <Label>Logo URL</Label>
-//                                     <Input
-//                                         name="logoUrl"
-//                                         value={formik.values.logoUrl}
-//                                         onChange={formik.handleChange}
-//                                         onBlur={formik.handleBlur}
-//                                         invalid={formik.touched.logoUrl && !!formik.errors.logoUrl}
-//                                     />
-//                                     {formik.touched.logoUrl && formik.errors.logoUrl && (
-//                                         <div className="text-danger small">{formik.errors.logoUrl}</div>
-//                                     )}
-//                                 </FormGroup>
-//                             </Col>
-//                             <Col md={6}>
-//                                 <FormGroup>
-//                                     <Label>Cover Image URL</Label>
-//                                     <Input
-//                                         name="coverImage"
-//                                         value={formik.values.coverImage}
-//                                         onChange={formik.handleChange}
-//                                         onBlur={formik.handleBlur}
-//                                         invalid={formik.touched.coverImage && !!formik.errors.coverImage}
-//                                     />
-//                                     {formik.touched.coverImage && formik.errors.coverImage && (
-//                                         <div className="text-danger small">{formik.errors.coverImage}</div>
-//                                     )}
-//                                 </FormGroup>
-//                             </Col>
-//                             <Col md={6}>
-//                                 <FormGroup>
-//                                     <Label>Category <span className="text-danger">*</span></Label>
-//                                     <Input
-//                                         type="select"
-//                                         name="category"
-//                                         value={formik.values.category}
-//                                         onChange={formik.handleChange}
-//                                         onBlur={formik.handleBlur}
-//                                         invalid={formik.touched.category && !!formik.errors.category}
-//                                     >
-//                                         <option value="">Select Category</option>
-//                                         {categories.map(cat => (
-//                                             <option key={cat._id} value={cat._id}>{cat.name}</option>
-//                                         ))}
-//                                     </Input>
-//                                     {formik.touched.category && formik.errors.category && (
-//                                         <div className="text-danger small">{formik.errors.category}</div>
-//                                     )}
-//                                 </FormGroup>
-//                             </Col>
-//                             <Col md={6}>
-//                                 <FormGroup>
-//                                     <Label>Dean</Label>
-//                                     <Input
-//                                         type="select"
-//                                         name="dean"
-//                                         value={formik.values.dean}
-//                                         onChange={formik.handleChange}
-//                                         onBlur={formik.handleBlur}
-//                                         invalid={formik.touched.dean && !!formik.errors.dean}
-//                                     >
-//                                         <option value="">Select Dean</option>
-//                                         {staff.map(person => (
-//                                             <option key={person._id} value={person._id}>{person.name}</option>
-//                                         ))}
-//                                     </Input>
-//                                     {formik.touched.dean && formik.errors.dean && (
-//                                         <div className="text-danger small">{formik.errors.dean}</div>
-//                                     )}
-//                                 </FormGroup>
-//                             </Col>
-//                             <Col md={6}>
-//                                 <FormGroup>
-//                                     <Label>Contact Phone</Label>
-//                                     <Input
-//                                         name="contactInfo.phone"
-//                                         value={formik.values.contactInfo.phone}
-//                                         onChange={formik.handleChange}
-//                                         onBlur={formik.handleBlur}
-//                                         invalid={formik.touched.contactInfo?.phone && !!formik.errors.contactInfo?.phone}
-//                                     />
-//                                     {formik.touched.contactInfo?.phone && formik.errors.contactInfo?.phone && (
-//                                         <div className="text-danger small">{formik.errors.contactInfo.phone}</div>
-//                                     )}
-//                                 </FormGroup>
-//                             </Col>
-//                             <Col md={6}>
-//                                 <FormGroup>
-//                                     <Label>Contact Email</Label>
-//                                     <Input
-//                                         type="email"
-//                                         name="contactInfo.email"
-//                                         value={formik.values.contactInfo.email}
-//                                         onChange={formik.handleChange}
-//                                         onBlur={formik.handleBlur}
-//                                         invalid={formik.touched.contactInfo?.email && !!formik.errors.contactInfo?.email}
-//                                     />
-//                                     {formik.touched.contactInfo?.email && formik.errors.contactInfo?.email && (
-//                                         <div className="text-danger small">{formik.errors.contactInfo.email}</div>
-//                                     )}
-//                                 </FormGroup>
-//                             </Col>
-//                             <Col md={6}>
-//                                 <FormGroup>
-//                                     <Label>Location</Label>
-//                                     <Input
-//                                         name="contactInfo.location"
-//                                         value={formik.values.contactInfo.location}
-//                                         onChange={formik.handleChange}
-//                                         onBlur={formik.handleBlur}
-//                                         invalid={formik.touched.contactInfo?.location && !!formik.errors.contactInfo?.location}
-//                                     />
-//                                     {formik.touched.contactInfo?.location && formik.errors.contactInfo?.location && (
-//                                         <div className="text-danger small">{formik.errors.contactInfo.location}</div>
-//                                     )}
-//                                 </FormGroup>
-//                             </Col>
-//                             <Col md={6}>
-//                                 <FormGroup>
-//                                     <Label>Website</Label>
-//                                     <Input
-//                                         name="contactInfo.website"
-//                                         value={formik.values.contactInfo.website}
-//                                         onChange={formik.handleChange}
-//                                         onBlur={formik.handleBlur}
-//                                         invalid={formik.touched.contactInfo?.website && !!formik.errors.contactInfo?.website}
-//                                     />
-//                                     {formik.touched.contactInfo?.website && formik.errors.contactInfo?.website && (
-//                                         <div className="text-danger small">{formik.errors.contactInfo.website}</div>
-//                                     )}
-//                                 </FormGroup>
-//                             </Col>
-//                             <Col md={12}>
-//                                 <FormGroup>
-//                                     <Label>Mission</Label>
-//                                     <Input
-//                                         type="textarea"
-//                                         name="mission"
-//                                         value={formik.values.mission}
-//                                         onChange={formik.handleChange}
-//                                         onBlur={formik.handleBlur}
-//                                         rows="2"
-//                                         invalid={formik.touched.mission && !!formik.errors.mission}
-//                                     />
-//                                     {formik.touched.mission && formik.errors.mission && (
-//                                         <div className="text-danger small">{formik.errors.mission}</div>
-//                                     )}
-//                                 </FormGroup>
-//                             </Col>
-//                             <Col md={12}>
-//                                 <FormGroup>
-//                                     <Label>Vision</Label>
-//                                     <Input
-//                                         type="textarea"
-//                                         name="vision"
-//                                         value={formik.values.vision}
-//                                         onChange={formik.handleChange}
-//                                         onBlur={formik.handleBlur}
-//                                         rows="2"
-//                                         invalid={formik.touched.vision && !!formik.errors.vision}
-//                                     />
-//                                     {formik.touched.vision && formik.errors.vision && (
-//                                         <div className="text-danger small">{formik.errors.vision}</div>
-//                                     )}
-//                                 </FormGroup>
-//                             </Col>
-//                             <Col md={12}>
-//                                 <FormGroup check>
-//                                     <Input
-//                                         type="checkbox"
-//                                         name="isActive"
-//                                         checked={formik.values.isActive}
-//                                         onChange={formik.handleChange}
-//                                         id="isActive"
-//                                     />
-//                                     <Label for="isActive" check>
-//                                         Active School
-//                                     </Label>
-//                                 </FormGroup>
-//                             </Col>
-//                         </Row>
-//                     </ModalBody>
-//                     <ModalFooter>
-//                         <Button color="light" onClick={() => setModal(false)}>
-//                             Cancel
-//                         </Button>
-//                         <Button color="primary" type="submit">
-//                             {isEdit ? 'Update School' : 'Add School'}
-//                         </Button>
-//                     </ModalFooter>
-//                 </Form>
-//             </Modal>
-
-//             {/* View Modal */}
-//             <Modal isOpen={viewModal} toggle={() => setViewModal(false)} size="lg">
-//                 <ModalHeader toggle={() => setViewModal(false)}>
-//                     School Details
-//                 </ModalHeader>
-//                 <ModalBody>
-//                     {selectedSchool && (
-//                         <Row>
-//                             <Col md={12} className="text-center mb-3">
-//                                 {selectedSchool.logoUrl && (
-//                                     <img
-//                                         src={selectedSchool.logoUrl}
-//                                         alt={`${selectedSchool.name} logo`}
-//                                         className="img-fluid rounded"
-//                                         style={{ maxHeight: '150px' }}
-//                                     />
-//                                 )}
-//                                 <h3 className="mt-3">{selectedSchool.name}</h3>
-//                                 <p className="text-muted">{selectedSchool.tagline}</p>
-//                             </Col>
-
-//                             <Col md={6}>
-//                                 <h5>Basic Information</h5>
-//                                 <p><strong>Category:</strong> {selectedSchool.category?.name || 'N/A'}</p>
-//                                 <p><strong>Dean:</strong> {selectedSchool.dean?.name || 'N/A'}</p>
-//                                 <p><strong>Status:</strong>
-//                                     <Badge color={selectedSchool.isActive ? 'success' : 'danger'} className="ms-2">
-//                                         {selectedSchool.isActive ? 'Active' : 'Inactive'}
-//                                     </Badge>
-//                                 </p>
-//                                 <p><strong>Order:</strong> {selectedSchool.order}</p>
-//                             </Col>
-
-//                             <Col md={6}>
-//                                 <h5>Contact Information</h5>
-//                                 <p><strong>Phone:</strong> {selectedSchool.contactInfo?.phone || 'N/A'}</p>
-//                                 <p><strong>Email:</strong> {selectedSchool.contactInfo?.email || 'N/A'}</p>
-//                                 <p><strong>Location:</strong> {selectedSchool.contactInfo?.location || 'N/A'}</p>
-//                                 <p><strong>Website:</strong> {selectedSchool.contactInfo?.website || 'N/A'}</p>
-//                             </Col>
-
-//                             <Col md={12} className="mt-3">
-//                                 <h5>Description</h5>
-//                                 <p>{selectedSchool.shortDescription || selectedSchool.description || 'No description available'}</p>
-//                             </Col>
-
-//                             {selectedSchool.mission && (
-//                                 <Col md={6} className="mt-3">
-//                                     <h5>Mission</h5>
-//                                     <p>{selectedSchool.mission}</p>
-//                                 </Col>
-//                             )}
-
-//                             {selectedSchool.vision && (
-//                                 <Col md={6} className="mt-3">
-//                                     <h5>Vision</h5>
-//                                     <p>{selectedSchool.vision}</p>
-//                                 </Col>
-//                             )}
-
-//                             {selectedSchool.facilities && selectedSchool.facilities.length > 0 && (
-//                                 <Col md={12} className="mt-3">
-//                                     <h5>Facilities</h5>
-//                                     <ul>
-//                                         {selectedSchool.facilities.map((facility, index) => (
-//                                             <li key={index}>
-//                                                 <strong>{facility.title}:</strong> {facility.description}
-//                                             </li>
-//                                         ))}
-//                                     </ul>
-//                                 </Col>
-//                             )}
-//                         </Row>
-//                     )}
-//                 </ModalBody>
-//                 <ModalFooter>
-//                     <Button color="light" onClick={() => setViewModal(false)}>
-//                         Close
-//                     </Button>
-//                 </ModalFooter>
-//             </Modal>
-
-//             {/* Delete Confirmation Modal */}
-//             <DeleteModal
-//                 show={deleteModal}
-//                 onDeleteClick={deleteSchool}
-//                 onCloseClick={() => setDeleteModal(false)}
-//             />
-
-//             <ToastContainer />
-//         </div>
-//     );
-// };
-
-// export default Schools;

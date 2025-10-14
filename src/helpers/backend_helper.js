@@ -166,5 +166,22 @@ export const FacilitiesAPI = {
 };
 
 
+
+
+export const InstitutionsAPI = {
+    list: () => api.get(url.INSTITUTIONS),
+    createOrupdate: (payload) => {
+        // For FormData, use post with multipart/form-data headers
+        return axios.post(url.INSTITUTIONS, payload, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
+    delete: (id) => api.delete(`${url.INSTITUTIONS}/${id}`)
+};
+
+
+
 // // ================================== END OF SETUPS URL ===================================================
 

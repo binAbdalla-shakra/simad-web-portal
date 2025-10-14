@@ -31,6 +31,9 @@ export const NEWS = "/news";
 export const EVENTS = "/events";
 export const FACILITIES = "/facilities";
 
+export const INSTITUTIONS = "/institutions";
+
+
 
 
 

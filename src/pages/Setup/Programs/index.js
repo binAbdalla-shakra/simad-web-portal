@@ -652,31 +652,34 @@ const ProgramsPage = () => {
         {
             name: 'Actions',
             cell: row => (
-                <div className="d-flex gap-2">
+                <div className="d-flex gap-1">
                     <Button
-                        color="soft-info"
+                        color="outline-info"
                         size="sm"
                         onClick={() => handleView(row)}
                         title="View Details"
+                        className="btn-icon"
                     >
                         <i className="ri-eye-line" />
                     </Button>
                     <Button
-                        color="soft-primary"
+                        color="outline-primary"
                         size="sm"
                         onClick={() => handleEdit(row)}
                         title="Edit"
+                        className="btn-icon"
                     >
                         <i className="ri-pencil-line" />
                     </Button>
                     <Button
-                        color="soft-danger"
+                        color="outline-danger"
                         size="sm"
                         onClick={() => {
                             setSelectedProgram(row);
                             setDeleteModal(true);
                         }}
                         title="Delete"
+                        className="btn-icon"
                     >
                         <i className="ri-delete-bin-line" />
                     </Button>
@@ -690,50 +693,155 @@ const ProgramsPage = () => {
             <Container fluid>
                 <BreadCrumb title="Programs" pageTitle="Academics" />
 
+                {/* Stats Cards */}
+                <Row className="mb-4">
+                    <Col xl={3} md={6}>
+                        <Card className="card-animate">
+                            <CardBody>
+                                <div className="d-flex align-items-center">
+                                    <div className="flex-grow-1">
+                                        <p className="text-uppercase fw-medium text-muted mb-0">Total Programs</p>
+                                        <h4 className="mb-0">{programs.length}</h4>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                        <div className="avatar-sm">
+                                            <span className="avatar-title bg-primary-subtle text-primary rounded-circle fs-2">
+                                                <i className="ri-book-line"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                    <Col xl={3} md={6}>
+                        <Card className="card-animate">
+                            <CardBody>
+                                <div className="d-flex align-items-center">
+                                    <div className="flex-grow-1">
+                                        <p className="text-uppercase fw-medium text-muted mb-0">Active Schools</p>
+                                        <h4 className="mb-0">{new Set(programs.map(p => p.school?._id)).size}</h4>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                        <div className="avatar-sm">
+                                            <span className="avatar-title bg-success-subtle text-success rounded-circle fs-2">
+                                                <i className="ri-building-line"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                    <Col xl={3} md={6}>
+                        <Card className="card-animate">
+                            <CardBody>
+                                <div className="d-flex align-items-center">
+                                    <div className="flex-grow-1">
+                                        <p className="text-uppercase fw-medium text-muted mb-0">Average Duration</p>
+                                        <h4 className="mb-0">
+                                            {programs.length > 0
+                                                ? (programs.reduce((sum, p) => sum + (p.duration || 0), 0) / programs.length).toFixed(1)
+                                                : 0
+                                            } years
+                                        </h4>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                        <div className="avatar-sm">
+                                            <span className="avatar-title bg-info-subtle text-info rounded-circle fs-2">
+                                                <i className="ri-time-line"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                    <Col xl={3} md={6}>
+                        <Card className="card-animate">
+                            <CardBody>
+                                <div className="d-flex align-items-center">
+                                    <div className="flex-grow-1">
+                                        <p className="text-uppercase fw-medium text-muted mb-0">With Cover Images</p>
+                                        <h4 className="mb-0">
+                                            {programs.filter(p => p.coverImage).length}
+                                        </h4>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                        <div className="avatar-sm">
+                                            <span className="avatar-title bg-warning-subtle text-warning rounded-circle fs-2">
+                                                <i className="ri-image-line"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                </Row>
+
                 {/* Filter Controls */}
-                <Card className="mb-3">
-                    <CardBody>
-                        <Row>
-                            <Col md={4}>
-                                <FormGroup>
-                                    <Label>Search</Label>
+                <Card className="mb-4">
+                    <CardBody className="p-3">
+                        <Row className="g-3 align-items-end">
+                            <Col md={6}>
+                                <FormGroup className="mb-0">
+                                    <Label className="form-label">Search Programs</Label>
                                     <Input
                                         type="text"
                                         name="search"
-                                        placeholder="Search by program name, short name, or tagline"
+                                        placeholder="Search by program name, short name, or tagline..."
                                         value={filters.search}
                                         onChange={handleFilterChange}
+                                        className="form-control"
                                     />
                                 </FormGroup>
                             </Col>
-                            {/* <Col md={4}>
-                                <FormGroup>
-                                    <Label>School</Label>
-                                    <Input
-                                        type="select"
-                                        name="school"
-                                        value={filters.school}
-                                        onChange={handleFilterChange}
-                                    >
-                                        <option value="">All Schools</option>
-                                        {schoolOptions.map(option => (
-                                            <option key={option.value} value={option.value}>
-                                                {option.label}
-                                            </option>
-                                        ))}
-                                    </Input>
+                            <Col md={4}>
+                                <FormGroup className="mb-0">
+                                    <Label className="form-label">School</Label>
+                                    <Select
+                                        options={schoolOptions}
+                                        value={schoolOptions.find(option => option.value === filters.school)}
+                                        onChange={(selected) => setFilters(prev => ({
+                                            ...prev,
+                                            school: selected ? selected.value : ""
+                                        }))}
+                                        isClearable
+                                        placeholder="Filter by school..."
+                                        className="react-select"
+                                        classNamePrefix="select"
+                                    />
                                 </FormGroup>
-                            </Col> */}
+                            </Col>
+                            <Col md={2}>
+                                <Button
+                                    color="primary"
+                                    className="w-100 mb-3"
+                                    onClick={() => setFilters({
+                                        search: '',
+                                        school: ''
+                                    })}
+                                >
+                                    <i className="ri-refresh-line me-1"></i>
+                                    Reset
+                                </Button>
+                            </Col>
                         </Row>
                     </CardBody>
                 </Card>
 
                 {/* Programs Table */}
                 <Card>
-                    <CardHeader className="d-flex justify-content-between align-items-center">
-                        <h5 className="mb-0">Programs List</h5>
-                        <Button color="primary" onClick={handleCreate}>
-                            <i className="ri-add-line me-1" /> Add Program
+                    <CardHeader className="d-flex justify-content-between align-items-center bg-light">
+                        <h5 className="card-title mb-0 flex-grow-1">
+                            <i className="ri-book-line align-middle me-2"></i>
+                            Programs List
+                            <Badge color="primary" className="ms-2">{filteredPrograms.length}</Badge>
+                        </h5>
+                        <Button color="primary" onClick={handleCreate} className="shadow-sm">
+                            <i className="ri-add-line me-1 align-middle"></i>
+                            Add Program
                         </Button>
                     </CardHeader>
                     <CardBody>
@@ -744,9 +852,31 @@ const ProgramsPage = () => {
                                 columns={columns}
                                 data={filteredPrograms}
                                 pagination
-                                highlightOnHover
+                                // highlightOnHover
                                 responsive
-                                noDataComponent="No programs found matching your criteria"
+                                // striped
+                                noDataComponent={
+                                    <div className="text-center py-5">
+                                        <i className="ri-inbox-line display-4 text-muted"></i>
+                                        <h5 className="mt-3">No programs found</h5>
+                                        <p className="text-muted">Try adjusting your search criteria or add a new program.</p>
+                                    </div>
+                                }
+                                customStyles={{
+                                    headCells: {
+                                        style: {
+                                            // backgroundColor: '#f8f9fa',
+                                            fontWeight: '600',
+                                            fontSize: '0.875rem',
+                                        },
+                                    },
+                                    cells: {
+                                        style: {
+                                            fontSize: '0.875rem',
+                                            padding: '12px 8px',
+                                        },
+                                    },
+                                }}
                             />
                         )}
                     </CardBody>
@@ -1409,230 +1539,561 @@ const ProgramsPage = () => {
             </Modal>
 
             {/* View Modal */}
-            <Modal isOpen={viewModal} toggle={() => setViewModal(false)} size="xl" scrollable>
-                <ModalHeader toggle={() => setViewModal(false)}>
-                    Program Details - {selectedProgram?.name}
+            <Modal isOpen={viewModal} toggle={() => setViewModal(false)} size="xl" centered className="modal-fullscreen-lg-down">
+                <ModalHeader toggle={() => setViewModal(false)} className="bg-light border-bottom">
+                    <div className="d-flex align-items-center">
+                        <div className="flex-shrink-0">
+                            {selectedProgram?.icon ? (
+                                <div className="avatar-title bg-primary bg-opacity-10 text-primary rounded me-3">
+                                    <i className={selectedProgram.icon + " fs-4"} />
+                                </div>
+                            ) : (
+                                <div className="avatar-title bg-light text-secondary rounded me-3">
+                                    <i className="ri-book-line fs-4" />
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex-grow-1">
+                            <h5 className="modal-title mb-0">{selectedProgram?.name}</h5>
+                            {selectedProgram?.shortName && (
+                                <small className="text-muted">{selectedProgram.shortName} • Program Details</small>
+                            )}
+                        </div>
+                    </div>
                 </ModalHeader>
-                <ModalBody style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                <ModalBody className="p-0">
                     {selectedProgram && (
-                        <>
-                            {/* Step Navigation for View */}
-                            <div className="step-arrow-nav mb-4">
+                        <div className="program-details-container">
+                            {/* Header Section with Cover Image */}
+                            {selectedProgram.coverImage && (
+                                <div className="program-cover-section position-relative">
+                                    <img
+                                        src={selectedProgram.coverImage}
+                                        alt="Cover"
+                                        className="img-fluid w-100"
+                                        style={{ height: '200px', objectFit: 'cover' }}
+                                    />
+                                    <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-25 d-flex align-items-center justify-content-center">
+                                        <div className="text-center text-white">
+                                            <h3 className="mb-1 text-white">{selectedProgram.name}</h3>
+                                            {selectedProgram.shortName && (
+                                                <p className="mb-0 fs-5">({selectedProgram.shortName})</p>
+                                            )}
+                                            {selectedProgram.tagline && (
+                                                <p className="mb-0 mt-2">{selectedProgram.tagline}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
-
-
+                            {/* Step Navigation */}
+                            <div className="step-arrow-nav border-bottom bg-white sticky-top" style={{ top: 0, zIndex: 1020 }}>
                                 <Nav className="nav-pills custom-nav nav-justified" role="tablist">
                                     <NavItem>
                                         <NavLink
-                                            className={activeTab === '1' ? 'active' : ''}
+                                            className={`d-flex align-items-center justify-content-center py-3 ${activeTab === '1' ? 'active' : ''}`}
                                             onClick={() => setActiveTab('1')}
                                         >
-                                            <i className="ri-book-line me-1" /> Basic Info
+                                            <i className="ri-book-line me-2 fs-5"></i>
+                                            <span>Basic Info</span>
                                         </NavLink>
                                     </NavItem>
                                     <NavItem>
                                         <NavLink
-                                            className={activeTab === '2' ? 'active' : ''}
+                                            className={`d-flex align-items-center justify-content-center py-3 ${activeTab === '2' ? 'active' : ''}`}
                                             onClick={() => setActiveTab('2')}
                                         >
-                                            <i className="ri-information-line me-1" /> Program Details
+                                            <i className="ri-information-line me-2 fs-5"></i>
+                                            <span>Program Details</span>
                                         </NavLink>
                                     </NavItem>
                                     <NavItem>
                                         <NavLink
-                                            className={activeTab === '3' ? 'active' : ''}
+                                            className={`d-flex align-items-center justify-content-center py-3 ${activeTab === '3' ? 'active' : ''}`}
                                             onClick={() => setActiveTab('3')}
                                         >
-                                            <i className="ri-file-list-line me-1" /> Curriculum
+                                            <i className="ri-file-list-line me-2 fs-5"></i>
+                                            <span>Curriculum</span>
                                         </NavLink>
                                     </NavItem>
                                     <NavItem>
                                         <NavLink
-                                            className={activeTab === '4' ? 'active' : ''}
+                                            className={`d-flex align-items-center justify-content-center py-3 ${activeTab === '4' ? 'active' : ''}`}
                                             onClick={() => setActiveTab('4')}
                                         >
-                                            <i className="ri-clipboard-line me-1" /> Admission
+                                            <i className="ri-clipboard-line me-2 fs-5"></i>
+                                            <span>Admission</span>
                                         </NavLink>
                                     </NavItem>
                                     <NavItem>
                                         <NavLink
-                                            className={activeTab === '5' ? 'active' : ''}
+                                            className={`d-flex align-items-center justify-content-center py-3 ${activeTab === '5' ? 'active' : ''}`}
                                             onClick={() => setActiveTab('5')}
                                         >
-                                            <i className="ri-briefcase-line me-1" /> Career Paths
+                                            <i className="ri-briefcase-line me-2 fs-5"></i>
+                                            <span>Career Paths</span>
                                         </NavLink>
                                     </NavItem>
                                 </Nav>
                             </div>
-                            <TabContent activeTab={activeTab}>
-                                {/* Tab 1: Basic Information */}
-                                <TabPane tabId="1">
-                                    <Row>
-                                        <Col md={4} className="text-center mb-3">
-                                            {selectedProgram.icon ? (
-                                                <div className="avatar-title bg-light text-primary rounded-circle display-4 mb-3">
-                                                    <i className={selectedProgram.icon} />
-                                                </div>
-                                            ) : (
-                                                <div className="avatar-title bg-light text-secondary rounded-circle display-4 mb-3">
-                                                    <i className="ri-book-line" />
-                                                </div>
-                                            )}
-                                            <h6 className="mt-2">Program Icon</h6>
-                                            {selectedProgram.icon && (
-                                                <p className="text-muted small">{selectedProgram.icon}</p>
-                                            )}
-                                        </Col>
-                                        <Col md={8}>
-                                            <h4>{selectedProgram.name}</h4>
-                                            {selectedProgram.shortName && (
-                                                <h5 className="text-primary">({selectedProgram.shortName})</h5>
-                                            )}
-                                            {selectedProgram.tagline && (
-                                                <p className="text-muted">{selectedProgram.tagline}</p>
-                                            )}
-                                            <div className="mt-3">
-                                                <p><strong>School:</strong> {selectedProgram.school?.name || 'N/A'}</p>
-                                                <p><strong>Provider:</strong> {selectedProgram.provider}</p>
-                                                <p><strong>Order:</strong> {selectedProgram.order}</p>
-                                                {selectedProgram.externalLink && (
-                                                    <p>
-                                                        <strong>External Link:</strong>{' '}
-                                                        <a href={selectedProgram.externalLink} target="_blank" rel="noopener noreferrer">
-                                                            {selectedProgram.externalLink}
-                                                        </a>
-                                                    </p>
+
+                            {/* Tab Content */}
+                            <div className="tab-content p-4" style={{ maxHeight: 'calc(70vh - 140px)', overflowY: 'auto' }}>
+                                <TabContent activeTab={activeTab}>
+                                    {/* Tab 1: Basic Information */}
+                                    <TabPane tabId="1">
+                                        <Row className="g-4">
+                                            <Col lg={4}>
+                                                <Card className="border-0 shadow-sm">
+                                                    <CardBody className="text-center p-4">
+                                                        {selectedProgram.icon ? (
+                                                            <div className="avatar-title bg-primary bg-opacity-10 text-primary rounded-circle display-4 mb-3" style={{ width: '100px', height: '100px', lineHeight: '100px' }}>
+                                                                <i className={selectedProgram.icon} />
+                                                            </div>
+                                                        ) : (
+                                                            <div className="avatar-title bg-light text-secondary rounded-circle display-4 mb-3" style={{ width: '100px', height: '100px', lineHeight: '100px' }}>
+                                                                <i className="ri-book-line" />
+                                                            </div>
+                                                        )}
+                                                        <h5 className="mb-2">{selectedProgram.name}</h5>
+                                                        {selectedProgram.shortName && (
+                                                            <p className="text-primary mb-2">({selectedProgram.shortName})</p>
+                                                        )}
+                                                        {selectedProgram.tagline && (
+                                                            <p className="text-muted mb-3">{selectedProgram.tagline}</p>
+                                                        )}
+                                                        <div className="d-flex justify-content-center gap-2 flex-wrap">
+                                                            <Badge color="primary" className="fs-6">Order: {selectedProgram.order}</Badge>
+                                                            {selectedProgram.school && (
+                                                                <Badge color="success" className="fs-6">{selectedProgram.school.name}</Badge>
+                                                            )}
+                                                        </div>
+                                                    </CardBody>
+                                                </Card>
+
+                                                <Card className="border-0 shadow-sm mt-3">
+                                                    <CardHeader className="bg-light">
+                                                        <h6 className="mb-0">
+                                                            <i className="ri-links-line me-2"></i>
+                                                            Quick Info
+                                                        </h6>
+                                                    </CardHeader>
+                                                    <CardBody>
+                                                        <div className="space-y-3">
+                                                            <div className="d-flex align-items-center">
+                                                                <i className="ri-building-line text-primary me-3 fs-5"></i>
+                                                                <div>
+                                                                    <small className="text-muted d-block">School</small>
+                                                                    <strong>{selectedProgram.school?.name || 'Not specified'}</strong>
+                                                                </div>
+                                                            </div>
+                                                            <div className="d-flex align-items-center">
+                                                                <i className="ri-user-line text-primary me-3 fs-5"></i>
+                                                                <div>
+                                                                    <small className="text-muted d-block">Provider</small>
+                                                                    <strong>{selectedProgram.provider}</strong>
+                                                                </div>
+                                                            </div>
+                                                            <div className="d-flex align-items-center">
+                                                                <i className="ri-list-ordered text-primary me-3 fs-5"></i>
+                                                                <div>
+                                                                    <small className="text-muted d-block">Display Order</small>
+                                                                    <strong>{selectedProgram.order}</strong>
+                                                                </div>
+                                                            </div>
+                                                            {selectedProgram.externalLink && (
+                                                                <div className="d-flex align-items-center">
+                                                                    <i className="ri-external-link-line text-primary me-3 fs-5"></i>
+                                                                    <div>
+                                                                        <small className="text-muted d-block">External Link</small>
+                                                                        <a href={selectedProgram.externalLink} target="_blank" rel="noopener noreferrer" className="text-decoration-none">
+                                                                            <strong>Visit Website</strong>
+                                                                        </a>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </CardBody>
+                                                </Card>
+                                            </Col>
+                                            <Col lg={8}>
+                                                {!selectedProgram.coverImage && (
+                                                    <Card className="border-0 shadow-sm mb-4">
+                                                        <CardBody className="text-center py-5">
+                                                            <i className="ri-image-line display-4 text-muted"></i>
+                                                            <h5 className="mt-3 text-muted">No Cover Image</h5>
+                                                            <p className="text-muted mb-0">No cover image has been set for this program.</p>
+                                                        </CardBody>
+                                                    </Card>
                                                 )}
-                                            </div>
-                                        </Col>
-                                        <Col md={12} className="mt-3">
-                                            {selectedProgram.coverImage && (
-                                                <div className="mb-3">
-                                                    <img
-                                                        src={selectedProgram.coverImage}
-                                                        alt="Cover"
-                                                        className="img-fluid rounded"
-                                                        style={{ maxHeight: '200px', objectFit: 'cover', width: '100%' }}
-                                                    />
-                                                    <h6 className="text-center mt-2">Cover Image</h6>
-                                                </div>
-                                            )}
-                                        </Col>
-                                    </Row>
-                                </TabPane>
 
-                                {/* Tab 2: Program Details */}
-                                <TabPane tabId="2">
-                                    <Row>
-                                        <Col md={6}>
-                                            <h6>About Program</h6>
-                                            <p><strong>Section Title:</strong> {selectedProgram.about_program_sec_title || 'N/A'}</p>
-                                            <p><strong>Section Icon:</strong> {selectedProgram.about_program_sec_icon || 'N/A'}</p>
-                                            <p><strong>Information:</strong> {selectedProgram.about_program_sec_info || 'N/A'}</p>
-                                        </Col>
-                                        <Col md={6}>
-                                            <h6>Duration & Fees</h6>
-                                            <p><strong>Duration:</strong> {selectedProgram.duration} years</p>
-                                            <p><strong>Duration Section Title:</strong> {selectedProgram.duration_sec_title || 'N/A'}</p>
-                                            <p><strong>Duration Section Icon:</strong> {selectedProgram.duration_sec_icon || 'N/A'}</p>
-                                            <p><strong>Semester Fee:</strong> ${selectedProgram.sem_fee || 'N/A'}</p>
-                                            <p><strong>Fee Section Title:</strong> {selectedProgram.sem_fee_sec_title || 'N/A'}</p>
-                                            <p><strong>Fee Section Icon:</strong> {selectedProgram.sem_fee_sec_icon || 'N/A'}</p>
-                                        </Col>
-                                    </Row>
-                                </TabPane>
-
-                                {/* Tab 3: Curriculum */}
-                                <TabPane tabId="3">
-                                    <Row>
-                                        <Col md={12}>
-                                            <h6>Curriculum Section</h6>
-                                            <p><strong>Title:</strong> {selectedProgram.curriculum_sec_title || 'N/A'}</p>
-                                            <p><strong>Icon:</strong> {selectedProgram.curriculum_sec_icon || 'N/A'}</p>
-                                            <p><strong>Description:</strong> {selectedProgram.curriculum_sec_desc || 'N/A'}</p>
-                                        </Col>
-                                        <Col md={12} className="mt-3">
-                                            <h6>Curriculum Items</h6>
-                                            {selectedProgram.curriculum?.length > 0 ? (
-                                                selectedProgram.curriculum.map((item, index) => (
-                                                    <Card key={index} className="mb-3">
+                                                {selectedProgram.about_program_sec_info && (
+                                                    <Card className="border-0 shadow-sm">
+                                                        <CardHeader className="bg-light">
+                                                            <h6 className="mb-0">
+                                                                <i className="ri-information-line me-2"></i>
+                                                                Program Overview
+                                                            </h6>
+                                                        </CardHeader>
                                                         <CardBody>
-                                                            <h6>{item.title}</h6>
-                                                            {item.icon && (
-                                                                <p><i className={item.icon} /> {item.icon}</p>
-                                                            )}
-                                                            <p className="mb-2">{item.description}</p>
-                                                            <small className="text-muted">Order: {item.order}</small>
+                                                            <p className="mb-0">{selectedProgram.about_program_sec_info}</p>
                                                         </CardBody>
                                                     </Card>
-                                                ))
-                                            ) : (
-                                                <p>No curriculum items recorded.</p>
-                                            )}
-                                        </Col>
-                                    </Row>
-                                </TabPane>
+                                                )}
+                                            </Col>
+                                        </Row>
+                                    </TabPane>
 
-                                {/* Tab 4: Admission Requirements */}
-                                <TabPane tabId="4">
-                                    <Row>
-                                        <Col md={12}>
-                                            <h6>Admission Requirements Section</h6>
-                                            <p><strong>Title:</strong> {selectedProgram.admissionRequirements_sec_title || 'N/A'}</p>
-                                            <p><strong>Icon:</strong> {selectedProgram.admissionRequirements_sec_icon || 'N/A'}</p>
-                                            <p><strong>Description:</strong> {selectedProgram.admissionRequirements_sec_desc || 'N/A'}</p>
-                                        </Col>
-                                        <Col md={12} className="mt-3">
-                                            <h6>Admission Requirements</h6>
-                                            {selectedProgram.admissionRequirements?.length > 0 ? (
-                                                <ul>
-                                                    {selectedProgram.admissionRequirements.map((requirement, index) => (
-                                                        <li key={index}>{requirement}</li>
-                                                    ))}
-                                                </ul>
-                                            ) : (
-                                                <p>No admission requirements recorded.</p>
-                                            )}
-                                        </Col>
-                                    </Row>
-                                </TabPane>
-
-                                {/* Tab 5: Career Paths */}
-                                <TabPane tabId="5">
-                                    <Row>
-                                        <Col md={12}>
-                                            <h6>Career Paths Section</h6>
-                                            <p><strong>Title:</strong> {selectedProgram.careerPaths_sec_title || 'N/A'}</p>
-                                            <p><strong>Icon:</strong> {selectedProgram.careerPaths_sec_icon || 'N/A'}</p>
-                                            <p><strong>Description:</strong> {selectedProgram.careerPaths_sec_desc || 'N/A'}</p>
-                                        </Col>
-                                        <Col md={12} className="mt-3">
-                                            <h6>Career Path Items</h6>
-                                            {selectedProgram.careerPaths?.length > 0 ? (
-                                                selectedProgram.careerPaths.map((item, index) => (
-                                                    <Card key={index} className="mb-3">
-                                                        <CardBody>
-                                                            <h6>{item.title}</h6>
-                                                            {item.icon && (
-                                                                <p><i className={item.icon} /> {item.icon}</p>
+                                    {/* Tab 2: Program Details */}
+                                    <TabPane tabId="2">
+                                        <Row className="g-4">
+                                            <Col lg={6}>
+                                                <Card className="border-0 shadow-sm h-100">
+                                                    <CardHeader className="bg-light">
+                                                        <h6 className="mb-0">
+                                                            <i className="ri-information-line me-2"></i>
+                                                            About Program Section
+                                                        </h6>
+                                                    </CardHeader>
+                                                    <CardBody>
+                                                        <div className="space-y-3">
+                                                            <div>
+                                                                <small className="text-muted d-block">Section Title</small>
+                                                                <strong>{selectedProgram.about_program_sec_title || 'Not set'}</strong>
+                                                            </div>
+                                                            <div>
+                                                                <small className="text-muted d-block">Section Icon</small>
+                                                                <div className="d-flex align-items-center">
+                                                                    {selectedProgram.about_program_sec_icon ? (
+                                                                        <>
+                                                                            <i className={selectedProgram.about_program_sec_icon + " text-primary me-2"}></i>
+                                                                            <span>{selectedProgram.about_program_sec_icon}</span>
+                                                                        </>
+                                                                    ) : (
+                                                                        <span className="text-muted">Not set</span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            {selectedProgram.about_program_sec_info && (
+                                                                <div>
+                                                                    <small className="text-muted d-block">Information</small>
+                                                                    <p className="mb-0">{selectedProgram.about_program_sec_info}</p>
+                                                                </div>
                                                             )}
-                                                            <p className="mb-2">{item.description}</p>
-                                                            <small className="text-muted">Order: {item.order}</small>
-                                                        </CardBody>
-                                                    </Card>
-                                                ))
-                                            ) : (
-                                                <p>No career paths recorded.</p>
-                                            )}
-                                        </Col>
-                                    </Row>
-                                </TabPane>
-                            </TabContent>
-                        </>
+                                                        </div>
+                                                    </CardBody>
+                                                </Card>
+                                            </Col>
+                                            <Col lg={6}>
+                                                <Card className="border-0 shadow-sm h-100">
+                                                    <CardHeader className="bg-light">
+                                                        <h6 className="mb-0">
+                                                            <i className="ri-time-line me-2"></i>
+                                                            Duration & Fees
+                                                        </h6>
+                                                    </CardHeader>
+                                                    <CardBody>
+                                                        <div className="space-y-3">
+                                                            <div className="d-flex align-items-center">
+                                                                <i className="ri-calendar-line text-success me-3 fs-5"></i>
+                                                                <div>
+                                                                    <small className="text-muted d-block">Duration</small>
+                                                                    <strong>{selectedProgram.duration} years</strong>
+                                                                </div>
+                                                            </div>
+                                                            <div className="d-flex align-items-center">
+                                                                <i className="ri-money-dollar-circle-line text-success me-3 fs-5"></i>
+                                                                <div>
+                                                                    <small className="text-muted d-block">Semester Fee</small>
+                                                                    <strong>${selectedProgram.sem_fee || 'Not specified'}</strong>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <small className="text-muted d-block">Duration Section</small>
+                                                                <div className="d-flex align-items-center">
+                                                                    {selectedProgram.duration_sec_icon && (
+                                                                        <i className={selectedProgram.duration_sec_icon + " text-primary me-2"}></i>
+                                                                    )}
+                                                                    <span>{selectedProgram.duration_sec_title || 'Not set'}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <small className="text-muted d-block">Fee Section</small>
+                                                                <div className="d-flex align-items-center">
+                                                                    {selectedProgram.sem_fee_sec_icon && (
+                                                                        <i className={selectedProgram.sem_fee_sec_icon + " text-primary me-2"}></i>
+                                                                    )}
+                                                                    <span>{selectedProgram.sem_fee_sec_title || 'Not set'}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </CardBody>
+                                                </Card>
+                                            </Col>
+                                        </Row>
+                                    </TabPane>
+
+                                    {/* Tab 3: Curriculum */}
+                                    <TabPane tabId="3">
+                                        <Row className="g-4">
+                                            <Col lg={4}>
+                                                <Card className="border-0 shadow-sm">
+                                                    <CardHeader className="bg-light">
+                                                        <h6 className="mb-0">
+                                                            <i className="ri-book-open-line me-2"></i>
+                                                            Curriculum Section
+                                                        </h6>
+                                                    </CardHeader>
+                                                    <CardBody>
+                                                        <div className="space-y-3">
+                                                            <div>
+                                                                <small className="text-muted d-block">Title</small>
+                                                                <strong>{selectedProgram.curriculum_sec_title || 'Not set'}</strong>
+                                                            </div>
+                                                            <div>
+                                                                <small className="text-muted d-block">Icon</small>
+                                                                <div className="d-flex align-items-center">
+                                                                    {selectedProgram.curriculum_sec_icon ? (
+                                                                        <>
+                                                                            <i className={selectedProgram.curriculum_sec_icon + " text-primary me-2"}></i>
+                                                                            <span>{selectedProgram.curriculum_sec_icon}</span>
+                                                                        </>
+                                                                    ) : (
+                                                                        <span className="text-muted">Not set</span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            {selectedProgram.curriculum_sec_desc && (
+                                                                <div>
+                                                                    <small className="text-muted d-block">Description</small>
+                                                                    <p className="mb-0 small">{selectedProgram.curriculum_sec_desc}</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </CardBody>
+                                                </Card>
+                                            </Col>
+                                            <Col lg={8}>
+                                                <Card className="border-0 shadow-sm">
+                                                    <CardHeader className="bg-light">
+                                                        <h6 className="mb-0">
+                                                            <i className="ri-list-check me-2"></i>
+                                                            Curriculum Items ({selectedProgram.curriculum?.length || 0})
+                                                        </h6>
+                                                    </CardHeader>
+                                                    <CardBody>
+                                                        {selectedProgram.curriculum?.length > 0 ? (
+                                                            <Row className="g-3">
+                                                                {selectedProgram.curriculum.map((item, index) => (
+                                                                    <Col lg={6} key={index}>
+                                                                        <Card className="border">
+                                                                            <CardBody>
+                                                                                <div className="d-flex align-items-start mb-2">
+                                                                                    <div className="flex-shrink-0">
+                                                                                        {item.icon ? (
+                                                                                            <div className="avatar-title bg-primary bg-opacity-10 text-primary rounded-circle">
+                                                                                                <i className={item.icon}></i>
+                                                                                            </div>
+                                                                                        ) : (
+                                                                                            <div className="avatar-title bg-light text-secondary rounded-circle">
+                                                                                                <i className="ri-book-2-line"></i>
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    <div className="flex-grow-1 ms-3">
+                                                                                        <h6 className="mb-1">{item.title}</h6>
+                                                                                        <small className="text-muted">Order: {item.order}</small>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <p className="mb-0 small text-muted">{item.description}</p>
+                                                                            </CardBody>
+                                                                        </Card>
+                                                                    </Col>
+                                                                ))}
+                                                            </Row>
+                                                        ) : (
+                                                            <div className="text-center py-4">
+                                                                <i className="ri-inbox-line display-4 text-muted"></i>
+                                                                <h5 className="mt-3 text-muted">No Curriculum Items</h5>
+                                                                <p className="text-muted mb-0">No curriculum items have been added to this program.</p>
+                                                            </div>
+                                                        )}
+                                                    </CardBody>
+                                                </Card>
+                                            </Col>
+                                        </Row>
+                                    </TabPane>
+
+                                    {/* Tab 4: Admission Requirements */}
+                                    <TabPane tabId="4">
+                                        <Row className="g-4">
+                                            <Col lg={4}>
+                                                <Card className="border-0 shadow-sm">
+                                                    <CardHeader className="bg-light">
+                                                        <h6 className="mb-0">
+                                                            <i className="ri-clipboard-line me-2"></i>
+                                                            Admission Section
+                                                        </h6>
+                                                    </CardHeader>
+                                                    <CardBody>
+                                                        <div className="space-y-3">
+                                                            <div>
+                                                                <small className="text-muted d-block">Title</small>
+                                                                <strong>{selectedProgram.admissionRequirements_sec_title || 'Not set'}</strong>
+                                                            </div>
+                                                            <div>
+                                                                <small className="text-muted d-block">Icon</small>
+                                                                <div className="d-flex align-items-center">
+                                                                    {selectedProgram.admissionRequirements_sec_icon ? (
+                                                                        <>
+                                                                            <i className={selectedProgram.admissionRequirements_sec_icon + " text-primary me-2"}></i>
+                                                                            <span>{selectedProgram.admissionRequirements_sec_icon}</span>
+                                                                        </>
+                                                                    ) : (
+                                                                        <span className="text-muted">Not set</span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            {selectedProgram.admissionRequirements_sec_desc && (
+                                                                <div>
+                                                                    <small className="text-muted d-block">Description</small>
+                                                                    <p className="mb-0 small">{selectedProgram.admissionRequirements_sec_desc}</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </CardBody>
+                                                </Card>
+                                            </Col>
+                                            <Col lg={8}>
+                                                <Card className="border-0 shadow-sm">
+                                                    <CardHeader className="bg-light">
+                                                        <h6 className="mb-0">
+                                                            <i className="ri-list-check-2 me-2"></i>
+                                                            Admission Requirements ({selectedProgram.admissionRequirements?.length || 0})
+                                                        </h6>
+                                                    </CardHeader>
+                                                    <CardBody>
+                                                        {selectedProgram.admissionRequirements?.length > 0 ? (
+                                                            <div className="space-y-2">
+                                                                {selectedProgram.admissionRequirements.map((requirement, index) => (
+                                                                    <div key={index} className="d-flex align-items-start">
+                                                                        <i className="ri-check-line text-success mt-1 me-2"></i>
+                                                                        <span>{requirement}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="text-center py-4">
+                                                                <i className="ri-inbox-line display-4 text-muted"></i>
+                                                                <h5 className="mt-3 text-muted">No Requirements</h5>
+                                                                <p className="text-muted mb-0">No admission requirements have been specified.</p>
+                                                            </div>
+                                                        )}
+                                                    </CardBody>
+                                                </Card>
+                                            </Col>
+                                        </Row>
+                                    </TabPane>
+
+                                    {/* Tab 5: Career Paths */}
+                                    <TabPane tabId="5">
+                                        <Row className="g-4">
+                                            <Col lg={4}>
+                                                <Card className="border-0 shadow-sm">
+                                                    <CardHeader className="bg-light">
+                                                        <h6 className="mb-0">
+                                                            <i className="ri-briefcase-line me-2"></i>
+                                                            Career Paths Section
+                                                        </h6>
+                                                    </CardHeader>
+                                                    <CardBody>
+                                                        <div className="space-y-3">
+                                                            <div>
+                                                                <small className="text-muted d-block">Title</small>
+                                                                <strong>{selectedProgram.careerPaths_sec_title || 'Not set'}</strong>
+                                                            </div>
+                                                            <div>
+                                                                <small className="text-muted d-block">Icon</small>
+                                                                <div className="d-flex align-items-center">
+                                                                    {selectedProgram.careerPaths_sec_icon ? (
+                                                                        <>
+                                                                            <i className={selectedProgram.careerPaths_sec_icon + " text-primary me-2"}></i>
+                                                                            <span>{selectedProgram.careerPaths_sec_icon}</span>
+                                                                        </>
+                                                                    ) : (
+                                                                        <span className="text-muted">Not set</span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            {selectedProgram.careerPaths_sec_desc && (
+                                                                <div>
+                                                                    <small className="text-muted d-block">Description</small>
+                                                                    <p className="mb-0 small">{selectedProgram.careerPaths_sec_desc}</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </CardBody>
+                                                </Card>
+                                            </Col>
+                                            <Col lg={8}>
+                                                <Card className="border-0 shadow-sm">
+                                                    <CardHeader className="bg-light">
+                                                        <h6 className="mb-0">
+                                                            <i className="ri-user-star-line me-2"></i>
+                                                            Career Path Items ({selectedProgram.careerPaths?.length || 0})
+                                                        </h6>
+                                                    </CardHeader>
+                                                    <CardBody>
+                                                        {selectedProgram.careerPaths?.length > 0 ? (
+                                                            <Row className="g-3">
+                                                                {selectedProgram.careerPaths.map((item, index) => (
+                                                                    <Col lg={6} key={index}>
+                                                                        <Card className="border">
+                                                                            <CardBody>
+                                                                                <div className="d-flex align-items-start mb-2">
+                                                                                    <div className="flex-shrink-0">
+                                                                                        {item.icon ? (
+                                                                                            <div className="avatar-title bg-warning bg-opacity-10 text-warning rounded-circle">
+                                                                                                <i className={item.icon}></i>
+                                                                                            </div>
+                                                                                        ) : (
+                                                                                            <div className="avatar-title bg-light text-secondary rounded-circle">
+                                                                                                <i className="ri-briefcase-4-line"></i>
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    <div className="flex-grow-1 ms-3">
+                                                                                        <h6 className="mb-1">{item.title}</h6>
+                                                                                        <small className="text-muted">Order: {item.order}</small>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <p className="mb-0 small text-muted">{item.description}</p>
+                                                                            </CardBody>
+                                                                        </Card>
+                                                                    </Col>
+                                                                ))}
+                                                            </Row>
+                                                        ) : (
+                                                            <div className="text-center py-4">
+                                                                <i className="ri-inbox-line display-4 text-muted"></i>
+                                                                <h5 className="mt-3 text-muted">No Career Paths</h5>
+                                                                <p className="text-muted mb-0">No career paths have been defined for this program.</p>
+                                                            </div>
+                                                        )}
+                                                    </CardBody>
+                                                </Card>
+                                            </Col>
+                                        </Row>
+                                    </TabPane>
+                                </TabContent>
+                            </div>
+                        </div>
                     )}
                 </ModalBody>
-                <ModalFooter>
-                    <Button color="light" onClick={() => setViewModal(false)}>
+                <ModalFooter className="bg-light border-top">
+                    <Button color="light" onClick={() => setViewModal(false)} className="d-flex align-items-center">
+                        <i className="ri-close-line me-2"></i>
                         Close
                     </Button>
                 </ModalFooter>

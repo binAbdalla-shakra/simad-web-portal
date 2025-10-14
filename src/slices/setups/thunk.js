@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { PartnerAPI, PartnerCategoryAPI, ProgramAPI, ProgramCategoryAPI, SchoolAPI, StaffAPI } from "../../helpers/backend_helper";
+import { InstitutionsAPI, PartnerAPI, PartnerCategoryAPI, ProgramAPI, ProgramCategoryAPI, SchoolAPI, StaffAPI } from "../../helpers/backend_helper";
 import { makeCRUDThunks } from "../../helpers/thunk_factory";
 import { toast } from "react-toastify";
 
@@ -116,6 +116,32 @@ export const CreateOrUpdatePartner = createAsyncThunk(
 
 
 
+
+
+
+export const {
+    list: getInstitutions,
+    delete: deleteInstitution,
+} = makeCRUDThunks("setup/InstitutionsAPI", InstitutionsAPI);
+
+export const createOrUpdateInstitution = createAsyncThunk(
+    "setup/InstitutionsAPI",
+    async (data, { dispatch }) => {
+        try {
+            const res = await InstitutionsAPI.createOrupdate(data);
+            if (!res.success) throw res;
+            toast.success(res.message);
+            dispatch(getPartnersInfo());
+            return res;
+        } catch (error) {
+            // Handle axios error response
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to update institutions data';
+            toast.error(errorMessage);
+
+
+        }
+    }
+);
 
 
 
