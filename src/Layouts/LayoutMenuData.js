@@ -195,7 +195,7 @@ const Navdata = () => {
         { id: "news", label: "News", link: "/content/news", parentId: "content-management" },
         { id: "facilities", label: "Facilities", link: "/content/facilities", parentId: "content-management" },
 
-        // { id: "media-gallery", label: "Media Gallery", link: "/content/media-gallery", parentId: "content-management" },
+
       ],
     },
 
@@ -240,23 +240,45 @@ const Navdata = () => {
       subItems: [
         {
           id: "profile",
-          label: "Profile",
+          label: "Overview",
           link: "/setting-profile",
           parentId: "system-settings",
         },
-        // Future expansion
-        // {
-        //   id: "menus",
-        //   label: "Menus",
-        //   link: "/setting-menus",
-        //   parentId: "system-settings",
-        // },
-        // {
-        //   id: "permissions",
-        //   label: "Permissions",
-        //   link: "/setting-permissions",
-        //   parentId: "system-settings",
-        // },
+        {
+          id: "university",
+          label: "University",
+          link: "/setting-university",
+          parentId: "system-settings",
+        },
+        {
+          id: "senate",
+          label: "Senate List",
+          link: "/setting-senate",
+          parentId: "system-settings",
+        },
+
+        {
+          id: "history",
+          label: "History",
+          link: "/setting/history",
+          parentId: "system-settings",
+        },
+        {
+          id: "whySimad",
+          label: "Why Simad",
+          link: "/setting/why-simad",
+          parentId: "system-settings",
+        },
+
+        {
+          id: "accreditations",
+          label: "Accreditations",
+          link: "/setting-accreditations",
+          parentId: "system-settings",
+        },
+
+
+
       ],
     },
 

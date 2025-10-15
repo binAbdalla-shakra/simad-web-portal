@@ -16,7 +16,7 @@ import { useQuill } from "react-quilljs";
 import "quill/dist/quill.snow.css";
 import Quill from 'quill';
 import { useDispatch, useSelector } from 'react-redux';
-import { getUniversityInfo as onGetUniversityInfo, updateUniversity as onUpdateUniversityInfo } from "../../../slices/thunks";
+import { getUniversityInfo as onGetUniversityInfo } from "../../../slices/thunks";
 import { createSelector } from 'reselect';
 
 // Import FilePond for file uploads

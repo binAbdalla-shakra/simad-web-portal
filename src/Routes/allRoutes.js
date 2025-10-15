@@ -8,6 +8,19 @@ import SignIn from '../pages/AuthenticationInner/Login';
 import UniversityProfile from '../pages/settings/University_Profile/index';
 import EditUniProfile from '../pages/settings/University_Profile/EditUniProfile';
 
+import Accreditations from '../pages/settings/Accreditations';
+import Senate from '../pages/settings/Senates';
+
+import University from '../pages/settings/University';
+import WhySimad from '../pages/settings/Why-Simad';
+
+import History from '../pages/settings/Histories';
+
+
+
+
+
+
 import Users from '../pages/settings/Users';
 import Roles from '../pages/settings/Roles';
 
@@ -56,8 +69,23 @@ const authProtectedRoutes = [
   { path: "/setting-profile", component: <UniversityProfile /> },
   { path: "/setting-edit-profile", component: <EditUniProfile /> },
 
+  { path: "/setting-accreditations", component: <Accreditations /> },
+
+
   { path: "/setting-users", component: <Users /> },
   { path: "/setting-roles", component: <Roles /> },
+
+  { path: "/setting-senate", component: <Senate /> },
+
+  { path: "/setting-university", component: <University /> },
+
+  { path: "/setting/why-simad", component: <WhySimad /> },
+
+  { path: "/setting/history", component: <History /> },
+
+
+
+
 
 
   { path: "/setup/parogram-categories", component: <ProgramCategories /> },

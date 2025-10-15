@@ -9,6 +9,17 @@ export const ROLES = "/roles";
 // University 
 export const UNIVERSITY_INFO = "/about-university";
 
+export const ACCREDITATION = "/accreditations";
+export const WHYSIMAD = "/why-simad";
+
+export const HISTORY = "/history";
+
+export const SENATE = "/senate";
+
+export const UNIVERSITY = "/university";
+
+
+
 // ================================== END OF SETTINGS URL ===================================================
 
 // ================================== SETUPS URL ===================================================

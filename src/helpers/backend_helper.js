@@ -38,7 +38,7 @@ export const UserAPI = makeCRUD(url.USERS);
 export const RoleAPI = makeCRUD(url.ROLES);
 
 
-export const UniversityAPI = {
+export const profileAPI = {
     list: () => api.get(url.UNIVERSITY_INFO),
     update: (uni) => {
         // Check if it's FormData (for file uploads) or regular data
@@ -55,6 +55,80 @@ export const UniversityAPI = {
         }
     }
 };
+
+
+
+export const accreditationAPI = {
+    list: () => api.get(url.ACCREDITATION),
+    createOrupdate: (payload) => {
+        // For FormData, use post with multipart/form-data headers
+        return axios.post(url.ACCREDITATION, payload, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
+    delete: (id) => api.delete(`${url.ACCREDITATION}/${id}`)
+};
+
+
+export const senateAPI = {
+    list: () => api.get(url.SENATE),
+    createOrupdate: (payload) => {
+        // For FormData, use post with multipart/form-data headers
+        return axios.post(url.SENATE, payload, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
+    delete: (id) => api.delete(`${url.SENATE}/${id}`)
+};
+
+
+
+export const universityAPI = {
+    list: () => api.get(url.UNIVERSITY),
+    createOrupdate: (payload) => {
+        // For FormData, use post with multipart/form-data headers
+        return axios.post(url.UNIVERSITY, payload, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    }
+};
+
+
+export const whySimadAPI = {
+    list: () => api.get(url.WHYSIMAD),
+    createOrupdate: (payload) => {
+        // For FormData, use post with multipart/form-data headers
+        return axios.post(url.WHYSIMAD, payload, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
+    delete: (id) => api.delete(`${url.WHYSIMAD}/${id}`)
+
+};
+
+
+export const historyAPI = {
+    list: () => api.get(url.HISTORY),
+    createOrupdate: (payload) => {
+        // For FormData, use post with multipart/form-data headers
+        return axios.post(url.HISTORY, payload, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
+    delete: (id) => api.delete(`${url.HISTORY}/${id}`)
+
+};
+
 
 // ================================== END OF SETTINGS URL ===================================================
 

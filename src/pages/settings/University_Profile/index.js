@@ -200,12 +200,12 @@ const UniversityProfile = () => {
                                             </NavLink>
                                         </NavItem>
                                     </Nav>
-
+                                    {/* 
                                     < div className="flex-shrink-0">
 
                                         <Link to="/setting-edit-profile" className="btn btn-success"><i
                                             className="ri-edit-box-line align-bottom"></i> Edit Profile</Link>
-                                    </div>
+                                    </div> */}
 
                                 </div>
 

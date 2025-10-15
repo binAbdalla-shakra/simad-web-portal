@@ -131,7 +131,7 @@ export const createOrUpdateInstitution = createAsyncThunk(
             const res = await InstitutionsAPI.createOrupdate(data);
             if (!res.success) throw res;
             toast.success(res.message);
-            dispatch(getPartnersInfo());
+            dispatch(getInstitutions());
             return res;
         } catch (error) {
             // Handle axios error response
