@@ -312,7 +312,7 @@ const FacilitiesPage = () => {
     return (
         <div className="page-content">
             <Container fluid>
-                <BreadCrumb title="Facilities" pageTitle="Content Management" />
+                <BreadCrumb title="Facilities" pageTitle="Campus" />
 
                 {/* Filter Controls */}
                 <Card className="mb-3">

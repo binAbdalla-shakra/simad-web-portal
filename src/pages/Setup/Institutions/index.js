@@ -617,12 +617,7 @@ const InstitutionsPage = () => {
             <Container fluid>
                 <BreadCrumb title="Institutions" pageTitle="Academics" />
 
-                {/* Alert */}
-                {/* {formAlert.show && (
-                    <Alert color={formAlert.type} className="mb-3">
-                        {formAlert.message}
-                    </Alert>
-                )} */}
+
 
                 {/* Stats Cards */}
                 <Row className="mb-4" style={{ display: "none" }}>

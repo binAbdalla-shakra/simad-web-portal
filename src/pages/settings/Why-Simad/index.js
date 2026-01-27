@@ -450,7 +450,7 @@ const WhySimadPage = () => {
     return (
         <div className="page-content">
             <Container fluid>
-                <BreadCrumb title="Why SIMAD" pageTitle="Marketing" />
+                <BreadCrumb title="Why SIMAD" pageTitle="University Info" />
 
 
 

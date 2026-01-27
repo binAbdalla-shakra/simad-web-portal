@@ -384,7 +384,7 @@ const EventsPage = () => {
     return (
         <div className="page-content">
             <Container fluid>
-                <BreadCrumb title="Events" pageTitle="Content Management" />
+                <BreadCrumb title="Events" pageTitle="Media" />
 
                 {/* Filter Controls */}
                 <Card className="mb-3">

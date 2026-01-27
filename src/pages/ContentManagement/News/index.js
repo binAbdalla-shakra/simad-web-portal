@@ -324,7 +324,7 @@ const NewsPage = () => {
     return (
         <div className="page-content">
             <Container fluid>
-                <BreadCrumb title="News" pageTitle="Content Management" />
+                <BreadCrumb title="News" pageTitle="Media" />
 
                 {/* Filter Controls */}
                 <Card className="mb-3">

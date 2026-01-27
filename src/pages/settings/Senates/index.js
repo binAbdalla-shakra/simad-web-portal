@@ -498,7 +498,7 @@ const SenatePage = () => {
     return (
         <div className="page-content">
             <Container fluid>
-                <BreadCrumb title="Senate Members" pageTitle="University Governance" />
+                <BreadCrumb title="Senate Members" pageTitle="University Info" />
 
 
 

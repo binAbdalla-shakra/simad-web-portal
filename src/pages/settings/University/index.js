@@ -417,7 +417,7 @@ const UniversitySettingsPage = () => {
         return (
             <div className="page-content">
                 <Container fluid>
-                    <BreadCrumb title="University Settings" pageTitle="System Configuration" />
+                    <BreadCrumb title="University Info" pageTitle="University" />
                     <Loader />
                 </Container>
             </div>
@@ -669,6 +669,30 @@ const UniversitySettingsPage = () => {
                                                 placeholder="Add university colors..."
                                                 className="react-select"
                                                 classNamePrefix="select"
+                                                styles={{
+                                                    option: (provided, state) => ({
+                                                        ...provided,
+                                                        backgroundColor: state.isFocused ? "#4a6fa5" : "#2f4b73",  // focused = blue, otherwise white
+                                                        color: "white",                                         // text color
+                                                    }),
+                                                    menu: (provided) => ({
+                                                        ...provided,
+                                                        backgroundColor: "white", // dropdown menu bg
+                                                    }),
+                                                    multiValue: (provided) => ({
+                                                        ...provided,
+                                                        backgroundColor: "#4a6fa5", // chip bg
+                                                        color: "white",
+                                                    }),
+                                                    multiValueLabel: (provided) => ({
+                                                        ...provided,
+                                                        color: "white", // chip text
+                                                    }),
+                                                    input: (provided) => ({
+                                                        ...provided,
+                                                        color: "#2f4b73", // typing text color
+                                                    }),
+                                                }}
                                             />
                                             <small className="text-muted">
                                                 Add your university's brand colors (hex codes or names)
@@ -685,6 +709,30 @@ const UniversitySettingsPage = () => {
                                                 placeholder="Add former names..."
                                                 className="react-select"
                                                 classNamePrefix="select"
+                                                styles={{
+                                                    option: (provided, state) => ({
+                                                        ...provided,
+                                                        backgroundColor: state.isFocused ? "#4a6fa5" : "#2f4b73",  // focused = blue, otherwise white
+                                                        color: "white",                                         // text color
+                                                    }),
+                                                    menu: (provided) => ({
+                                                        ...provided,
+                                                        backgroundColor: "white", // dropdown menu bg
+                                                    }),
+                                                    multiValue: (provided) => ({
+                                                        ...provided,
+                                                        backgroundColor: "#4a6fa5", // chip bg
+                                                        color: "white",
+                                                    }),
+                                                    multiValueLabel: (provided) => ({
+                                                        ...provided,
+                                                        color: "white", // chip text
+                                                    }),
+                                                    input: (provided) => ({
+                                                        ...provided,
+                                                        color: "#2f4b73", // typing text color
+                                                    }),
+                                                }}
                                             />
                                         </FormGroup>
                                     </Col>
@@ -742,7 +790,7 @@ const UniversitySettingsPage = () => {
                                                 type="url"
                                                 value={formData.contact.website}
                                                 onChange={(e) => handleNestedChange('contact', 'website', e.target.value)}
-                                                placeholder="https://www.university.edu"
+                                                placeholder="https://www.simad.edu.so"
                                                 className="form-control-lg"
                                             />
                                         </FormGroup>

@@ -462,7 +462,7 @@ const AccreditationsPage = () => {
     return (
         <div className="page-content">
             <Container fluid>
-                <BreadCrumb title="Accreditations" pageTitle="Quality Assurance" />
+                <BreadCrumb title="Accreditations" pageTitle="University Info" />
 
 
                 {/* Stats Cards */}

@@ -275,7 +275,13 @@ const UniversityProfile = () => {
                                                         </div>
                                                     </CardBody>
                                                 </Card>
+                                                <Card>
+                                                    <CardBody>
+                                                        <h5 className="card-title mb-3">About SIMAD</h5>
+                                                        <div dangerouslySetInnerHTML={{ __html: universityInfo?.about_simad }} />
 
+                                                    </CardBody>
+                                                </Card>
                                                 <Card>
                                                     <CardBody>
                                                         <h5 className="card-title mb-4">Portfolio</h5>
@@ -315,6 +321,7 @@ const UniversityProfile = () => {
                                                         </div>
                                                     </CardBody>
                                                 </Card>
+
                                             </Col>
                                             <Col xxl={8}>
                                                 <Card>
@@ -631,51 +638,7 @@ const UniversityProfile = () => {
                                             ))}
                                         </Row>
                                         <br />
-                                        {/* <Card className="mt-4">
-                                            <CardHeader>
-                                                <h5 className="card-title mb-0">Accreditation Status</h5>
-                                            </CardHeader>
-                                            <CardBody>
-                                                <div className="table-responsive">
-                                                    <table className="table table-bordered mb-0">
-                                                        <thead className="table-light">
-                                                            <tr>
-                                                                <th scope="col">Program</th>
-                                                                <th scope="col">Accreditation Body</th>
-                                                                <th scope="col">Status</th>
-                                                                <th scope="col">Valid Until</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            <tr>
-                                                                <td>Business Administration</td>
-                                                                <td>International Accreditation Council</td>
-                                                                <td><Badge color="success">Fully Accredited</Badge></td>
-                                                                <td>2027</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Computer Science</td>
-                                                                <td>Technology Education Board</td>
-                                                                <td><Badge color="success">Fully Accredited</Badge></td>
-                                                                <td>2026</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Engineering</td>
-                                                                <td>Engineering Accreditation Commission</td>
-                                                                <td><Badge color="warning">Provisional</Badge></td>
-                                                                <td>2025</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Medicine</td>
-                                                                <td>Medical Education Council</td>
-                                                                <td><Badge color="info">In Process</Badge></td>
-                                                                <td>-</td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </CardBody>
-                                        </Card> */}
+
                                     </TabPane>
                                 </TabContent>
                             </div>

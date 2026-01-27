@@ -100,189 +100,376 @@ const Navdata = () => {
   const menuItems = [
 
     {
-      id: "setups",
-      label: "Academic Setups",
+      id: "academic-structure",
+      label: "Academic Structure",
       icon: "ri-graduation-cap-line",
-      link: "/#",
-      stateVariables: menuStates["Setups"] || false,
+      stateVariables: menuStates["AcademicStructure"] || false,
       click: function (e) {
         e.preventDefault();
-        setMenuStates((prev) => ({ ...prev, Setups: !prev.Setups }));
-        setIscurrentState("Setups");
+        setMenuStates((prev) => ({ ...prev, AcademicStructure: !prev.AcademicStructure }));
+        setIscurrentState("AcademicStructure");
         updateIconSidebar(e);
       },
       subItems: [
         {
           id: "program-categories",
-          label: "program Categories",
+          label: "Program Categories",
           link: "/setup/parogram-categories",
-          parentId: "setups",
+          parentId: "academic-structure",
         },
-
         {
           id: "schools",
-          label: "Schools",
+          label: "Schools & Faculties",
           link: "/setup/schools",
-          parentId: "setups",
+          parentId: "academic-structure",
         },
-
         {
           id: "programs",
           label: "Programs",
           link: "/setup/programs",
-          parentId: "setups",
+          parentId: "academic-structure",
         },
         {
           id: "institutions",
           label: "Institutions",
           link: "/setup/institutions",
-          parentId: "setups",
+          parentId: "academic-structure",
         },
-
       ],
     },
+
     {
-      id: "organization",
-      label: "Organizations",
+      id: "people-and-partnerships",
+      label: "People & Partnerships",
       icon: "ri-building-line",
-      link: "/#",
-      stateVariables: menuStates["Organizations"] || false,
+      stateVariables: menuStates["PeopleAndPartnerships"] || false,
       click: function (e) {
         e.preventDefault();
-        setMenuStates((prev) => ({ ...prev, Organizations: !prev.Organizations }));
-        setIscurrentState("Organizations");
+        setMenuStates((prev) => ({ ...prev, PeopleAndPartnerships: !prev.PeopleAndPartnerships }));
+        setIscurrentState("PeopleAndPartnerships");
         updateIconSidebar(e);
       },
       subItems: [
         {
-          id: "staffs",
-          label: "Staffs",
+          id: "staff-directory",
+          label: "Staff Directory",
           link: "/setup/staffs",
-          parentId: "setups",
+          parentId: "people-and-partnerships",
         },
         {
           id: "partner-categories",
           label: "Partner Categories",
           link: "/setup/partner-categories",
-          parentId: "setups",
+          parentId: "people-and-partnerships",
         },
-
         {
-          id: "partners",
-          label: "Partners",
+          id: "external-partners",
+          label: "External Partners",
           link: "/setup/partners",
-          parentId: "setups",
+          parentId: "people-and-partnerships",
         },
-
-
       ],
     },
 
-
     {
-      id: "content-management",
-      label: "Content Management",
+      id: "media-and-resources",
+      label: "Media & Campus Life",
       icon: "ri-file-list-3-line",
-      stateVariables: menuStates["ContentManagement"] || false,
+      stateVariables: menuStates["MediaAndResources"] || false,
       click: function (e) {
         e.preventDefault();
-        setMenuStates((prev) => ({ ...prev, ContentManagement: !prev.ContentManagement }));
-        setIscurrentState("ContentManagement");
+        setMenuStates((prev) => ({ ...prev, MediaAndResources: !prev.MediaAndResources }));
+        setIscurrentState("MediaAndResources");
         updateIconSidebar(e);
       },
       subItems: [
-        { id: "events", label: "Events", link: "/content/events", parentId: "content-management" },
-        { id: "news", label: "News", link: "/content/news", parentId: "content-management" },
-        { id: "facilities", label: "Facilities", link: "/content/facilities", parentId: "content-management" },
-
-
+        {
+          id: "events",
+          label: "Events",
+          link: "/content/events",
+          parentId: "media-and-resources",
+        },
+        {
+          id: "news",
+          label: "News & Announcements",
+          link: "/content/news",
+          parentId: "media-and-resources",
+        },
+        {
+          id: "facilities",
+          label: "Campus Facilities",
+          link: "/content/facilities",
+          parentId: "media-and-resources",
+        },
       ],
     },
 
     {
-      id: "user-management",
-      label: "User Management",
+      id: "access-control",
+      label: "Access Control",
       icon: "ri-team-line",
-      stateVariables: menuStates["UserManagement"] || false,
+      stateVariables: menuStates["AccessControl"] || false,
       click: function (e) {
         e.preventDefault();
-        setMenuStates((prev) => ({ ...prev, UserManagement: !prev.UserManagement }));
-        setIscurrentState("UserManagement");
+        setMenuStates((prev) => ({ ...prev, AccessControl: !prev.AccessControl }));
+        setIscurrentState("AccessControl");
         updateIconSidebar(e);
       },
       subItems: [
         {
           id: "users",
-          label: "Users",
+          label: "User Accounts",
           link: "/setting-users",
-          parentId: "user-management",
+          parentId: "access-control",
         },
         {
           id: "roles",
-          label: "Roles",
+          label: "Roles & Permissions",
           link: "/setting-roles",
-          parentId: "user-management",
+          parentId: "access-control",
         },
       ],
     },
 
     {
-      id: "system-settings",
-      label: "System Settings",
+      id: "university-profile",
+      label: "University Profile",
       icon: "ri-settings-3-line",
-      stateVariables: menuStates["SystemSettings"] || false,
+      stateVariables: menuStates["UniversityProfile"] || false,
       click: function (e) {
         e.preventDefault();
-        setMenuStates((prev) => ({ ...prev, SystemSettings: !prev.SystemSettings }));
-        setIscurrentState("SystemSettings");
+        setMenuStates((prev) => ({ ...prev, UniversityProfile: !prev.UniversityProfile }));
+        setIscurrentState("UniversityProfile");
         updateIconSidebar(e);
       },
       subItems: [
         {
-          id: "profile",
+          id: "overview",
           label: "Overview",
           link: "/setting-profile",
-          parentId: "system-settings",
+          parentId: "university-profile",
         },
         {
-          id: "university",
-          label: "University",
+          id: "university-info",
+          label: "University Info",
           link: "/setting-university",
-          parentId: "system-settings",
+          parentId: "university-profile",
         },
         {
           id: "senate",
-          label: "Senate List",
+          label: "Senate",
           link: "/setting-senate",
-          parentId: "system-settings",
+          parentId: "university-profile",
         },
-
         {
           id: "history",
-          label: "History",
+          label: "Our History",
           link: "/setting/history",
-          parentId: "system-settings",
+          parentId: "university-profile",
         },
         {
-          id: "whySimad",
-          label: "Why Simad",
+          id: "why-simad",
+          label: "Why SIMAD?",
           link: "/setting/why-simad",
-          parentId: "system-settings",
+          parentId: "university-profile",
         },
-
         {
           id: "accreditations",
           label: "Accreditations",
           link: "/setting-accreditations",
-          parentId: "system-settings",
+          parentId: "university-profile",
         },
-
-
-
       ],
     },
 
   ];
+
+  // const menuItems = [
+
+  //   {
+  //     id: "setups",
+  //     label: "Academic Setups",
+  //     icon: "ri-graduation-cap-line",
+  //     link: "/#",
+  //     stateVariables: menuStates["Setups"] || false,
+  //     click: function (e) {
+  //       e.preventDefault();
+  //       setMenuStates((prev) => ({ ...prev, Setups: !prev.Setups }));
+  //       setIscurrentState("Setups");
+  //       updateIconSidebar(e);
+  //     },
+  //     subItems: [
+  //       {
+  //         id: "program-categories",
+  //         label: "program Categories",
+  //         link: "/setup/parogram-categories",
+  //         parentId: "setups",
+  //       },
+
+  //       {
+  //         id: "schools",
+  //         label: "Schools",
+  //         link: "/setup/schools",
+  //         parentId: "setups",
+  //       },
+
+  //       {
+  //         id: "programs",
+  //         label: "Programs",
+  //         link: "/setup/programs",
+  //         parentId: "setups",
+  //       },
+  //       {
+  //         id: "institutions",
+  //         label: "Institutions",
+  //         link: "/setup/institutions",
+  //         parentId: "setups",
+  //       },
+
+  //     ],
+  //   },
+  //   {
+  //     id: "organization",
+  //     label: "Organizations",
+  //     icon: "ri-building-line",
+  //     link: "/#",
+  //     stateVariables: menuStates["Organizations"] || false,
+  //     click: function (e) {
+  //       e.preventDefault();
+  //       setMenuStates((prev) => ({ ...prev, Organizations: !prev.Organizations }));
+  //       setIscurrentState("Organizations");
+  //       updateIconSidebar(e);
+  //     },
+  //     subItems: [
+  //       {
+  //         id: "staffs",
+  //         label: "Staffs",
+  //         link: "/setup/staffs",
+  //         parentId: "setups",
+  //       },
+  //       {
+  //         id: "partner-categories",
+  //         label: "Partner Categories",
+  //         link: "/setup/partner-categories",
+  //         parentId: "setups",
+  //       },
+
+  //       {
+  //         id: "partners",
+  //         label: "Partners",
+  //         link: "/setup/partners",
+  //         parentId: "setups",
+  //       },
+
+
+  //     ],
+  //   },
+
+
+  //   {
+  //     id: "content-management",
+  //     label: "Content Management",
+  //     icon: "ri-file-list-3-line",
+  //     stateVariables: menuStates["ContentManagement"] || false,
+  //     click: function (e) {
+  //       e.preventDefault();
+  //       setMenuStates((prev) => ({ ...prev, ContentManagement: !prev.ContentManagement }));
+  //       setIscurrentState("ContentManagement");
+  //       updateIconSidebar(e);
+  //     },
+  //     subItems: [
+  //       { id: "events", label: "Events", link: "/content/events", parentId: "content-management" },
+  //       { id: "news", label: "News", link: "/content/news", parentId: "content-management" },
+  //       { id: "facilities", label: "Facilities", link: "/content/facilities", parentId: "content-management" },
+
+
+  //     ],
+  //   },
+
+  //   {
+  //     id: "user-management",
+  //     label: "User Management",
+  //     icon: "ri-team-line",
+  //     stateVariables: menuStates["UserManagement"] || false,
+  //     click: function (e) {
+  //       e.preventDefault();
+  //       setMenuStates((prev) => ({ ...prev, UserManagement: !prev.UserManagement }));
+  //       setIscurrentState("UserManagement");
+  //       updateIconSidebar(e);
+  //     },
+  //     subItems: [
+  //       {
+  //         id: "users",
+  //         label: "Users",
+  //         link: "/setting-users",
+  //         parentId: "user-management",
+  //       },
+  //       {
+  //         id: "roles",
+  //         label: "Roles",
+  //         link: "/setting-roles",
+  //         parentId: "user-management",
+  //       },
+  //     ],
+  //   },
+
+  //   {
+  //     id: "system-settings",
+  //     label: "System Settings",
+  //     icon: "ri-settings-3-line",
+  //     stateVariables: menuStates["SystemSettings"] || false,
+  //     click: function (e) {
+  //       e.preventDefault();
+  //       setMenuStates((prev) => ({ ...prev, SystemSettings: !prev.SystemSettings }));
+  //       setIscurrentState("SystemSettings");
+  //       updateIconSidebar(e);
+  //     },
+  //     subItems: [
+  //       {
+  //         id: "profile",
+  //         label: "Overview",
+  //         link: "/setting-profile",
+  //         parentId: "system-settings",
+  //       },
+  //       {
+  //         id: "university",
+  //         label: "University",
+  //         link: "/setting-university",
+  //         parentId: "system-settings",
+  //       },
+  //       {
+  //         id: "senate",
+  //         label: "Senate List",
+  //         link: "/setting-senate",
+  //         parentId: "system-settings",
+  //       },
+
+  //       {
+  //         id: "history",
+  //         label: "History",
+  //         link: "/setting/history",
+  //         parentId: "system-settings",
+  //       },
+  //       {
+  //         id: "whySimad",
+  //         label: "Why Simad",
+  //         link: "/setting/why-simad",
+  //         parentId: "system-settings",
+  //       },
+
+  //       {
+  //         id: "accreditations",
+  //         label: "Accreditations",
+  //         link: "/setting-accreditations",
+  //         parentId: "system-settings",
+  //       },
+
+
+
+  //     ],
+  //   },
+
+  // ];
 
   // console.log("retreivced data is:", retreivedMenus);
   const dynamicMenu = retreivedMenus.map((item) => {

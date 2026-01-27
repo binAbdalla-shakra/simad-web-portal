@@ -785,7 +785,7 @@ const StaffPage = () => {
     return (
         <div className="page-content">
             <Container fluid>
-                <BreadCrumb title="Staff" pageTitle="Organizations" />
+                <BreadCrumb title="Staff" pageTitle="People" />
 
                 {/* Filter Controls */}
                 <Card className="mb-3">

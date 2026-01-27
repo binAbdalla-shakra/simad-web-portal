@@ -468,7 +468,7 @@ const HistoryPage = () => {
     return (
         <div className="page-content">
             <Container fluid>
-                <BreadCrumb title="University History" pageTitle="About University" />
+                <BreadCrumb title="University History" pageTitle="University Info" />
 
                 {/* Alert */}
                 {formAlert.show && (
