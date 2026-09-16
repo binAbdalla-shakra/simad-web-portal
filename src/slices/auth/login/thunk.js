@@ -3,6 +3,7 @@
 import {
   login, changePassword, logout as logoutRequest
 } from "../../../helpers/backend_helper";
+import { setAuthorization } from "../../../helpers/api_helper";
 
 import { loginSuccess, logoutUserSuccess, apiError, reset_login_flag } from './reducer';
 
@@ -23,6 +24,7 @@ export const loginUser = (user, history) => async (dispatch) => {
       data = finallogin.data;
 
       if (data.status === "success") {
+        setAuthorization(data.accessToken); // Add this line to fix the race condition!
         if (user.password === process.env.REACT_APP_DEFAULT_PASS) {
           history('/create-new-pass')
         }
