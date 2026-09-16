@@ -4,7 +4,7 @@ import {
     Col, Container, Row,
     Form, Input, Label, FormGroup,
     Modal, ModalBody, ModalFooter, ModalHeader,
-    Button, Badge, Alert
+    Button, Badge, Alert, Spinner
 } from "reactstrap";
 import DataTable from "react-data-table-component";
 import Select from "react-select";
@@ -14,6 +14,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import BreadCrumb from "../../../Components/Common/BreadCrumb";
 import DeleteModal from "../../../Components/Common/DeleteModal";
 import Loader from "../../../Components/Common/Loader";
+import NoDataFound from "../../../Components/Common/NoDataFound";
 
 // Import FilePond for file uploads
 import { FilePond, registerPlugin } from 'react-filepond';
@@ -63,6 +64,7 @@ const WhySimadPage = () => {
     // State management
     const [reasons, setReasons] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [modal, setModal] = useState(false);
     const [viewModal, setViewModal] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
@@ -211,8 +213,9 @@ const WhySimadPage = () => {
     // Create new reason
     const createReason = async (e) => {
         e.preventDefault();
-        if (!validateForm()) return;
+        if (!validateForm() || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
 
@@ -229,20 +232,25 @@ const WhySimadPage = () => {
                 submitData.append('image', formData.image);
             }
 
-            await dispatch(onCreateOrUpdateWhySimad(submitData));
+            await dispatch(onCreateOrUpdateWhySimad(submitData)).unwrap();
 
             handleModalClose();
             fetchData();
         } catch (error) {
+            // Failed: keep the modal open and the entered data intact so the
+            // user can fix the issue and resubmit instead of losing their input.
             console.error("Error creating reason:", error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     // Update reason
     const updateReason = async (e) => {
         e.preventDefault();
-        if (!validateForm() || !selectedReason) return;
+        if (!validateForm() || !selectedReason || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
 
@@ -262,12 +270,14 @@ const WhySimadPage = () => {
             // Append ID for update
             submitData.append('_id', selectedReason._id);
 
-            await dispatch(onCreateOrUpdateWhySimad(submitData));
+            await dispatch(onCreateOrUpdateWhySimad(submitData)).unwrap();
 
             handleModalClose();
             fetchData();
         } catch (error) {
             console.error("Error updating reason:", error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -324,7 +334,7 @@ const WhySimadPage = () => {
             submitData.append('order', reason.order);
             submitData.append('isActive', !reason.isActive);
 
-            await dispatch(onCreateOrUpdateWhySimad(submitData));
+            await dispatch(onCreateOrUpdateWhySimad(submitData)).unwrap();
 
             fetchData();
         } catch (error) {
@@ -622,11 +632,7 @@ const WhySimadPage = () => {
                                 responsive
                                 // striped
                                 noDataComponent={
-                                    <div className="text-center py-5">
-                                        <i className="ri-inbox-line display-4 text-muted"></i>
-                                        <h5 className="mt-3">No reasons found</h5>
-                                        <p className="text-muted">Try adjusting your search criteria or add a new reason.</p>
-                                    </div>
+                                    <NoDataFound title="No reasons found" message="Try adjusting your search criteria or add a new reason." />
                                 }
                                 customStyles={{
                                     headCells: {
@@ -661,7 +667,7 @@ const WhySimadPage = () => {
                             <Col md={12}>
                                 <FormGroup>
                                     <Label className="form-label">
-                                        Reason Image
+                                        Reason Image <span className="text-muted fs-12">(optional)</span>
                                     </Label>
                                     <FilePond
                                         files={imageFiles}
@@ -714,7 +720,7 @@ const WhySimadPage = () => {
 
                             <Col md={2}>
                                 <FormGroup>
-                                    <Label className="form-label">Display Order</Label>
+                                    <Label className="form-label">Display Order <span className="text-muted fs-12">(optional)</span></Label>
                                     <Input
                                         type="number"
                                         name="order"
@@ -775,9 +781,9 @@ const WhySimadPage = () => {
                             <i className="ri-close-line me-1"></i>
                             Cancel
                         </Button>
-                        <Button color="primary" type="submit">
-                            <i className="ri-save-line me-1"></i>
-                            {isEdit ? 'Update Reason' : 'Create Reason'}
+                        <Button color="primary" type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? <Spinner size="sm" className="me-1" /> : <i className="ri-save-line me-1"></i>}
+                            {isSubmitting ? 'Saving...' : (isEdit ? 'Update Reason' : 'Create Reason')}
                         </Button>
                     </ModalFooter>
                 </Form>

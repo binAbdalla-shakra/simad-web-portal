@@ -5,13 +5,14 @@ import {
     Col, Container, Row,
     Form, Input, Label, FormGroup,
     Modal, ModalBody, ModalFooter, ModalHeader,
-    Button, Badge
+    Button, Badge, Spinner
 } from "reactstrap";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import BreadCrumb from "../../../Components/Common/BreadCrumb";
 import DeleteModal from "../../../Components/Common/DeleteModal";
 import Loader from "../../../Components/Common/Loader";
+import NoDataFound from "../../../Components/Common/NoDataFound";
 
 import { useDispatch, useSelector } from 'react-redux';
 import { createSelector } from 'reselect';
@@ -41,6 +42,7 @@ const PartnerCategories = () => {
     const [filters, setFilters] = useState({ search: '' });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [modal, setModal] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
@@ -92,8 +94,9 @@ const PartnerCategories = () => {
     };
 
     const createCategory = async () => {
-        if (!validateForm()) return;
+        if (!validateForm() || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const authUser = JSON.parse(sessionStorage.getItem("authUser"));
             const data = {
@@ -101,16 +104,21 @@ const PartnerCategories = () => {
                 createdBy: authUser?.data?.user?.username || "Admin"
             };
 
-            dispatch(onAddPartnerCategory(data));
+            await dispatch(onAddPartnerCategory(data)).unwrap();
             setModal(false);
         } catch (error) {
+            // Failed: keep the modal open and the entered data intact so the
+            // user can fix the issue and resubmit instead of losing their input.
             console.error("Error creating category:", error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     const updateCategory = async () => {
-        if (!validateForm() || !selectedCategory) return;
+        if (!validateForm() || !selectedCategory || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const authUser = JSON.parse(sessionStorage.getItem("authUser"));
             const data = {
@@ -119,10 +127,12 @@ const PartnerCategories = () => {
                 updatedBy: authUser?.data?.user?.username || "Admin"
             };
 
-            dispatch(onUpdatePartnerCategory(data));
+            await dispatch(onUpdatePartnerCategory(data)).unwrap();
             setModal(false);
         } catch (error) {
             console.error("Error updating category:", error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -229,7 +239,9 @@ const PartnerCategories = () => {
                                 pagination
                                 highlightOnHover
                                 responsive
-                                noDataComponent="No categories found"
+                                noDataComponent={
+                                    <NoDataFound title="No categories found" message="Get started by creating your first partner category." />
+                                }
                             />
                         )}
                     </CardBody>
@@ -267,7 +279,7 @@ const PartnerCategories = () => {
                                         value={formData.desc}
                                         onChange={handleInputChange}
                                         rows="3"
-                                        placeholder="Category description"
+                                        placeholder="e.g., Partner organizations based outside Somalia"
                                     />
                                 </FormGroup>
                             </Col>
@@ -277,8 +289,9 @@ const PartnerCategories = () => {
                         <Button color="light" onClick={() => setModal(false)}>
                             Cancel
                         </Button>
-                        <Button color="primary" type="submit" disabled={loading}>
-                            {loading ? 'Saving...' : 'Save Changes'}
+                        <Button color="primary" type="submit" disabled={isSubmitting}>
+                            {isSubmitting && <Spinner size="sm" className="me-1" />}
+                            {isSubmitting ? 'Saving...' : 'Save Changes'}
                         </Button>
                     </ModalFooter>
                 </Form>

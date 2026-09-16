@@ -4,7 +4,7 @@ import {
     Card, CardBody, CardHeader, Col, Container,
     Nav, NavItem, NavLink, Row, TabContent,
     TabPane, Form, FormGroup, Label, Input,
-    Button, Badge, Alert
+    Button, Badge, Alert, Spinner
 } from 'reactstrap';
 import classnames from 'classnames';
 import { validateUniversityData } from '../utils/validation';
@@ -79,6 +79,7 @@ const UniversityProfileEdit = () => {
 
     const [activeTab, setActiveTab] = useState('1');
     const [saveStatus, setSaveStatus] = useState({ type: '', message: '' });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Refs for Quill editors
     const missionRef = useRef(null);
@@ -441,7 +442,9 @@ const UniversityProfileEdit = () => {
     // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             // Get content from Quill editors
             const missionContent = missionQuill ? missionQuill.root.innerHTML : '';
@@ -556,6 +559,8 @@ const UniversityProfileEdit = () => {
                 type: 'danger',
                 message: error.message || 'Error saving changes. Please try again.'
             });
+        } finally {
+            setIsSubmitting(false);
         }
     };
     return (
@@ -587,8 +592,9 @@ const UniversityProfileEdit = () => {
                                 <Link to="/setting-profile" className="btn btn-light">
                                     <i className="ri-arrow-left-line align-bottom me-1"></i> Back to Profile
                                 </Link>
-                                <Button color="success" onClick={handleSubmit}>
-                                    <i className="ri-save-line align-bottom me-1"></i> Save Changes
+                                <Button color="success" onClick={handleSubmit} disabled={isSubmitting}>
+                                    {isSubmitting ? <Spinner size="sm" className="me-1" /> : <i className="ri-save-line align-bottom me-1"></i>}
+                                    {isSubmitting ? 'Saving...' : 'Save Changes'}
                                 </Button>
                             </div>
                         </Col>
@@ -675,10 +681,11 @@ const UniversityProfileEdit = () => {
                                                         <Row>
                                                             <Col md={6}>
                                                                 <FormGroup>
-                                                                    <Label for="name">University Name</Label>
+                                                                    <Label for="name">University Name <span className="text-danger">*</span></Label>
                                                                     <Input
                                                                         type="text"
                                                                         id="name"
+                                                                        placeholder="e.g., Simad University"
                                                                         value={universityInfo.name || ''}
                                                                         onChange={(e) => handleInputChange(e, null, 'name')}
                                                                     />
@@ -686,7 +693,7 @@ const UniversityProfileEdit = () => {
                                                             </Col>
                                                             <Col md={6}>
                                                                 <FormGroup>
-                                                                    <Label for="type">University Type</Label>
+                                                                    <Label for="type">University Type <span className="text-danger">*</span></Label>
                                                                     <Input
                                                                         type="select"
                                                                         id="type"
@@ -705,7 +712,7 @@ const UniversityProfileEdit = () => {
                                                         <Row>
                                                             <Col md={6}>
                                                                 <FormGroup>
-                                                                    <Label for="founded">Founded Date</Label>
+                                                                    <Label for="founded">Founded Date <span className="text-muted fs-12">(optional)</span></Label>
                                                                     <Flatpickr
                                                                         className="form-control"
                                                                         value={universityInfo.founded || ''}
@@ -725,10 +732,11 @@ const UniversityProfileEdit = () => {
                                                             </Col>
                                                             <Col md={6}>
                                                                 <FormGroup>
-                                                                    <Label for="motto">Motto</Label>
+                                                                    <Label for="motto">Motto <span className="text-muted fs-12">(optional)</span></Label>
                                                                     <Input
                                                                         type="text"
                                                                         id="motto"
+                                                                        placeholder="e.g., Knowledge for Development"
                                                                         value={universityInfo.motto || ''}
                                                                         onChange={(e) => handleInputChange(e, null, 'motto')}
                                                                     />
@@ -742,10 +750,11 @@ const UniversityProfileEdit = () => {
                                                         <Row>
                                                             <Col md={6}>
                                                                 <FormGroup>
-                                                                    <Label for="students">Number of Students</Label>
+                                                                    <Label for="students">Number of Students <span className="text-muted fs-12">(optional)</span></Label>
                                                                     <Input
                                                                         type="number"
                                                                         id="students"
+                                                                        placeholder="e.g., 5000"
                                                                         value={universityInfo.stats?.students || ''}
                                                                         onChange={(e) => handleInputChange(e, 'stats', 'students')}
                                                                     />
@@ -753,10 +762,11 @@ const UniversityProfileEdit = () => {
                                                             </Col>
                                                             <Col md={6}>
                                                                 <FormGroup>
-                                                                    <Label for="alumni">Number of Alumni</Label>
+                                                                    <Label for="alumni">Number of Alumni <span className="text-muted fs-12">(optional)</span></Label>
                                                                     <Input
                                                                         type="number"
                                                                         id="alumni"
+                                                                        placeholder="e.g., 12000"
                                                                         value={universityInfo.stats?.alumni || ''}
                                                                         onChange={(e) => handleInputChange(e, 'stats', 'alumni')}
                                                                     />
@@ -775,10 +785,11 @@ const UniversityProfileEdit = () => {
                                                     </CardHeader>
                                                     <CardBody>
                                                         <FormGroup>
-                                                            <Label for="street">Street Address</Label>
+                                                            <Label for="street">Street Address <span className="text-muted fs-12">(optional)</span></Label>
                                                             <Input
                                                                 type="text"
                                                                 id="street"
+                                                                placeholder="e.g., Wadada Airport"
                                                                 value={universityInfo.address?.street || ''}
                                                                 onChange={(e) => handleInputChange(e, 'address', 'street')}
                                                             />
@@ -787,10 +798,11 @@ const UniversityProfileEdit = () => {
                                                         <Row>
                                                             <Col md={4}>
                                                                 <FormGroup>
-                                                                    <Label for="city">City</Label>
+                                                                    <Label for="city">City <span className="text-muted fs-12">(optional)</span></Label>
                                                                     <Input
                                                                         type="text"
                                                                         id="city"
+                                                                        placeholder="e.g., Mogadishu"
                                                                         value={universityInfo.address?.city || ''}
                                                                         onChange={(e) => handleInputChange(e, 'address', 'city')}
                                                                     />
@@ -798,10 +810,11 @@ const UniversityProfileEdit = () => {
                                                             </Col>
                                                             <Col md={4}>
                                                                 <FormGroup>
-                                                                    <Label for="state">State/Region</Label>
+                                                                    <Label for="state">State/Region <span className="text-muted fs-12">(optional)</span></Label>
                                                                     <Input
                                                                         type="text"
                                                                         id="state"
+                                                                        placeholder="e.g., Banaadir"
                                                                         value={universityInfo.address?.state || ''}
                                                                         onChange={(e) => handleInputChange(e, 'address', 'state')}
                                                                     />
@@ -809,10 +822,11 @@ const UniversityProfileEdit = () => {
                                                             </Col>
                                                             <Col md={4}>
                                                                 <FormGroup>
-                                                                    <Label for="country">Country</Label>
+                                                                    <Label for="country">Country <span className="text-muted fs-12">(optional)</span></Label>
                                                                     <Input
                                                                         type="text"
                                                                         id="country"
+                                                                        placeholder="e.g., Somalia"
                                                                         value={universityInfo.address?.country || ''}
                                                                         onChange={(e) => handleInputChange(e, 'address', 'country')}
                                                                     />
@@ -823,10 +837,11 @@ const UniversityProfileEdit = () => {
                                                         <Row>
                                                             <Col md={4}>
                                                                 <FormGroup>
-                                                                    <Label for="phone">Phone Number</Label>
+                                                                    <Label for="phone">Phone Number <span className="text-muted fs-12">(optional)</span></Label>
                                                                     <Input
                                                                         type="text"
                                                                         id="phone"
+                                                                        placeholder="e.g., +252610000000"
                                                                         value={universityInfo.contact?.phone || ''}
                                                                         onChange={(e) => handleInputChange(e, 'contact', 'phone')}
                                                                     />
@@ -834,10 +849,11 @@ const UniversityProfileEdit = () => {
                                                             </Col>
                                                             <Col md={4}>
                                                                 <FormGroup>
-                                                                    <Label for="email">Email Address</Label>
+                                                                    <Label for="email">Email Address <span className="text-muted fs-12">(optional)</span></Label>
                                                                     <Input
                                                                         type="email"
                                                                         id="email"
+                                                                        placeholder="e.g., info@simad.edu.so"
                                                                         value={universityInfo.contact?.email || ''}
                                                                         onChange={(e) => handleInputChange(e, 'contact', 'email')}
                                                                     />
@@ -845,10 +861,11 @@ const UniversityProfileEdit = () => {
                                                             </Col>
                                                             <Col md={4}>
                                                                 <FormGroup>
-                                                                    <Label for="website">Website</Label>
+                                                                    <Label for="website">Website <span className="text-muted fs-12">(optional)</span></Label>
                                                                     <Input
                                                                         type="url"
                                                                         id="website"
+                                                                        placeholder="e.g., https://www.simad.edu.so"
                                                                         value={universityInfo.contact?.website || ''}
                                                                         onChange={(e) => handleInputChange(e, 'contact', 'website')}
                                                                     />
@@ -867,14 +884,14 @@ const UniversityProfileEdit = () => {
                                                     </CardHeader>
                                                     <CardBody>
                                                         <FormGroup>
-                                                            <Label for="mission">Mission Statement</Label>
+                                                            <Label for="mission">Mission Statement <span className="text-muted fs-12">(optional)</span></Label>
                                                             <div className="snow-editor" style={{ height: 300 }}>
                                                                 <div ref={missionRef} />
                                                             </div>
                                                         </FormGroup>
 
                                                         <FormGroup>
-                                                            <Label for="vision">Vision Statement</Label>
+                                                            <Label for="vision">Vision Statement <span className="text-muted fs-12">(optional)</span></Label>
                                                             <div className="snow-editor" style={{ height: 300, marginBottom: '20px' }}>
                                                                 <div ref={visionRef} />
                                                             </div>
@@ -888,14 +905,14 @@ const UniversityProfileEdit = () => {
                                                         </FormGroup>
 
                                                         <FormGroup>
-                                                            <Label for="guiding_principles">Guiding Principles</Label>
+                                                            <Label for="guiding_principles">Guiding Principles <span className="text-muted fs-12">(optional)</span></Label>
                                                             <div className="snow-editor" style={{ height: 300, marginBottom: '20px' }}>
                                                                 <div ref={guiding_principlesRef} />
                                                             </div>
                                                         </FormGroup>
 
                                                         <FormGroup>
-                                                            <Label for="achievements">Achievements & Core Values</Label>
+                                                            <Label for="achievements">Achievements & Core Values <span className="text-muted fs-12">(optional)</span></Label>
                                                             <div className="snow-editor" style={{ height: 300, marginBottom: '20px' }}>
                                                                 <div ref={achievementsRef} />
                                                             </div>
@@ -934,28 +951,30 @@ const UniversityProfileEdit = () => {
                                                                     </div>
 
                                                                     <FormGroup>
-                                                                        <Label for={`why-title-${index}`}>Title</Label>
+                                                                        <Label for={`why-title-${index}`}>Title <span className="text-danger">*</span></Label>
                                                                         <Input
                                                                             type="text"
                                                                             id={`why-title-${index}`}
+                                                                            placeholder="e.g., World-Class Faculty"
                                                                             value={item.title || ''}
                                                                             onChange={(e) => handleWhySimadChange(index, 'title', e.target.value)}
                                                                         />
                                                                     </FormGroup>
 
                                                                     <FormGroup>
-                                                                        <Label for={`why-desc-${index}`}>Description</Label>
+                                                                        <Label for={`why-desc-${index}`}>Description <span className="text-danger">*</span></Label>
                                                                         <Input
                                                                             type="textarea"
                                                                             id={`why-desc-${index}`}
                                                                             rows="3"
+                                                                            placeholder="Describe this reason in a sentence or two"
                                                                             value={item.description || ''}
                                                                             onChange={(e) => handleWhySimadChange(index, 'description', e.target.value)}
                                                                         />
                                                                     </FormGroup>
 
                                                                     <FormGroup>
-                                                                        <Label for={`why-image-${index}`}>Upload Image</Label>
+                                                                        <Label for={`why-image-${index}`}>Upload Image <span className="text-muted fs-12">(optional)</span></Label>
                                                                         <FilePond
                                                                             files={whySimadImages[index] || []}
                                                                             onupdatefiles={(fileItems) => {
@@ -999,10 +1018,11 @@ const UniversityProfileEdit = () => {
                                                                     </FormGroup>
 
                                                                     <FormGroup >
-                                                                        <Label for={`why-order-${index}`}>Display Order</Label>
+                                                                        <Label for={`why-order-${index}`}>Display Order <span className="text-muted fs-12">(optional)</span></Label>
                                                                         <Input
                                                                             type="number"
                                                                             id={`why-order-${index}`}
+                                                                            placeholder="e.g., 1"
                                                                             value={item.order || index + 1}
                                                                             onChange={(e) => handleWhySimadChange(index, 'order', parseInt(e.target.value))}
                                                                         />
@@ -1054,10 +1074,11 @@ const UniversityProfileEdit = () => {
                                                                     </div>
 
                                                                     <FormGroup>
-                                                                        <Label for={`history-year-${historyIndex}`}>Year</Label>
+                                                                        <Label for={`history-year-${historyIndex}`}>Year <span className="text-danger">*</span></Label>
                                                                         <Input
                                                                             type="text"
                                                                             id={`history-year-${historyIndex}`}
+                                                                            placeholder="e.g., 1999"
                                                                             value={item.year || ''}
                                                                             onChange={(e) => handleHistoryChange(historyIndex, 'year', e.target.value)}
                                                                         />
@@ -1065,7 +1086,7 @@ const UniversityProfileEdit = () => {
 
                                                                     <div className="mb-3">
                                                                         <div className="d-flex justify-content-between align-items-center mb-2">
-                                                                            <Label className="mb-0">Events</Label>
+                                                                            <Label className="mb-0">Events <span className="text-danger">*</span></Label>
                                                                             <Button color="outline-primary" size="sm" onClick={() => addHistoryEvent(historyIndex)}>
                                                                                 <i className="ri-add-line align-bottom me-1"></i> Add Event
                                                                             </Button>
@@ -1075,6 +1096,7 @@ const UniversityProfileEdit = () => {
                                                                             <div key={eventIndex} className="d-flex align-items-center mb-2">
                                                                                 <Input
                                                                                     type="text"
+                                                                                    placeholder="e.g., Simad University was founded"
                                                                                     value={event || ''}
                                                                                     onChange={(e) => handleHistoryEventChange(historyIndex, eventIndex, e.target.value)}
                                                                                     className="me-2"
@@ -1149,10 +1171,11 @@ const UniversityProfileEdit = () => {
                                                                     <Row>
                                                                         <Col md={6}>
                                                                             <FormGroup>
-                                                                                <Label for={`senate-name-${index}`}>Full Name</Label>
+                                                                                <Label for={`senate-name-${index}`}>Full Name <span className="text-danger">*</span></Label>
                                                                                 <Input
                                                                                     type="text"
                                                                                     id={`senate-name-${index}`}
+                                                                                    placeholder="e.g., Prof. Ahmed Yusuf"
                                                                                     value={member.name || ''}
                                                                                     onChange={(e) => handleSenateChange(index, 'name', e.target.value)}
                                                                                 />
@@ -1160,10 +1183,11 @@ const UniversityProfileEdit = () => {
                                                                         </Col>
                                                                         <Col md={6}>
                                                                             <FormGroup>
-                                                                                <Label for={`senate-position-${index}`}>Position</Label>
+                                                                                <Label for={`senate-position-${index}`}>Position <span className="text-danger">*</span></Label>
                                                                                 <Input
                                                                                     type="text"
                                                                                     id={`senate-position-${index}`}
+                                                                                    placeholder="e.g., Chairman of the Senate"
                                                                                     value={member.position || ''}
                                                                                     onChange={(e) => handleSenateChange(index, 'position', e.target.value)}
                                                                                 />
@@ -1172,7 +1196,7 @@ const UniversityProfileEdit = () => {
                                                                     </Row>
 
                                                                     <FormGroup>
-                                                                        <Label for={`senate-image-${index}`}>Upload Image</Label>
+                                                                        <Label for={`senate-image-${index}`}>Upload Image <span className="text-muted fs-12">(optional)</span></Label>
                                                                         <FilePond
                                                                             files={senateMemberImages[index] || []}
                                                                             onupdatefiles={(fileItems) => {
@@ -1215,32 +1239,35 @@ const UniversityProfileEdit = () => {
                                                                     </FormGroup>
 
                                                                     <FormGroup>
-                                                                        <Label for={`senate-message-${index}`}>Message/Quote</Label>
+                                                                        <Label for={`senate-message-${index}`}>Message/Quote <span className="text-danger">*</span></Label>
                                                                         <Input
                                                                             type="textarea"
                                                                             id={`senate-message-${index}`}
                                                                             rows="2"
+                                                                            placeholder="A short message or quote from this member"
                                                                             value={member.message || ''}
                                                                             onChange={(e) => handleSenateChange(index, 'message', e.target.value)}
                                                                         />
                                                                     </FormGroup>
 
                                                                     <FormGroup>
-                                                                        <Label for={`senate-bio-${index}`}>Biography</Label>
+                                                                        <Label for={`senate-bio-${index}`}>Biography <span className="text-danger">*</span></Label>
                                                                         <Input
                                                                             type="textarea"
                                                                             id={`senate-bio-${index}`}
                                                                             rows="4"
+                                                                            placeholder="Brief biography of this senate member"
                                                                             value={member.bio || ''}
                                                                             onChange={(e) => handleSenateChange(index, 'bio', e.target.value)}
                                                                         />
                                                                     </FormGroup>
 
                                                                     <FormGroup>
-                                                                        <Label for={`senate-order-${index}`}>Display Order</Label>
+                                                                        <Label for={`senate-order-${index}`}>Display Order <span className="text-muted fs-12">(optional)</span></Label>
                                                                         <Input
                                                                             type="number"
                                                                             id={`senate-order-${index}`}
+                                                                            placeholder="e.g., 1"
                                                                             value={member.order || index + 1}
                                                                             onChange={(e) => handleSenateChange(index, 'order', parseInt(e.target.value))}
                                                                         />
@@ -1292,17 +1319,18 @@ const UniversityProfileEdit = () => {
                                                                     </div>
 
                                                                     <FormGroup>
-                                                                        <Label for={`accred-name-${index}`}>Accreditation Body Name</Label>
+                                                                        <Label for={`accred-name-${index}`}>Accreditation Body Name <span className="text-danger">*</span></Label>
                                                                         <Input
                                                                             type="text"
                                                                             id={`accred-name-${index}`}
+                                                                            placeholder="e.g., National Commission for Higher Education"
                                                                             value={item.name || ''}
                                                                             onChange={(e) => handleAccreditationChange(index, 'name', e.target.value)}
                                                                         />
                                                                     </FormGroup>
 
                                                                     <FormGroup>
-                                                                        <Label for={`accred-logo-${index}`}>Upload Logo</Label>
+                                                                        <Label for={`accred-logo-${index}`}>Upload Logo <span className="text-muted fs-12">(optional)</span></Label>
                                                                         <FilePond
                                                                             files={accreditationLogos[index] || []}
                                                                             onupdatefiles={(fileItems) => {
@@ -1345,31 +1373,34 @@ const UniversityProfileEdit = () => {
                                                                     </FormGroup>
 
                                                                     <FormGroup>
-                                                                        <Label for={`accred-message-${index}`}>Description/Message</Label>
+                                                                        <Label for={`accred-message-${index}`}>Description/Message <span className="text-danger">*</span></Label>
                                                                         <Input
                                                                             type="textarea"
                                                                             id={`accred-message-${index}`}
                                                                             rows="3"
+                                                                            placeholder="Describe this accreditation"
                                                                             value={item.message || ''}
                                                                             onChange={(e) => handleAccreditationChange(index, 'message', e.target.value)}
                                                                         />
                                                                     </FormGroup>
 
                                                                     <FormGroup>
-                                                                        <Label for={`accred-validity-${index}`}>Validity Period</Label>
+                                                                        <Label for={`accred-validity-${index}`}>Validity Period <span className="text-danger">*</span></Label>
                                                                         <Input
                                                                             type="text"
                                                                             id={`accred-validity-${index}`}
+                                                                            placeholder="e.g., Valid until 2027"
                                                                             value={item.validity || ''}
                                                                             onChange={(e) => handleAccreditationChange(index, 'validity', e.target.value)}
                                                                         />
                                                                     </FormGroup>
 
                                                                     <FormGroup>
-                                                                        <Label for={`accred-order-${index}`}>Display Order</Label>
+                                                                        <Label for={`accred-order-${index}`}>Display Order <span className="text-muted fs-12">(optional)</span></Label>
                                                                         <Input
                                                                             type="number"
                                                                             id={`accred-order-${index}`}
+                                                                            placeholder="e.g., 1"
                                                                             value={item.order || index + 1}
                                                                             onChange={(e) => handleAccreditationChange(index, 'order', parseInt(e.target.value))}
                                                                         />

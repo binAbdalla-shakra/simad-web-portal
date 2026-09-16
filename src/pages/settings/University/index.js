@@ -299,7 +299,7 @@ const UniversitySettingsPage = () => {
     // Save university data
     const saveUniversity = async (e) => {
         e.preventDefault();
-        if (!validateForm()) return;
+        if (!validateForm() || saving) return;
 
         setSaving(true);
         try {
@@ -369,13 +369,14 @@ const UniversitySettingsPage = () => {
                 submitData.append('_id', universityData._id);
             }
 
-            await dispatch(onCreateOrUpdateUniversity(submitData));
+            await dispatch(onCreateOrUpdateUniversity(submitData)).unwrap();
 
             toast.success("University settings saved successfully!");
             fetchData();
         } catch (error) {
+            // Error toast already shown by the thunk; keep the entered data
+            // intact so the user can fix the issue and resubmit.
             console.error("Error saving university data:", error);
-            toast.error("Failed to save university settings");
         } finally {
             setSaving(false);
         }
@@ -572,7 +573,7 @@ const UniversitySettingsPage = () => {
                                                 name="name"
                                                 value={formData.name}
                                                 onChange={handleInputChange}
-                                                placeholder="Enter university name"
+                                                placeholder="e.g., SIMAD University"
                                                 className="form-control-lg"
                                                 required
                                             />
@@ -608,6 +609,7 @@ const UniversitySettingsPage = () => {
                                                     type: selected ? selected.value : "Private"
                                                 }))}
                                                 options={typeOptions}
+                                                placeholder="Select university type"
                                                 className="react-select"
                                                 classNamePrefix="select"
                                             />
@@ -615,7 +617,9 @@ const UniversitySettingsPage = () => {
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label className="form-label">Founded Date</Label>
+                                            <Label className="form-label">
+                                                Founded Date <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 type="date"
                                                 name="founded"
@@ -627,19 +631,23 @@ const UniversitySettingsPage = () => {
                                     </Col>
                                     <Col md={12}>
                                         <FormGroup>
-                                            <Label className="form-label">Motto</Label>
+                                            <Label className="form-label">
+                                                Motto <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 name="motto"
                                                 value={formData.motto}
                                                 onChange={handleInputChange}
-                                                placeholder="Enter university motto"
+                                                placeholder="e.g., Knowledge for Life"
                                                 className="form-control-lg"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label className="form-label">Academic Language</Label>
+                                            <Label className="form-label">
+                                                Academic Language <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 value={formData.academics.language}
                                                 onChange={(e) => handleNestedChange('academics', 'language', e.target.value)}
@@ -650,7 +658,9 @@ const UniversitySettingsPage = () => {
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label className="form-label">Affiliation</Label>
+                                            <Label className="form-label">
+                                                Affiliation <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 value={formData.academics.affiliation}
                                                 onChange={(e) => handleNestedChange('academics', 'affiliation', e.target.value)}
@@ -661,7 +671,9 @@ const UniversitySettingsPage = () => {
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label className="form-label">University Colors</Label>
+                                            <Label className="form-label">
+                                                University Colors <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <CreatableSelect
                                                 isMulti
                                                 value={formData.colors.map(color => ({ value: color, label: color }))}
@@ -701,7 +713,9 @@ const UniversitySettingsPage = () => {
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label className="form-label">Former Names</Label>
+                                            <Label className="form-label">
+                                                Former Names <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <CreatableSelect
                                                 isMulti
                                                 value={formData.formerNames.map(name => ({ value: name, label: name }))}
@@ -762,7 +776,9 @@ const UniversitySettingsPage = () => {
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label className="form-label">Phone Number</Label>
+                                            <Label className="form-label">
+                                                Phone Number <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 value={formData.contact.phone}
                                                 onChange={(e) => handleNestedChange('contact', 'phone', e.target.value)}
@@ -773,7 +789,9 @@ const UniversitySettingsPage = () => {
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label className="form-label">Email Address</Label>
+                                            <Label className="form-label">
+                                                Email Address <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 type="email"
                                                 value={formData.contact.email}
@@ -785,7 +803,9 @@ const UniversitySettingsPage = () => {
                                     </Col>
                                     <Col md={12}>
                                         <FormGroup>
-                                            <Label className="form-label">Website</Label>
+                                            <Label className="form-label">
+                                                Website <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 type="url"
                                                 value={formData.contact.website}
@@ -801,44 +821,53 @@ const UniversitySettingsPage = () => {
                                     </Col>
                                     <Col md={12}>
                                         <FormGroup>
-                                            <Label className="form-label">Street Address</Label>
+                                            <Label className="form-label">
+                                                Street Address <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 value={formData.address.street}
                                                 onChange={(e) => handleNestedChange('address', 'street', e.target.value)}
-                                                placeholder="Street name and number"
+                                                placeholder="e.g., Airport Road"
                                                 className="form-control-lg"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label className="form-label">City</Label>
+                                            <Label className="form-label">
+                                                City <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 value={formData.address.city}
                                                 onChange={(e) => handleNestedChange('address', 'city', e.target.value)}
-                                                placeholder="City"
+                                                placeholder="e.g., Mogadishu"
                                                 className="form-control-lg"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label className="form-label">State/Region</Label>
+                                            <Label className="form-label">
+                                                State/Region <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 value={formData.address.state}
                                                 onChange={(e) => handleNestedChange('address', 'state', e.target.value)}
-                                                placeholder="State or Region"
+                                                placeholder="e.g., Banaadir"
                                                 className="form-control-lg"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label className="form-label">Country</Label>
+                                            <Label className="form-label">
+                                                Country <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Select
                                                 value={countryOptions.find(opt => opt.value === formData.address.country)}
                                                 onChange={(selected) => handleNestedChange('address', 'country', selected ? selected.value : "Somalia")}
                                                 options={countryOptions}
+                                                placeholder="Select country"
                                                 className="react-select"
                                                 classNamePrefix="select"
                                             />
@@ -846,11 +875,13 @@ const UniversitySettingsPage = () => {
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label className="form-label">Postal Code</Label>
+                                            <Label className="form-label">
+                                                Postal Code <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 value={formData.address.postalCode}
                                                 onChange={(e) => handleNestedChange('address', 'postalCode', e.target.value)}
-                                                placeholder="Postal code"
+                                                placeholder="e.g., 252"
                                                 className="form-control-lg"
                                             />
                                         </FormGroup>
@@ -960,7 +991,9 @@ const UniversitySettingsPage = () => {
                                                 <Row className="g-3">
                                                     <Col md={3}>
                                                         <FormGroup>
-                                                            <Label className="form-label">Total Students</Label>
+                                                            <Label className="form-label">
+                                                                Total Students <span className="text-muted fs-12">(optional)</span>
+                                                            </Label>
                                                             <Input
                                                                 type="number"
                                                                 value={formData.stats.students}
@@ -972,7 +1005,9 @@ const UniversitySettingsPage = () => {
                                                     </Col>
                                                     <Col md={3}>
                                                         <FormGroup>
-                                                            <Label className="form-label">Alumni Count</Label>
+                                                            <Label className="form-label">
+                                                                Alumni Count <span className="text-muted fs-12">(optional)</span>
+                                                            </Label>
                                                             <Input
                                                                 type="number"
                                                                 value={formData.stats.alumni}
@@ -984,7 +1019,9 @@ const UniversitySettingsPage = () => {
                                                     </Col>
                                                     <Col md={3}>
                                                         <FormGroup>
-                                                            <Label className="form-label">Laboratories</Label>
+                                                            <Label className="form-label">
+                                                                Laboratories <span className="text-muted fs-12">(optional)</span>
+                                                            </Label>
                                                             <Input
                                                                 type="number"
                                                                 value={formData.stats.labs}
@@ -996,7 +1033,9 @@ const UniversitySettingsPage = () => {
                                                     </Col>
                                                     <Col md={3}>
                                                         <FormGroup>
-                                                            <Label className="form-label">Campuses</Label>
+                                                            <Label className="form-label">
+                                                                Campuses <span className="text-muted fs-12">(optional)</span>
+                                                            </Label>
                                                             <Input
                                                                 type="number"
                                                                 value={formData.stats.campuses}
@@ -1018,7 +1057,9 @@ const UniversitySettingsPage = () => {
                                 <Row className="g-3">
                                     <Col md={12}>
                                         <FormGroup>
-                                            <Label className="form-label">About University</Label>
+                                            <Label className="form-label">
+                                                About University <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 type="textarea"
                                                 name="about_simad"
@@ -1037,7 +1078,9 @@ const UniversitySettingsPage = () => {
                                     </Col>
                                     <Col md={12}>
                                         <FormGroup>
-                                            <Label className="form-label">Mission Statement</Label>
+                                            <Label className="form-label">
+                                                Mission Statement <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 type="textarea"
                                                 value={formData.description.mission}
@@ -1055,7 +1098,9 @@ const UniversitySettingsPage = () => {
                                     </Col>
                                     <Col md={12}>
                                         <FormGroup>
-                                            <Label className="form-label">Vision Statement</Label>
+                                            <Label className="form-label">
+                                                Vision Statement <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 type="textarea"
                                                 value={formData.description.vision}
@@ -1073,7 +1118,9 @@ const UniversitySettingsPage = () => {
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label className="form-label">Guiding Principles</Label>
+                                            <Label className="form-label">
+                                                Guiding Principles <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 type="textarea"
                                                 value={formData.description.guiding_principles}
@@ -1086,7 +1133,9 @@ const UniversitySettingsPage = () => {
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label className="form-label">Core Values</Label>
+                                            <Label className="form-label">
+                                                Core Values <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 type="textarea"
                                                 value={formData.description.core_values}
@@ -1107,7 +1156,7 @@ const UniversitySettingsPage = () => {
                                         <FormGroup>
                                             <Label className="form-label">
                                                 <i className="ri-facebook-fill text-primary me-2"></i>
-                                                Facebook
+                                                Facebook <span className="text-muted fs-12">(optional)</span>
                                             </Label>
                                             <Input
                                                 value={formData.socialMedia.facebook}
@@ -1121,7 +1170,7 @@ const UniversitySettingsPage = () => {
                                         <FormGroup>
                                             <Label className="form-label">
                                                 <i className="ri-twitter-fill text-info me-2"></i>
-                                                Twitter
+                                                Twitter <span className="text-muted fs-12">(optional)</span>
                                             </Label>
                                             <Input
                                                 value={formData.socialMedia.twitter}
@@ -1135,7 +1184,7 @@ const UniversitySettingsPage = () => {
                                         <FormGroup>
                                             <Label className="form-label">
                                                 <i className="ri-linkedin-fill text-primary me-2"></i>
-                                                LinkedIn
+                                                LinkedIn <span className="text-muted fs-12">(optional)</span>
                                             </Label>
                                             <Input
                                                 value={formData.socialMedia.linkedin}
@@ -1149,7 +1198,7 @@ const UniversitySettingsPage = () => {
                                         <FormGroup>
                                             <Label className="form-label">
                                                 <i className="ri-instagram-line text-danger me-2"></i>
-                                                Instagram
+                                                Instagram <span className="text-muted fs-12">(optional)</span>
                                             </Label>
                                             <Input
                                                 value={formData.socialMedia.instagram}
@@ -1163,7 +1212,7 @@ const UniversitySettingsPage = () => {
                                         <FormGroup>
                                             <Label className="form-label">
                                                 <i className="ri-youtube-fill text-danger me-2"></i>
-                                                YouTube
+                                                YouTube <span className="text-muted fs-12">(optional)</span>
                                             </Label>
                                             <Input
                                                 value={formData.socialMedia.youtube}
@@ -1177,7 +1226,7 @@ const UniversitySettingsPage = () => {
                                         <FormGroup>
                                             <Label className="form-label">
                                                 <i className="ri-tiktok-fill me-2"></i>
-                                                TikTok
+                                                TikTok <span className="text-muted fs-12">(optional)</span>
                                             </Label>
                                             <Input
                                                 value={formData.socialMedia.tiktok}

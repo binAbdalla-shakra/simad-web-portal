@@ -343,8 +343,10 @@ $cyans: (
 // fusv-enable
 
 // scss-docs-start theme-color-variables
-$primary: $indigo;
-$secondary: $blue;
+// Primary/secondary follow the Simad University logo's brand colors
+// (green #1fa34a, blue #4691ce) instead of the generic template indigo.
+$primary: #1fa34a;
+$secondary: #4691ce;
 $success: $green;
 $info: $cyan;
 $warning: $yellow;

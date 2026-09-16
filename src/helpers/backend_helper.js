@@ -27,7 +27,26 @@ const makeCRUD = (endpoint) => ({
 
 // Auth
 export const login = (data) => api.create(url.POST_LOGIN, data);
+export const refreshAccessToken = () => axios.post(url.POST_REFRESH_TOKEN, {}, { withCredentials: true });
+export const logout = () => api.create(url.POST_LOGOUT, {});
 export const changePassword = (data) => api.patch(url.CHANGE_PASSWORD, data);
+
+// Dashboard
+export const DashboardAPI = {
+    stats: () => api.get(url.DASHBOARD_STATS),
+};
+
+// Menus (used to build the permission-assignment checkbox tree)
+export const MenuAPI = makeCRUD(url.MENUS);
+export const getMyPermissions = () => api.get(url.MY_PERMISSIONS);
+
+// Reports
+export const ReportsAPI = {
+    programsBySchool: () => api.get(url.REPORT_PROGRAMS_BY_SCHOOL),
+    usersByRole: () => api.get(url.REPORT_USERS_BY_ROLE),
+    partnersByCategory: () => api.get(url.REPORT_PARTNERS_BY_CATEGORY),
+    contentActivity: () => api.get(url.REPORT_CONTENT_ACTIVITY),
+};
 
 
 // ================================== SETTINGS URL ===================================================

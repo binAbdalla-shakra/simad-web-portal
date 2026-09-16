@@ -6,13 +6,14 @@ import {
     Col, Container, Row,
     Form, Input, Label, FormGroup,
     Modal, ModalBody, ModalFooter, ModalHeader,
-    Button, Badge, FormFeedback
+    Button, Badge, FormFeedback, Spinner
 } from "reactstrap";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import BreadCrumb from "../../../Components/Common/BreadCrumb";
 import DeleteModal from "../../../Components/Common/DeleteModal";
 import Loader from "../../../Components/Common/Loader";
+import NoDataFound from "../../../Components/Common/NoDataFound";
 import { useDispatch, useSelector } from 'react-redux';
 import { createSelector } from 'reselect';
 
@@ -57,6 +58,7 @@ const Users = () => {
 
     const [usersList, setUsersList] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [modal, setModal] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -254,23 +256,32 @@ const Users = () => {
 
             isActive: Yup.boolean()
         }),
-        onSubmit: (values) => {
+        onSubmit: async (values) => {
+            if (isSubmitting) return;
             const payload = {
                 ...values,
             };
 
-            if (isEdit) {
-                dispatch(onUpdateUser({ _id: selectedUser._id, ...payload }));
-            } else {
-                dispatch(onAddNewUser({
-                    ...payload,
-                    id: (Math.floor(Math.random() * (30 - 20)) + 20).toString(),
-                    avatar: 'user-dummy-img.jpg',
-                    password: process.env.REACT_APP_DEFAULT_PASS || "Simad1999",
-                    bg_url: 'user-dummy-img.jpg'
-                }));
+            setIsSubmitting(true);
+            try {
+                if (isEdit) {
+                    await dispatch(onUpdateUser({ _id: selectedUser._id, ...payload })).unwrap();
+                } else {
+                    await dispatch(onAddNewUser({
+                        ...payload,
+                        id: (Math.floor(Math.random() * (30 - 20)) + 20).toString(),
+                        avatar: 'user-dummy-img.jpg',
+                        password: process.env.REACT_APP_DEFAULT_PASS || "Simad1999",
+                        bg_url: 'user-dummy-img.jpg'
+                    })).unwrap();
+                }
+                // Only close on success - keep the modal (and entered values) open on failure.
+                setModal(false);
+            } catch (error) {
+                // Error toast already shown by the thunk.
+            } finally {
+                setIsSubmitting(false);
             }
-            setModal(false);
         }
 
     });
@@ -401,7 +412,7 @@ const Users = () => {
                                 pagination
                                 highlightOnHover
                                 responsive
-                                noDataComponent="No users found matching your criteria"
+                                noDataComponent={<NoDataFound title="No users found" message="No users match your current search or filters." />}
                             />
                         )}
                     </CardBody>
@@ -575,8 +586,9 @@ const Users = () => {
                         <Button color="light" onClick={() => setModal(false)}>
                             Cancel
                         </Button>
-                        <Button color="primary" type="submit" disabled={loading}>
-                            {loading ? 'Saving...' : 'Save Changes'}
+                        <Button color="primary" type="submit" disabled={isSubmitting}>
+                            {isSubmitting && <Spinner size="sm" className="me-1" />}
+                            {isSubmitting ? 'Saving...' : 'Save Changes'}
                         </Button>
                     </ModalFooter>
                 </Form>

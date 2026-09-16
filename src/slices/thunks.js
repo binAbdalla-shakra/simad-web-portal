@@ -13,3 +13,5 @@ export * from "./settings/thunk";
 
 export * from "./setups/thunk";
 export * from "./ContentManagement/thunk";
+export * from "./dashboard/thunk";
+export * from "./reports/thunk";

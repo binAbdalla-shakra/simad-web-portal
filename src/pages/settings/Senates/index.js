@@ -4,7 +4,7 @@ import {
     Col, Container, Row,
     Form, Input, Label, FormGroup,
     Modal, ModalBody, ModalFooter, ModalHeader,
-    Button, Badge, Alert
+    Button, Badge, Alert, Spinner
 } from "reactstrap";
 import DataTable from "react-data-table-component";
 import Select from "react-select";
@@ -14,6 +14,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import BreadCrumb from "../../../Components/Common/BreadCrumb";
 import DeleteModal from "../../../Components/Common/DeleteModal";
 import Loader from "../../../Components/Common/Loader";
+import NoDataFound from "../../../Components/Common/NoDataFound";
 
 // Import FilePond for file uploads
 import { FilePond, registerPlugin } from 'react-filepond';
@@ -63,6 +64,7 @@ const SenatePage = () => {
     // State management
     const [senateMembers, setSenateMembers] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [modal, setModal] = useState(false);
     const [viewModal, setViewModal] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
@@ -225,8 +227,9 @@ const SenatePage = () => {
     // Create new senate member
     const createSenateMember = async (e) => {
         e.preventDefault();
-        if (!validateForm()) return;
+        if (!validateForm() || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
 
@@ -243,20 +246,25 @@ const SenatePage = () => {
                 submitData.append('image', formData.image);
             }
 
-            await dispatch(onCreateOrUpdateSenateMember(submitData));
+            await dispatch(onCreateOrUpdateSenateMember(submitData)).unwrap();
 
             handleModalClose();
             fetchData();
         } catch (error) {
+            // Failed: keep the modal open and the entered data intact so the
+            // user can fix the issue and resubmit instead of losing their input.
             console.error("Error creating senate member:", error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     // Update senate member
     const updateSenateMember = async (e) => {
         e.preventDefault();
-        if (!validateForm() || !selectedMember) return;
+        if (!validateForm() || !selectedMember || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
 
@@ -276,12 +284,14 @@ const SenatePage = () => {
             // Append ID for update
             submitData.append('_id', selectedMember._id);
 
-            await dispatch(onCreateOrUpdateSenateMember(submitData));
+            await dispatch(onCreateOrUpdateSenateMember(submitData)).unwrap();
 
             handleModalClose();
             fetchData();
         } catch (error) {
             console.error("Error updating senate member:", error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -342,7 +352,7 @@ const SenatePage = () => {
             submitData.append('order', member.order);
             submitData.append('isActive', !member.isActive);
 
-            await dispatch(onCreateOrUpdateSenateMember(submitData));
+            await dispatch(onCreateOrUpdateSenateMember(submitData)).unwrap();
 
             fetchData();
         } catch (error) {
@@ -683,11 +693,7 @@ const SenatePage = () => {
                                 responsive
                                 // striped
                                 noDataComponent={
-                                    <div className="text-center py-5">
-                                        <i className="ri-inbox-line display-4 text-muted"></i>
-                                        <h5 className="mt-3">No senate members found</h5>
-                                        <p className="text-muted">Try adjusting your search criteria or add a new senate member.</p>
-                                    </div>
+                                    <NoDataFound title="No senate members found" message="Try adjusting your search criteria or add a new senate member." />
                                 }
                                 customStyles={{
                                     headCells: {
@@ -722,7 +728,7 @@ const SenatePage = () => {
                             <Col md={12}>
                                 <FormGroup>
                                     <Label className="form-label">
-                                        Member Photo
+                                        Member Photo <span className="text-muted fs-12">(optional)</span>
                                     </Label>
                                     <FilePond
                                         files={imageFiles}
@@ -766,7 +772,7 @@ const SenatePage = () => {
                                         name="name"
                                         value={formData.name}
                                         onChange={handleInputChange}
-                                        placeholder="Enter full name"
+                                        placeholder="e.g., Prof. Ahmed Yusuf"
                                         className="form-control-lg"
                                         required
                                     />
@@ -798,7 +804,7 @@ const SenatePage = () => {
 
                             <Col md={2}>
                                 <FormGroup>
-                                    <Label className="form-label">Display Order</Label>
+                                    <Label className="form-label">Display Order <span className="text-muted fs-12">(optional)</span></Label>
                                     <Input
                                         type="number"
                                         name="order"
@@ -882,10 +888,10 @@ const SenatePage = () => {
                             <i className="ri-close-line me-1"></i>
                             Cancel
                         </Button>
-                        <Button color="primary" type="submit" disabled={loading}>
-                            {loading ? (
+                        <Button color="primary" type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? (
                                 <>
-                                    <i className="ri-loader-4-line spin me-1"></i>
+                                    <Spinner size="sm" className="me-1" />
                                     {isEdit ? 'Updating...' : 'Creating...'}
                                 </>
                             ) : (

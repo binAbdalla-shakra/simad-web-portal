@@ -4,7 +4,7 @@ import {
     Col, Container, Row,
     Form, Input, Label, FormGroup,
     Modal, ModalBody, ModalFooter, ModalHeader,
-    Button, Badge, Alert
+    Button, Badge, Alert, Spinner
 } from "reactstrap";
 import DataTable from "react-data-table-component";
 import Select from "react-select";
@@ -14,6 +14,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import BreadCrumb from "../../../Components/Common/BreadCrumb";
 import DeleteModal from "../../../Components/Common/DeleteModal";
+import NoDataFound from "../../../Components/Common/NoDataFound";
 import Loader from "../../../Components/Common/Loader";
 
 import { useDispatch, useSelector } from 'react-redux';
@@ -54,6 +55,7 @@ const HistoryPage = () => {
     // State management
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [modal, setModal] = useState(false);
     const [viewModal, setViewModal] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
@@ -222,8 +224,9 @@ const HistoryPage = () => {
     // Create new history entry
     const createHistory = async (e) => {
         e.preventDefault();
-        if (!validateForm()) return;
+        if (!validateForm() || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
 
@@ -242,20 +245,25 @@ const HistoryPage = () => {
                     submitData.append(`events[${index}]`, event);
                 });
 
-            await dispatch(onCreateOrUpdateHistory(submitData));
+            await dispatch(onCreateOrUpdateHistory(submitData)).unwrap();
 
             handleModalClose();
             fetchData();
         } catch (error) {
+            // Failed: keep the modal open and the entered data intact so the
+            // user can fix the issue and resubmit instead of losing their input.
             console.error("Error creating history entry:", error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     // Update history entry
     const updateHistory = async (e) => {
         e.preventDefault();
-        if (!validateForm() || !selectedHistory) return;
+        if (!validateForm() || !selectedHistory || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
 
@@ -277,12 +285,14 @@ const HistoryPage = () => {
             // Append ID for update
             submitData.append('_id', selectedHistory._id);
 
-            await dispatch(onCreateOrUpdateHistory(submitData));
+            await dispatch(onCreateOrUpdateHistory(submitData)).unwrap();
 
             handleModalClose();
             fetchData();
         } catch (error) {
             console.error("Error updating history entry:", error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -342,12 +352,11 @@ const HistoryPage = () => {
                 submitData.append(`events[${index}]`, event);
             });
 
-            await dispatch(onCreateOrUpdateHistory(submitData));
+            await dispatch(onCreateOrUpdateHistory(submitData)).unwrap();
 
             fetchData();
         } catch (error) {
             console.error("Error toggling history status:", error);
-            toast.error("Failed to update history status");
         }
     };
 
@@ -646,11 +655,7 @@ const HistoryPage = () => {
                                 responsive
                                 // striped
                                 noDataComponent={
-                                    <div className="text-center py-5">
-                                        <i className="ri-inbox-line display-4 text-muted"></i>
-                                        <h5 className="mt-3">No history entries found</h5>
-                                        <p className="text-muted">Try adjusting your search criteria or add a new historical year.</p>
-                                    </div>
+                                    <NoDataFound title="No history entries found" message="Try adjusting your search criteria or add a new historical year." />
                                 }
                                 customStyles={{
                                     headCells: {
@@ -703,7 +708,7 @@ const HistoryPage = () => {
 
                             <Col md={6}>
                                 <FormGroup>
-                                    <Label className="form-label">Display Order</Label>
+                                    <Label className="form-label">Display Order <span className="text-muted fs-12">(optional)</span></Label>
                                     <Input
                                         type="number"
                                         name="order"
@@ -741,7 +746,7 @@ const HistoryPage = () => {
                                             <Input
                                                 value={event}
                                                 onChange={(e) => handleEventChange(index, e.target.value)}
-                                                placeholder={`Enter historical event ${index + 1}...`}
+                                                placeholder="e.g., Simad University officially opened its doors"
                                                 className="form-control-lg"
                                             />
                                         </div>
@@ -785,9 +790,9 @@ const HistoryPage = () => {
                             <i className="ri-close-line me-1"></i>
                             Cancel
                         </Button>
-                        <Button color="primary" type="submit">
-                            <i className="ri-save-line me-1"></i>
-                            {isEdit ? 'Update History' : 'Create History'}
+                        <Button color="primary" type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? <Spinner size="sm" className="me-1" /> : <i className="ri-save-line me-1"></i>}
+                            {isSubmitting ? 'Saving...' : (isEdit ? 'Update History' : 'Create History')}
                         </Button>
                     </ModalFooter>
                 </Form>

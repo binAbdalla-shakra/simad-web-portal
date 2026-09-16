@@ -20,7 +20,7 @@ const TwosVerify = () => {
             } else {
                 getInputElement(index).blur();
                 // Submit code
-                navigate('/setting-profile')
+                navigate('/dashboard')
 
                 console.log('submit code');
             }

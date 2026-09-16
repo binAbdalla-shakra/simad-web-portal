@@ -4,7 +4,7 @@ import {
     Col, Container, Row,
     Form, Input, Label, FormGroup,
     Modal, ModalBody, ModalFooter, ModalHeader,
-    Button, Badge,
+    Button, Badge, Spinner,
 } from "reactstrap";
 import DataTable from "react-data-table-component";
 import Select from "react-select";
@@ -14,6 +14,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import BreadCrumb from "../../../Components/Common/BreadCrumb";
 import DeleteModal from "../../../Components/Common/DeleteModal";
 import Loader from "../../../Components/Common/Loader";
+import NoDataFound from "../../../Components/Common/NoDataFound";
 
 // Import FilePond for file uploads
 import { FilePond, registerPlugin } from 'react-filepond';
@@ -63,6 +64,7 @@ const AccreditationsPage = () => {
     // State management
     const [accreditations, setAccreditations] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [modal, setModal] = useState(false);
     const [viewModal, setViewModal] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
@@ -213,8 +215,9 @@ const AccreditationsPage = () => {
     // Create new accreditation
     const createAccreditation = async (e) => {
         e.preventDefault();
-        if (!validateForm()) return;
+        if (!validateForm() || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
 
@@ -231,20 +234,25 @@ const AccreditationsPage = () => {
                 submitData.append('logo', formData.logo);
             }
 
-            await dispatch(onCreateOrUpdateAccreditation(submitData));
+            await dispatch(onCreateOrUpdateAccreditation(submitData)).unwrap();
 
             handleModalClose();
             fetchData();
         } catch (error) {
+            // Failed: keep the modal open and the entered data intact so the
+            // user can fix the issue and resubmit instead of losing their input.
             console.error("Error creating accreditation:", error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     // Update accreditation
     const updateAccreditation = async (e) => {
         e.preventDefault();
-        if (!validateForm() || !selectedAccreditation) return;
+        if (!validateForm() || !selectedAccreditation || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
 
@@ -265,12 +273,14 @@ const AccreditationsPage = () => {
             submitData.append('_id', selectedAccreditation._id);
 
 
-            await dispatch(onCreateOrUpdateAccreditation(submitData));
+            await dispatch(onCreateOrUpdateAccreditation(submitData)).unwrap();
 
             handleModalClose();
             fetchData();
         } catch (error) {
             console.error("Error updating accreditation:", error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -329,7 +339,7 @@ const AccreditationsPage = () => {
             submitData.append('order', accreditation.order);
             submitData.append('isActive', !accreditation.isActive);
 
-            await dispatch(onCreateOrUpdateAccreditation(submitData));
+            await dispatch(onCreateOrUpdateAccreditation(submitData)).unwrap();
 
             toast.success(`Accreditation ${!accreditation.isActive ? 'activated' : 'deactivated'} successfully!`);
             fetchData();
@@ -634,11 +644,7 @@ const AccreditationsPage = () => {
                                 responsive
                                 // striped
                                 noDataComponent={
-                                    <div className="text-center py-5">
-                                        <i className="ri-inbox-line display-4 text-muted"></i>
-                                        <h5 className="mt-3">No accreditations found</h5>
-                                        <p className="text-muted">Try adjusting your search criteria or add a new accreditation.</p>
-                                    </div>
+                                    <NoDataFound title="No accreditations found" message="Try adjusting your search criteria or add a new accreditation." />
                                 }
                                 customStyles={{
                                     headCells: {
@@ -717,7 +723,7 @@ const AccreditationsPage = () => {
                                         name="name"
                                         value={formData.name}
                                         onChange={handleInputChange}
-                                        placeholder="Enter accreditation name"
+                                        placeholder="e.g., ABET Accreditation"
                                         className="form-control-lg"
                                         required
                                     />
@@ -742,7 +748,7 @@ const AccreditationsPage = () => {
 
                             <Col md={2}>
                                 <FormGroup>
-                                    <Label className="form-label">Display Order</Label>
+                                    <Label className="form-label">Display Order <span className="text-muted fs-12">(optional)</span></Label>
                                     <Input
                                         type="number"
                                         name="order"
@@ -768,7 +774,7 @@ const AccreditationsPage = () => {
                                         name="message"
                                         value={formData.message}
                                         onChange={handleInputChange}
-                                        placeholder="Enter accreditation description or message"
+                                        placeholder="e.g., Accredited by the Ministry of Higher Education for meeting national quality standards."
                                         rows="4"
                                         className="form-control-lg"
                                         required
@@ -803,10 +809,10 @@ const AccreditationsPage = () => {
                             <i className="ri-close-line me-1"></i>
                             Cancel
                         </Button>
-                        <Button color="primary" type="submit" disabled={loading}>
-                            {loading ? (
+                        <Button color="primary" type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? (
                                 <>
-                                    <i className="ri-loader-4-line spin me-1"></i>
+                                    <Spinner size="sm" className="me-1" />
                                     {isEdit ? 'Updating...' : 'Creating...'}
                                 </>
                             ) : (

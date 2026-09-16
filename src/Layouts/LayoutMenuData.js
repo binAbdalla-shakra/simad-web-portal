@@ -1,17 +1,34 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import axios from "axios";
-import { api } from "../config";
+import { getMyPermissions } from "../helpers/backend_helper";
 const Navdata = () => {
   const history = useNavigate();
   const location = useLocation();
 
-  const authUser = JSON.parse(sessionStorage.getItem("authUser"));
-  const userId = authUser?.data?.user?._id;
-  const isSuperAdmin = userId === "superadmin-id";
   const [iscurrentState, setIscurrentState] = useState("Dashboard");
-  const [retreivedMenus, setRetreivedMenus] = useState([]);
   const [menuStates, setMenuStates] = useState({}); // dynamic toggle states
+
+  // Permission state, fetched once per session from GET /users/me/permissions.
+  // isSuperAdmin === null means "not resolved yet" so we don't flash a
+  // restricted menu (or bounce the user to /not-found) before the request lands.
+  const [isSuperAdmin, setIsSuperAdmin] = useState(null);
+  const [permittedLinks, setPermittedLinks] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getMyPermissions().then((res) => {
+      if (cancelled || !res?.success) return;
+      setIsSuperAdmin(!!res.data?.isSuperAdmin);
+      setPermittedLinks(res.data?.permittedLinks || []);
+    }).catch(() => {
+      if (!cancelled) {
+        // Fail closed: treat an unresolved permissions check as "no access".
+        setIsSuperAdmin(false);
+        setPermittedLinks([]);
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   function updateIconSidebar(e) {
     if (e?.target?.getAttribute("subitems")) {
@@ -25,19 +42,6 @@ const Navdata = () => {
       });
     }
   }
-  // Function to collect all permitted paths from menus
-  const getAllPermittedPaths = (menus) => {
-    const paths = [];
-    menus.forEach(menu => {
-      if (menu.link && menu.link !== "/#") paths.push(menu.link);
-      if (menu.subItems) {
-        menu.subItems.forEach(sub => {
-          paths.push(sub.link);
-        });
-      }
-    });
-    return paths;
-  };
 
   // Reset state variables on current state change
   useEffect(() => {
@@ -50,54 +54,31 @@ const Navdata = () => {
     });
   }, [iscurrentState]);
 
-  // console.log("current state is:", iscurrentState)
-
-  // Fetch dynamic menu if not superadmin
-  // useEffect(() => {
-  //   const fetchDynamicMenu = async () => {
-  //     try {
-
-  //       const response = await fetch(`${api.API_URL}/users/${userId}/menu`);
-  //       const data = await response.json();
-  //       setRetreivedMenus(data.flatMenu);
-  //     } catch (err) {
-  //       console.error("Error fetching user menu:", err);
-  //     }
-  //   };
-
-  //   if (userId && userId !== "superadmin-id") {
-  //     fetchDynamicMenu();
-  //   }
-  // }, [userId]);
-
-
-
-
-  // Check route permission
+  // Guard direct navigation to a URL the current user isn't permitted to see.
   useEffect(() => {
-    if (!isSuperAdmin && retreivedMenus.length > 0) {
-      const permittedPaths = getAllPermittedPaths(retreivedMenus);
-      const currentPath = location.pathname;
+    if (isSuperAdmin === null) return; // still resolving
+    if (isSuperAdmin) return;
 
-      // Allow access to root or not-found page
-      if (currentPath === "/" || currentPath === "/not-found") return;
+    const currentPath = location.pathname;
+    if (currentPath === "/" || currentPath === "/not-found" || currentPath === "/login") return;
 
-      // Check if current path or any parent path is permitted
-      const isPermitted = permittedPaths.some(path => {
-        return currentPath.startsWith(path) ||
-          (path !== "/dashboard" && currentPath.includes(path));
-      });
-
-      if (!isPermitted) {
-        history("/not-found");
-      }
+    const isPermitted = permittedLinks.some((path) => currentPath.startsWith(path));
+    if (!isPermitted) {
+      history("/not-found");
     }
-  }, [location.pathname, retreivedMenus, isSuperAdmin, history]);
+  }, [location.pathname, permittedLinks, isSuperAdmin, history]);
 
 
 
   // Static full-access menu for superadmin
   const menuItems = [
+
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: "ri-dashboard-2-line",
+      link: "/dashboard",
+    },
 
     {
       id: "academic-structure",
@@ -164,7 +145,7 @@ const Navdata = () => {
         },
         {
           id: "external-partners",
-          label: "External Partners",
+          label: "Partners",
           link: "/setup/partners",
           parentId: "people-and-partnerships",
         },
@@ -204,34 +185,7 @@ const Navdata = () => {
       ],
     },
 
-    {
-      id: "access-control",
-      label: "Access Control",
-      icon: "ri-team-line",
-      stateVariables: menuStates["AccessControl"] || false,
-      click: function (e) {
-        e.preventDefault();
-        setMenuStates((prev) => ({ ...prev, AccessControl: !prev.AccessControl }));
-        setIscurrentState("AccessControl");
-        updateIconSidebar(e);
-      },
-      subItems: [
         {
-          id: "users",
-          label: "User Accounts",
-          link: "/setting-users",
-          parentId: "access-control",
-        },
-        {
-          id: "roles",
-          label: "Roles & Permissions",
-          link: "/setting-roles",
-          parentId: "access-control",
-        },
-      ],
-    },
-
-    {
       id: "university-profile",
       label: "University Profile",
       icon: "ri-settings-3-line",
@@ -282,233 +236,62 @@ const Navdata = () => {
       ],
     },
 
+
+    {
+      id: "reports",
+      label: "Reports",
+      icon: "ri-bar-chart-2-line",
+      link: "/reports",
+    },
+
+
+    {
+      id: "access-control",
+      label: "Access Control",
+      icon: "ri-team-line",
+      stateVariables: menuStates["AccessControl"] || false,
+      click: function (e) {
+        e.preventDefault();
+        setMenuStates((prev) => ({ ...prev, AccessControl: !prev.AccessControl }));
+        setIscurrentState("AccessControl");
+        updateIconSidebar(e);
+      },
+      subItems: [
+        {
+          id: "users",
+          label: "User Accounts",
+          link: "/setting-users",
+          parentId: "access-control",
+        },
+        {
+          id: "roles",
+          label: "Roles & Permissions",
+          link: "/setting-roles",
+          parentId: "access-control",
+        },
+      ],
+    },
+
+
   ];
 
-  // const menuItems = [
 
-  //   {
-  //     id: "setups",
-  //     label: "Academic Setups",
-  //     icon: "ri-graduation-cap-line",
-  //     link: "/#",
-  //     stateVariables: menuStates["Setups"] || false,
-  //     click: function (e) {
-  //       e.preventDefault();
-  //       setMenuStates((prev) => ({ ...prev, Setups: !prev.Setups }));
-  //       setIscurrentState("Setups");
-  //       updateIconSidebar(e);
-  //     },
-  //     subItems: [
-  //       {
-  //         id: "program-categories",
-  //         label: "program Categories",
-  //         link: "/setup/parogram-categories",
-  //         parentId: "setups",
-  //       },
+  // Filter the static menu down to what this user's roles actually permit.
+  // Superadmins (and while permissions are still resolving) see everything,
+  // so the sidebar doesn't flash empty on first load.
+  const visibleMenuItems = (isSuperAdmin === false)
+    ? menuItems
+      .map((item) => {
+        if (!item.subItems) {
+          return permittedLinks.includes(item.link) ? item : null;
+        }
+        const allowedSubItems = item.subItems.filter((sub) => permittedLinks.includes(sub.link));
+        return allowedSubItems.length > 0 ? { ...item, subItems: allowedSubItems } : null;
+      })
+      .filter(Boolean)
+    : menuItems;
 
-  //       {
-  //         id: "schools",
-  //         label: "Schools",
-  //         link: "/setup/schools",
-  //         parentId: "setups",
-  //       },
-
-  //       {
-  //         id: "programs",
-  //         label: "Programs",
-  //         link: "/setup/programs",
-  //         parentId: "setups",
-  //       },
-  //       {
-  //         id: "institutions",
-  //         label: "Institutions",
-  //         link: "/setup/institutions",
-  //         parentId: "setups",
-  //       },
-
-  //     ],
-  //   },
-  //   {
-  //     id: "organization",
-  //     label: "Organizations",
-  //     icon: "ri-building-line",
-  //     link: "/#",
-  //     stateVariables: menuStates["Organizations"] || false,
-  //     click: function (e) {
-  //       e.preventDefault();
-  //       setMenuStates((prev) => ({ ...prev, Organizations: !prev.Organizations }));
-  //       setIscurrentState("Organizations");
-  //       updateIconSidebar(e);
-  //     },
-  //     subItems: [
-  //       {
-  //         id: "staffs",
-  //         label: "Staffs",
-  //         link: "/setup/staffs",
-  //         parentId: "setups",
-  //       },
-  //       {
-  //         id: "partner-categories",
-  //         label: "Partner Categories",
-  //         link: "/setup/partner-categories",
-  //         parentId: "setups",
-  //       },
-
-  //       {
-  //         id: "partners",
-  //         label: "Partners",
-  //         link: "/setup/partners",
-  //         parentId: "setups",
-  //       },
-
-
-  //     ],
-  //   },
-
-
-  //   {
-  //     id: "content-management",
-  //     label: "Content Management",
-  //     icon: "ri-file-list-3-line",
-  //     stateVariables: menuStates["ContentManagement"] || false,
-  //     click: function (e) {
-  //       e.preventDefault();
-  //       setMenuStates((prev) => ({ ...prev, ContentManagement: !prev.ContentManagement }));
-  //       setIscurrentState("ContentManagement");
-  //       updateIconSidebar(e);
-  //     },
-  //     subItems: [
-  //       { id: "events", label: "Events", link: "/content/events", parentId: "content-management" },
-  //       { id: "news", label: "News", link: "/content/news", parentId: "content-management" },
-  //       { id: "facilities", label: "Facilities", link: "/content/facilities", parentId: "content-management" },
-
-
-  //     ],
-  //   },
-
-  //   {
-  //     id: "user-management",
-  //     label: "User Management",
-  //     icon: "ri-team-line",
-  //     stateVariables: menuStates["UserManagement"] || false,
-  //     click: function (e) {
-  //       e.preventDefault();
-  //       setMenuStates((prev) => ({ ...prev, UserManagement: !prev.UserManagement }));
-  //       setIscurrentState("UserManagement");
-  //       updateIconSidebar(e);
-  //     },
-  //     subItems: [
-  //       {
-  //         id: "users",
-  //         label: "Users",
-  //         link: "/setting-users",
-  //         parentId: "user-management",
-  //       },
-  //       {
-  //         id: "roles",
-  //         label: "Roles",
-  //         link: "/setting-roles",
-  //         parentId: "user-management",
-  //       },
-  //     ],
-  //   },
-
-  //   {
-  //     id: "system-settings",
-  //     label: "System Settings",
-  //     icon: "ri-settings-3-line",
-  //     stateVariables: menuStates["SystemSettings"] || false,
-  //     click: function (e) {
-  //       e.preventDefault();
-  //       setMenuStates((prev) => ({ ...prev, SystemSettings: !prev.SystemSettings }));
-  //       setIscurrentState("SystemSettings");
-  //       updateIconSidebar(e);
-  //     },
-  //     subItems: [
-  //       {
-  //         id: "profile",
-  //         label: "Overview",
-  //         link: "/setting-profile",
-  //         parentId: "system-settings",
-  //       },
-  //       {
-  //         id: "university",
-  //         label: "University",
-  //         link: "/setting-university",
-  //         parentId: "system-settings",
-  //       },
-  //       {
-  //         id: "senate",
-  //         label: "Senate List",
-  //         link: "/setting-senate",
-  //         parentId: "system-settings",
-  //       },
-
-  //       {
-  //         id: "history",
-  //         label: "History",
-  //         link: "/setting/history",
-  //         parentId: "system-settings",
-  //       },
-  //       {
-  //         id: "whySimad",
-  //         label: "Why Simad",
-  //         link: "/setting/why-simad",
-  //         parentId: "system-settings",
-  //       },
-
-  //       {
-  //         id: "accreditations",
-  //         label: "Accreditations",
-  //         link: "/setting-accreditations",
-  //         parentId: "system-settings",
-  //       },
-
-
-
-  //     ],
-  //   },
-
-  // ];
-
-  // console.log("retreivced data is:", retreivedMenus);
-  const dynamicMenu = retreivedMenus.map((item) => {
-    const menuItem = {
-      id: item.id,
-      label: item.label,
-      icon: item.icon,
-      link: item.link,
-      stateVariables: menuStates[item.label] || false,
-      click: (e) => {
-        e.preventDefault();
-        setMenuStates((prev) => ({
-          ...prev,
-          [item.label]: !prev[item.label],
-        }));
-        setIscurrentState(item.label);
-        updateIconSidebar(e);
-      }
-    };
-
-    // Only add subItems if they exist and length > 0
-    if (item.subItems && item.subItems.length > 0) {
-      menuItem.subItems = item.subItems.map((sub) => ({
-        id: sub.id,
-        label: sub.label,
-        link: sub.link,
-        parentId: sub.parentId,
-      }));
-    }
-
-    return menuItem;
-  });
-
-
-  // const menuToRender = userId === "superadmin-id" ? menuItems : dynamicMenu;
-
-
-
-  return <React.Fragment>{menuItems}</React.Fragment>;
+  return <React.Fragment>{visibleMenuItems}</React.Fragment>;
 };
 
 export default Navdata;

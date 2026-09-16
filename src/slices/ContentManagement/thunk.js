@@ -11,7 +11,7 @@ export const {
 
 export const CreateOrUpdateNews = createAsyncThunk(
     "ContentManagement/UpdatenewsInfo",
-    async (data, { dispatch }) => {
+    async (data, { dispatch, rejectWithValue }) => {
         try {
             const res = await NewsAPI.createOrupdate(data);
             if (!res.success) throw res;
@@ -22,6 +22,7 @@ export const CreateOrUpdateNews = createAsyncThunk(
             // Handle axios error response
             const errorMessage = error.response?.data?.message || error.message || 'Failed to take an action';
             toast.error(errorMessage);
+            return rejectWithValue(errorMessage);
         }
     }
 );
@@ -35,7 +36,7 @@ export const {
 
 export const CreateOrUpdateEvent = createAsyncThunk(
     "ContentManagement/createorupdateInfo",
-    async (data, { dispatch }) => {
+    async (data, { dispatch, rejectWithValue }) => {
         try {
             const res = await EventsAPI.createOrupdate(data);
             if (!res.success) throw res;
@@ -46,6 +47,7 @@ export const CreateOrUpdateEvent = createAsyncThunk(
             // Handle axios error response
             const errorMessage = error.response?.data?.message || error.message || 'Failed to take an action';
             toast.error(errorMessage);
+            return rejectWithValue(errorMessage);
         }
     }
 );
@@ -60,7 +62,7 @@ export const {
 
 export const CreateOrUpdateFacility = createAsyncThunk(
     "ContentManagement/facility",
-    async (data, { dispatch }) => {
+    async (data, { dispatch, rejectWithValue }) => {
         try {
             const res = await FacilitiesAPI.createOrupdate(data);
             if (!res.success) throw res;
@@ -71,6 +73,7 @@ export const CreateOrUpdateFacility = createAsyncThunk(
             // Handle axios error response
             const errorMessage = error.response?.data?.message || error.message || 'Failed to take an action';
             toast.error(errorMessage);
+            return rejectWithValue(errorMessage);
         }
     }
 );

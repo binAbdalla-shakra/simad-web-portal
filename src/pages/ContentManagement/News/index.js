@@ -4,7 +4,7 @@ import {
     Col, Container, Row,
     Form, Input, Label, FormGroup,
     Modal, ModalBody, ModalFooter, ModalHeader,
-    Button, Badge
+    Button, Badge, Spinner
 } from "reactstrap";
 import Select from "react-select";
 
@@ -49,6 +49,7 @@ const NewsPage = () => {
     // State management
     const [news, setNews] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [modal, setModal] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -220,8 +221,9 @@ const NewsPage = () => {
     // Create new news
     const createNews = async (e) => {
         e.preventDefault();
-        if (!validateForm()) return;
+        if (!validateForm() || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
             submitData.append('title', formData.title);
@@ -233,21 +235,25 @@ const NewsPage = () => {
                 submitData.append('image', formData.image);
             }
 
-            await dispatch(onCreateOrUpdateNews(submitData));
+            await dispatch(onCreateOrUpdateNews(submitData)).unwrap();
 
             setModal(false);
             resetForm();
         } catch (error) {
+            // Failed: keep the modal open and the entered data intact so the
+            // user can fix the issue and resubmit instead of losing their input.
             console.error("Error creating news:", error);
-
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     // Update news
     const updateNews = async (e) => {
         e.preventDefault();
-        if (!validateForm() || !selectedNews) return;
+        if (!validateForm() || !selectedNews || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
             submitData.append('title', formData.title);
@@ -260,13 +266,14 @@ const NewsPage = () => {
                 submitData.append('image', formData.image);
             }
 
-            await dispatch(onCreateOrUpdateNews(submitData));
+            await dispatch(onCreateOrUpdateNews(submitData)).unwrap();
 
             setModal(false);
             resetForm();
         } catch (error) {
             console.error("Error updating news:", error);
-
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -492,7 +499,7 @@ const NewsPage = () => {
                                         name="title"
                                         value={formData.title}
                                         onChange={handleInputChange}
-                                        placeholder="Enter news title"
+                                        placeholder="e.g., Simad University Launches New Engineering Program"
                                         required
                                     />
                                 </FormGroup>
@@ -505,7 +512,7 @@ const NewsPage = () => {
                                         name="description"
                                         value={formData.description}
                                         onChange={handleInputChange}
-                                        placeholder="Enter news description"
+                                        placeholder="Enter a brief summary of the news article"
                                         rows="4"
                                         required
                                     />
@@ -513,7 +520,7 @@ const NewsPage = () => {
                             </Col>
                             <Col md={6}>
                                 <FormGroup>
-                                    <Label>Information Link</Label>
+                                    <Label>Information Link <span className="text-muted fs-12">(optional)</span></Label>
                                     <Input
                                         type="url"
                                         name="infoLink"
@@ -540,7 +547,7 @@ const NewsPage = () => {
                             </Col>
                             <Col md={12}>
                                 <FormGroup>
-                                    <Label>News Image</Label>
+                                    <Label>News Image <span className="text-muted fs-12">(optional)</span></Label>
                                     <FilePond
                                         files={imageFiles}
                                         onupdatefiles={handleFileUpdate}
@@ -563,8 +570,9 @@ const NewsPage = () => {
                         <Button color="light" onClick={() => setModal(false)}>
                             Cancel
                         </Button>
-                        <Button color="primary" type="submit">
-                            {isEdit ? 'Update News' : 'Add News'}
+                        <Button color="primary" type="submit" disabled={isSubmitting}>
+                            {isSubmitting && <Spinner size="sm" className="me-1" />}
+                            {isSubmitting ? 'Saving...' : (isEdit ? 'Update News' : 'Add News')}
                         </Button>
                     </ModalFooter>
                 </Form>

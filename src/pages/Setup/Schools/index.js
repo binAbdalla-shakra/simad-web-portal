@@ -4,7 +4,7 @@ import {
     Col, Container, Row,
     Form, Input, Label, FormGroup,
     Modal, ModalBody, ModalFooter, ModalHeader,
-    Button, Badge, Nav, NavItem, NavLink, TabContent, TabPane
+    Button, Badge, Nav, NavItem, NavLink, TabContent, TabPane, Spinner
 } from "reactstrap";
 import DataTable from "react-data-table-component";
 import Select from "react-select";
@@ -14,6 +14,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import BreadCrumb from "../../../Components/Common/BreadCrumb";
 import DeleteModal from "../../../Components/Common/DeleteModal";
 import Loader from "../../../Components/Common/Loader";
+import NoDataFound from "../../../Components/Common/NoDataFound";
 import CreatableSelect from 'react-select/creatable';
 
 // Import FilePond for file uploads
@@ -84,6 +85,7 @@ const SchoolsPage = () => {
     const [staff, setStaff] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [modal, setModal] = useState(false);
     const [viewModal, setViewModal] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
@@ -366,8 +368,9 @@ const SchoolsPage = () => {
     // Create new school
     const createSchool = async (e) => {
         e.preventDefault();
-        if (!validateForm()) return;
+        if (!validateForm() || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
 
@@ -416,21 +419,25 @@ const SchoolsPage = () => {
                 submitData.append('coverImage', formData.coverImage);
             }
 
-            await dispatch(onCreateOrUpdateSchool(submitData));
+            await dispatch(onCreateOrUpdateSchool(submitData)).unwrap();
 
             handleModalClose();
             resetForm();
         } catch (error) {
+            // Failed: keep the modal open and the entered data intact so the
+            // user can fix the issue and resubmit instead of losing their input.
             console.error("Error creating school:", error);
-
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     // Update school
     const updateSchool = async (e) => {
         e.preventDefault();
-        if (!validateForm() || !selectedSchool) return;
+        if (!validateForm() || !selectedSchool || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
 
@@ -482,13 +489,14 @@ const SchoolsPage = () => {
             // Append ID for update
             submitData.append('_id', selectedSchool._id);
 
-            await dispatch(onCreateOrUpdateSchool(submitData));
+            await dispatch(onCreateOrUpdateSchool(submitData)).unwrap();
 
             handleModalClose();
             resetForm();
         } catch (error) {
             console.error("Error updating school:", error);
-
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -852,11 +860,7 @@ const SchoolsPage = () => {
                                 responsive
                                 // striped
                                 noDataComponent={
-                                    <div className="text-center py-5">
-                                        <i className="ri-inbox-line display-4 text-muted"></i>
-                                        <h5 className="mt-3">No schools found</h5>
-                                        <p className="text-muted">Try adjusting your search criteria or add a new school.</p>
-                                    </div>
+                                    <NoDataFound title="No schools found" message="Try adjusting your search criteria or add a new school." />
                                 }
                                 customStyles={{
                                     headCells: {
@@ -980,19 +984,19 @@ const SchoolsPage = () => {
                                                 name="name"
                                                 value={formData.name}
                                                 onChange={handleInputChange}
-                                                placeholder="Enter school name"
+                                                placeholder="e.g., School of Computing"
                                                 required
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label>Tagline</Label>
+                                            <Label>Tagline <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="tagline"
                                                 value={formData.tagline}
                                                 onChange={handleInputChange}
-                                                placeholder="Enter school tagline"
+                                                placeholder="e.g., Excellence in Innovation"
                                             />
                                         </FormGroup>
                                     </Col>
@@ -1014,7 +1018,7 @@ const SchoolsPage = () => {
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label>Dean</Label>
+                                            <Label>Dean <span className="text-muted fs-12">(optional)</span></Label>
                                             <Select
                                                 value={staffOptions.find(option => option.value === formData.dean) || null}
                                                 onChange={(selected) => setFormData(prev => ({
@@ -1029,20 +1033,20 @@ const SchoolsPage = () => {
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label>Order</Label>
+                                            <Label>Order <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 type="number"
                                                 name="order"
                                                 value={formData.order}
                                                 onChange={handleInputChange}
                                                 min="0"
-                                                placeholder="Display order"
+                                                placeholder="e.g., 1"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={12}>
                                         <FormGroup>
-                                            <Label>Short Description</Label>
+                                            <Label>Short Description <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 type="textarea"
                                                 name="shortDescription"
@@ -1064,38 +1068,38 @@ const SchoolsPage = () => {
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label>Phone</Label>
+                                            <Label>Phone <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 value={formData.contactInfo.phone}
                                                 onChange={(e) => handleNestedChange('contactInfo', 'phone', e.target.value)}
-                                                placeholder="Enter phone number"
+                                                placeholder="e.g., +252610000000"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label>Email</Label>
+                                            <Label>Email <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 type="email"
                                                 value={formData.contactInfo.email}
                                                 onChange={(e) => handleNestedChange('contactInfo', 'email', e.target.value)}
-                                                placeholder="Enter email address"
+                                                placeholder="e.g., info@simad.edu.so"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label>Location</Label>
+                                            <Label>Location <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 value={formData.contactInfo.location}
                                                 onChange={(e) => handleNestedChange('contactInfo', 'location', e.target.value)}
-                                                placeholder="Enter location"
+                                                placeholder="e.g., Mogadishu, Somalia"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label>Website</Label>
+                                            <Label>Website <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 type="url"
                                                 value={formData.contactInfo.website}
@@ -1110,19 +1114,19 @@ const SchoolsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Academic Staff</Label>
+                                            <Label>Academic Staff <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 type="number"
                                                 value={formData.facts_and_figures.academic_staff}
                                                 onChange={(e) => handleNestedChange('facts_and_figures', 'academic_staff', e.target.value)}
-                                                placeholder="Number of staff"
+                                                placeholder="e.g., 120"
                                                 min="0"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Student Population</Label>
+                                            <Label>Student Population <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 value={formData.facts_and_figures.student_population}
                                                 onChange={(e) => handleNestedChange('facts_and_figures', 'student_population', e.target.value)}
@@ -1132,7 +1136,7 @@ const SchoolsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Founded Year</Label>
+                                            <Label>Founded Year <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 value={formData.facts_and_figures.founded_year}
                                                 onChange={(e) => handleNestedChange('facts_and_figures', 'founded_year', e.target.value)}
@@ -1148,7 +1152,7 @@ const SchoolsPage = () => {
                                 <Row>
                                     <Col md={12}>
                                         <FormGroup>
-                                            <Label>Mission</Label>
+                                            <Label>Mission <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 type="textarea"
                                                 name="mission"
@@ -1161,7 +1165,7 @@ const SchoolsPage = () => {
                                     </Col>
                                     <Col md={12}>
                                         <FormGroup>
-                                            <Label>Vision</Label>
+                                            <Label>Vision <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 type="textarea"
                                                 name="vision"
@@ -1195,32 +1199,32 @@ const SchoolsPage = () => {
                                             <Row>
                                                 <Col md={6}>
                                                     <FormGroup>
-                                                        <Label>Student Name</Label>
+                                                        <Label>Student Name <span className="text-muted fs-12">(optional)</span></Label>
                                                         <Input
                                                             value={testimonial.student_name}
                                                             onChange={(e) => handleArrayFieldChange('student_testimonials', index, 'student_name', e.target.value)}
-                                                            placeholder="Enter student name"
+                                                            placeholder="e.g., Ahmed Ali"
                                                         />
                                                     </FormGroup>
                                                 </Col>
                                                 <Col md={6}>
                                                     <FormGroup>
-                                                        <Label>Program</Label>
+                                                        <Label>Program <span className="text-muted fs-12">(optional)</span></Label>
                                                         <Input
                                                             value={testimonial.student_program_shortName}
                                                             onChange={(e) => handleArrayFieldChange('student_testimonials', index, 'student_program_shortName', e.target.value)}
-                                                            placeholder="Enter program name"
+                                                            placeholder="e.g., BSc Computer Science"
                                                         />
                                                     </FormGroup>
                                                 </Col>
                                                 <Col md={12}>
                                                     <FormGroup>
-                                                        <Label>Testimonial Message</Label>
+                                                        <Label>Testimonial Message <span className="text-muted fs-12">(optional)</span></Label>
                                                         <Input
                                                             type="textarea"
                                                             value={testimonial.message}
                                                             onChange={(e) => handleArrayFieldChange('student_testimonials', index, 'message', e.target.value)}
-                                                            placeholder="Enter testimonial message"
+                                                            placeholder="e.g., Simad University gave me the skills I needed to succeed."
                                                             rows="3"
                                                         />
                                                     </FormGroup>
@@ -1249,18 +1253,18 @@ const SchoolsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Title</Label>
+                                            <Label>Title <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="programs_sec_title"
                                                 value={formData.programs_sec_title}
                                                 onChange={handleInputChange}
-                                                placeholder="Section title"
+                                                placeholder="e.g., Our Academic Programs"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Icon Class</Label>
+                                            <Label>Icon Class <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="programs_sec_icon"
                                                 value={formData.programs_sec_icon}
@@ -1271,12 +1275,12 @@ const SchoolsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Subtitle</Label>
+                                            <Label>Subtitle <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="programs_sec_subtitle"
                                                 value={formData.programs_sec_subtitle}
                                                 onChange={handleInputChange}
-                                                placeholder="Section subtitle"
+                                                placeholder="e.g., Explore the programs we offer"
                                             />
                                         </FormGroup>
                                     </Col>
@@ -1286,18 +1290,18 @@ const SchoolsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Title</Label>
+                                            <Label>Title <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="vison_and_mission_sec_title"
                                                 value={formData.vison_and_mission_sec_title}
                                                 onChange={handleInputChange}
-                                                placeholder="Section title"
+                                                placeholder="e.g., Our Vision & Mission"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Icon Class</Label>
+                                            <Label>Icon Class <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="vison_and_mission_sec_icon"
                                                 value={formData.vison_and_mission_sec_icon}
@@ -1308,12 +1312,12 @@ const SchoolsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Subtitle</Label>
+                                            <Label>Subtitle <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="vison_and_mission_sec_subtitle"
                                                 value={formData.vison_and_mission_sec_subtitle}
                                                 onChange={handleInputChange}
-                                                placeholder="Section subtitle"
+                                                placeholder="e.g., What drives us forward"
                                             />
                                         </FormGroup>
                                     </Col>
@@ -1323,18 +1327,18 @@ const SchoolsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Title</Label>
+                                            <Label>Title <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="dean_message_sec_title"
                                                 value={formData.dean_message_sec_title}
                                                 onChange={handleInputChange}
-                                                placeholder="Section title"
+                                                placeholder="e.g., A Message from the Dean"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Icon Class</Label>
+                                            <Label>Icon Class <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="dean_message_sec_icon"
                                                 value={formData.dean_message_sec_icon}
@@ -1345,24 +1349,24 @@ const SchoolsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Subtitle</Label>
+                                            <Label>Subtitle <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="dean_message_sec_subtitle"
                                                 value={formData.dean_message_sec_subtitle}
                                                 onChange={handleInputChange}
-                                                placeholder="Section subtitle"
+                                                placeholder="e.g., Words of guidance and vision"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={12}>
                                         <FormGroup>
-                                            <Label>Message Text</Label>
+                                            <Label>Message Text <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 type="textarea"
                                                 name="dean_message_sec_text"
                                                 value={formData.dean_message_sec_text}
                                                 onChange={handleInputChange}
-                                                placeholder="Dean's message text"
+                                                placeholder="e.g., Welcome to our school, where we nurture future leaders..."
                                                 rows="3"
                                             />
                                         </FormGroup>
@@ -1373,18 +1377,18 @@ const SchoolsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Title</Label>
+                                            <Label>Title <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="facts_message_sec_title"
                                                 value={formData.facts_message_sec_title}
                                                 onChange={handleInputChange}
-                                                placeholder="Section title"
+                                                placeholder="e.g., Facts & Figures"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Icon Class</Label>
+                                            <Label>Icon Class <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="facts_message_sec_icon"
                                                 value={formData.facts_message_sec_icon}
@@ -1395,12 +1399,12 @@ const SchoolsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Subtitle</Label>
+                                            <Label>Subtitle <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="facts_message_sec_subtitle"
                                                 value={formData.facts_message_sec_subtitle}
                                                 onChange={handleInputChange}
-                                                placeholder="Section subtitle"
+                                                placeholder="e.g., Our university by the numbers"
                                             />
                                         </FormGroup>
                                     </Col>
@@ -1410,18 +1414,18 @@ const SchoolsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Title</Label>
+                                            <Label>Title <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="testimonials_message_sec_title"
                                                 value={formData.testimonials_message_sec_title}
                                                 onChange={handleInputChange}
-                                                placeholder="Section title"
+                                                placeholder="e.g., What Our Students Say"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Icon Class</Label>
+                                            <Label>Icon Class <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="testimonials_message_sec_icon"
                                                 value={formData.testimonials_message_sec_icon}
@@ -1432,12 +1436,12 @@ const SchoolsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Subtitle</Label>
+                                            <Label>Subtitle <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="testimonials_message_sec_subtitle"
                                                 value={formData.testimonials_message_sec_subtitle}
                                                 onChange={handleInputChange}
-                                                placeholder="Section subtitle"
+                                                placeholder="e.g., Real experiences from our students"
                                             />
                                         </FormGroup>
                                     </Col>
@@ -1447,18 +1451,18 @@ const SchoolsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Title</Label>
+                                            <Label>Title <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="contact_message_sec_title"
                                                 value={formData.contact_message_sec_title}
                                                 onChange={handleInputChange}
-                                                placeholder="Section title"
+                                                placeholder="e.g., Get in Touch"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Icon Class</Label>
+                                            <Label>Icon Class <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="contact_message_sec_icon"
                                                 value={formData.contact_message_sec_icon}
@@ -1469,12 +1473,12 @@ const SchoolsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Subtitle</Label>
+                                            <Label>Subtitle <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="contact_message_sec_subtitle"
                                                 value={formData.contact_message_sec_subtitle}
                                                 onChange={handleInputChange}
-                                                placeholder="Section subtitle"
+                                                placeholder="e.g., We'd love to hear from you"
                                             />
                                         </FormGroup>
                                     </Col>
@@ -1497,7 +1501,8 @@ const SchoolsPage = () => {
                                         Next <i className="ri-arrow-right-line ms-1" />
                                     </Button>
                                 ) : (
-                                    <Button color="success" type="submit">
+                                    <Button color="success" type="submit" disabled={isSubmitting}>
+                                        {isSubmitting && <Spinner size="sm" className="me-1" />}
                                         {isEdit ? 'Update School' : 'Add School'}
                                     </Button>
                                 )}

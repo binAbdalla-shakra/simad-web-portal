@@ -4,7 +4,7 @@ import {
     Col, Container, Row,
     Form, Input, Label, FormGroup,
     Modal, ModalBody, ModalFooter, ModalHeader,
-    Button, Badge, Nav, NavItem, NavLink, TabContent, TabPane, Alert
+    Button, Badge, Nav, NavItem, NavLink, TabContent, TabPane, Alert, Spinner
 } from "reactstrap";
 import DataTable from "react-data-table-component";
 import Select from "react-select";
@@ -14,6 +14,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import BreadCrumb from "../../../Components/Common/BreadCrumb";
 import DeleteModal from "../../../Components/Common/DeleteModal";
 import Loader from "../../../Components/Common/Loader";
+import NoDataFound from "../../../Components/Common/NoDataFound";
 
 // Import FilePond for file uploads
 import { FilePond, registerPlugin } from 'react-filepond';
@@ -63,6 +64,7 @@ const InstitutionsPage = () => {
     // State management
     const [institutions, setInstitutions] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [modal, setModal] = useState(false);
     const [viewModal, setViewModal] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
@@ -362,8 +364,9 @@ const InstitutionsPage = () => {
     // Create new institution
     const createInstitution = async (e) => {
         e.preventDefault();
-        if (!validateForm()) return;
+        if (!validateForm() || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
 
@@ -402,19 +405,24 @@ const InstitutionsPage = () => {
                 submitData.append('image', formData.image);
             }
 
-            await dispatch(onCreateOrUpdateInstitution(submitData));
+            await dispatch(onCreateOrUpdateInstitution(submitData)).unwrap();
             handleModalClose();
             fetchData();
         } catch (error) {
+            // Failed: keep the modal open and the entered data intact so the
+            // user can fix the issue and resubmit instead of losing their input.
             console.error("Error creating institution:", error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     // Update institution
     const updateInstitution = async (e) => {
         e.preventDefault();
-        if (!validateForm() || !selectedInstitution) return;
+        if (!validateForm() || !selectedInstitution || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
 
@@ -456,12 +464,14 @@ const InstitutionsPage = () => {
             // Append ID for update
             submitData.append('_id', selectedInstitution._id);
 
-            await dispatch(onCreateOrUpdateInstitution(submitData));
+            await dispatch(onCreateOrUpdateInstitution(submitData)).unwrap();
 
             handleModalClose();
             fetchData();
         } catch (error) {
             console.error("Error updating institution:", error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -779,11 +789,7 @@ const InstitutionsPage = () => {
                                 pagination
                                 responsive
                                 noDataComponent={
-                                    <div className="text-center py-5">
-                                        <i className="ri-inbox-line display-4 text-muted"></i>
-                                        <h5 className="mt-3">No institutions found</h5>
-                                        <p className="text-muted">Try adjusting your search criteria or add a new institution.</p>
-                                    </div>
+                                    <NoDataFound title="No institutions found" message="Try adjusting your search criteria or add a new institution." />
                                 }
                                 customStyles={{
                                     headCells: {
@@ -869,7 +875,7 @@ const InstitutionsPage = () => {
                                                         name="name"
                                                         value={formData.name}
                                                         onChange={handleInputChange}
-                                                        placeholder="Enter institution name"
+                                                        placeholder="e.g., Faculty of Computer Science"
                                                         className="form-control-lg"
                                                         required
                                                     />
@@ -893,13 +899,15 @@ const InstitutionsPage = () => {
                                                 </FormGroup>
 
                                                 <FormGroup>
-                                                    <Label className="form-label">Short Description</Label>
+                                                    <Label className="form-label">
+                                                        Short Description <span className="text-muted fs-12">(optional)</span>
+                                                    </Label>
                                                     <Input
                                                         type="textarea"
                                                         name="shortDescription"
                                                         value={formData.shortDescription}
                                                         onChange={handleInputChange}
-                                                        placeholder="Brief description of the institution"
+                                                        placeholder="e.g., A leading center for technology and innovation education"
                                                         rows="3"
                                                         className="form-control-lg"
                                                     />
@@ -995,7 +1003,9 @@ const InstitutionsPage = () => {
                                     </CardHeader>
                                     <CardBody>
                                         <FormGroup>
-                                            <Label className="form-label">Section Heading</Label>
+                                            <Label className="form-label">
+                                                Section Heading <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 value={formData.overview.heading}
                                                 onChange={(e) => handleNestedChange('overview', 'heading', e.target.value)}
@@ -1005,7 +1015,9 @@ const InstitutionsPage = () => {
                                         </FormGroup>
 
                                         <FormGroup>
-                                            <Label className="form-label">Content</Label>
+                                            <Label className="form-label">
+                                                Content <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 type="textarea"
                                                 value={formData.overview.content}
@@ -1032,7 +1044,9 @@ const InstitutionsPage = () => {
                                     </CardHeader>
                                     <CardBody>
                                         <FormGroup>
-                                            <Label className="form-label">Section Heading</Label>
+                                            <Label className="form-label">
+                                                Section Heading <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 value={formData.visionMission.heading}
                                                 onChange={(e) => handleNestedChange('visionMission', 'heading', e.target.value)}
@@ -1042,7 +1056,9 @@ const InstitutionsPage = () => {
                                         </FormGroup>
 
                                         <FormGroup>
-                                            <Label className="form-label">Content</Label>
+                                            <Label className="form-label">
+                                                Content <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 type="textarea"
                                                 value={formData.visionMission.content}
@@ -1069,7 +1085,9 @@ const InstitutionsPage = () => {
                                     </CardHeader>
                                     <CardBody>
                                         <FormGroup>
-                                            <Label className="form-label">Section Heading</Label>
+                                            <Label className="form-label">
+                                                Section Heading <span className="text-muted fs-12">(optional)</span>
+                                            </Label>
                                             <Input
                                                 value={formData.keyPrograms.heading}
                                                 onChange={(e) => handleNestedChange('keyPrograms', 'heading', e.target.value)}
@@ -1130,10 +1148,10 @@ const InstitutionsPage = () => {
                                         Next <i className="ri-arrow-right-line ms-1" />
                                     </Button>
                                 ) : (
-                                    <Button color="success" type="submit" disabled={loading}>
-                                        {loading ? (
+                                    <Button color="success" type="submit" disabled={isSubmitting}>
+                                        {isSubmitting ? (
                                             <>
-                                                <i className="ri-loader-4-line spin me-1"></i>
+                                                <Spinner size="sm" className="me-1" />
                                                 {isEdit ? 'Updating...' : 'Creating...'}
                                             </>
                                         ) : (

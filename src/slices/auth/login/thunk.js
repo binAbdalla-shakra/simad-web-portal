@@ -1,7 +1,7 @@
 //Include Both Helper File with needed methods
 // import { getFirebaseBackend } from "../../../helpers/firebase_helper";
 import {
-  login, changePassword
+  login, changePassword, logout as logoutRequest
 } from "../../../helpers/backend_helper";
 
 import { loginSuccess, logoutUserSuccess, apiError, reset_login_flag } from './reducer';
@@ -63,6 +63,11 @@ export const changeUserPassword = (user, history) => async (dispatch) => {
 
 export const logoutUser = () => async (dispatch) => {
   try {
+    try {
+      await logoutRequest();
+    } catch (e) {
+      // Best-effort: still clear the local session even if the server call fails
+    }
     sessionStorage.removeItem("authUser");
 
 
@@ -74,6 +79,11 @@ export const logoutUser = () => async (dispatch) => {
 export const logoutCurrentUser = (navigate) => async (dispatch) => {
   try {
     // console.log("clicked logout");
+    try {
+      await logoutRequest();
+    } catch (e) {
+      // Best-effort: still clear the local session even if the server call fails
+    }
     sessionStorage.removeItem("authUser");
     navigate("/login");
   } catch (error) {

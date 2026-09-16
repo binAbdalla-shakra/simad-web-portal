@@ -5,16 +5,20 @@ import {
     Col, Container, Row,
     Form, Input, Label, FormGroup,
     Modal, ModalBody, ModalFooter, ModalHeader,
-    Button, Badge
+    Button, Badge, Spinner
 } from "reactstrap";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import BreadCrumb from "../../../Components/Common/BreadCrumb";
 import DeleteModal from "../../../Components/Common/DeleteModal";
 import Loader from "../../../Components/Common/Loader";
+import NoDataFound from "../../../Components/Common/NoDataFound";
 
 import { useDispatch, useSelector } from 'react-redux';
 import { createSelector } from 'reselect';
+
+import { MenuAPI } from "../../../helpers/backend_helper";
+import { getLoggedinUser } from "../../../helpers/api_helper";
 
 //redux
 import {
@@ -40,6 +44,7 @@ const Roles = () => {
     const [roles, setRoles] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [modal, setModal] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -51,19 +56,79 @@ const Roles = () => {
         search: ''
     });
 
+    const currentUser = getLoggedinUser()?.data?.user;
+    const currentUserId = currentUser?._id || currentUser?.id || "";
+
     // Form state
     const [formData, setFormData] = useState({
         type: "",
         description: "",
-        CreatedBy: "667f1b9e8c4a8d001e4a1234", // Static MongoID
-        ModifiedBy: "667f1b9e8c4a8d001e4a1234" // Static MongoID
+        CreatedBy: currentUserId,
+        ModifiedBy: currentUserId
     });
 
-    // Static user IDs (you can modify these as needed)
-    const staticUserIds = {
-        CreatedBy: "667f1b9e8c4a8d001e4a1234",
-        ModifiedBy: "667f1b9e8c4a8d001e4a1234"
+    // Menus (fetched once) and the checkbox-tree state derived from them
+    const [menus, setMenus] = useState([]);
+    // permissionsState: { [topLevelMenuId]: { hasAccess: bool, subMenus: Set<string> } }
+    const [permissionsState, setPermissionsState] = useState({});
+
+    useEffect(() => {
+        MenuAPI.list().then((res) => {
+            if (res?.success) setMenus(res.data?.menus || []);
+        });
+    }, []);
+
+    const topLevelMenus = menus.filter((m) => !m.parentId);
+    const childMenusByParent = (parentId) => menus.filter((m) => m.parentId === parentId);
+
+    const emptyPermissionsState = () => {
+        const state = {};
+        topLevelMenus.forEach((menu) => {
+            state[menu._id] = { hasAccess: false, subMenus: new Set() };
+        });
+        return state;
     };
+
+    const permissionsStateFromRole = (role) => {
+        const state = emptyPermissionsState();
+        (role?.permissions || []).forEach((perm) => {
+            const menuId = perm.menu?._id || perm.menu;
+            if (!menuId || !state[menuId]) return;
+            state[menuId] = {
+                hasAccess: !!perm.hasAccess,
+                subMenus: new Set((perm.subMenus || []).map((s) => s._id || s))
+            };
+        });
+        return state;
+    };
+
+    const toggleSectionAccess = (menuId, checked) => {
+        setPermissionsState((prev) => {
+            const children = childMenusByParent(menuId);
+            const next = { ...prev, [menuId]: { hasAccess: checked, subMenus: new Set(prev[menuId]?.subMenus) } };
+            if (children.length > 0) {
+                next[menuId].subMenus = checked ? new Set(children.map((c) => c._id)) : new Set();
+            }
+            return next;
+        });
+    };
+
+    const toggleSubMenu = (menuId, subMenuId, checked) => {
+        setPermissionsState((prev) => {
+            const subMenus = new Set(prev[menuId]?.subMenus);
+            checked ? subMenus.add(subMenuId) : subMenus.delete(subMenuId);
+            return { ...prev, [menuId]: { hasAccess: subMenus.size > 0, subMenus } };
+        });
+    };
+
+    const buildPermissionsPayload = () =>
+        Object.entries(permissionsState)
+            .filter(([, v]) => v.hasAccess || v.subMenus.size > 0)
+            .map(([menu, v]) => ({
+                menu,
+                subMenus: Array.from(v.subMenus),
+                hasAccess: v.hasAccess
+            }));
 
     // Fetch roles
     const fetchRoles = useCallback(async () => {
@@ -128,38 +193,47 @@ const Roles = () => {
 
     // Create new role
     const createRole = async () => {
-        if (!validateForm()) return;
+        if (!validateForm() || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const roleData = {
                 ...formData,
-                CreatedBy: staticUserIds.CreatedBy
+                CreatedBy: currentUserId,
+                permissions: buildPermissionsPayload()
             };
 
-            await dispatch(onAddRole(roleData));
+            await dispatch(onAddRole(roleData)).unwrap();
             setModal(false);
             resetForm();
         } catch (error) {
-            toast.error("Error creating role: " + error.message);
+            // Failed: keep the modal open and the entered data intact so the
+            // user can fix the issue and resubmit instead of losing their input.
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     // Update role
     const updateRole = async () => {
-        if (!validateForm() || !selectedRole) return;
+        if (!validateForm() || !selectedRole || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const roleData = {
                 ...formData,
                 _id: selectedRole._id,
-                ModifiedBy: staticUserIds.ModifiedBy
+                ModifiedBy: currentUserId,
+                permissions: buildPermissionsPayload()
             };
 
-            await dispatch(onUpdateRole(roleData));
+            await dispatch(onUpdateRole(roleData)).unwrap();
             setModal(false);
             resetForm();
         } catch (error) {
-            toast.error("Error updating role: " + error.message);
+            // Error toast already shown by the thunk.
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -181,9 +255,10 @@ const Roles = () => {
         setFormData({
             type: "",
             description: "",
-            CreatedBy: staticUserIds.CreatedBy,
-            ModifiedBy: staticUserIds.ModifiedBy
+            CreatedBy: currentUserId,
+            ModifiedBy: currentUserId
         });
+        setPermissionsState(emptyPermissionsState());
     };
 
     // Open modal for edit
@@ -192,9 +267,10 @@ const Roles = () => {
         setFormData({
             type: role.type,
             description: role.description || "",
-            CreatedBy: role.CreatedBy || staticUserIds.CreatedBy,
-            ModifiedBy: role.ModifiedBy || staticUserIds.ModifiedBy
+            CreatedBy: role.CreatedBy || currentUserId,
+            ModifiedBy: currentUserId
         });
+        setPermissionsState(permissionsStateFromRole(role));
         setIsEdit(true);
         setModal(true);
     };
@@ -311,11 +387,7 @@ const Roles = () => {
                                 responsive
                                 striped
                                 noDataComponent={
-                                    <div className="text-center py-4">
-                                        <i className="ri-shield-keyhole-line display-4 text-muted" />
-                                        <h5 className="mt-2">No Roles Found</h5>
-                                        <p className="text-muted">Get started by creating your first role.</p>
-                                    </div>
+                                    <NoDataFound title="No Roles Found" message="Get started by creating your first role." />
                                 }
                             />
                         )}
@@ -351,7 +423,7 @@ const Roles = () => {
                             </Col>
                             <Col md={12}>
                                 <FormGroup>
-                                    <Label>Description</Label>
+                                    <Label>Description <span className="text-muted fs-12">(optional)</span></Label>
                                     <Input
                                         type="textarea"
                                         name="description"
@@ -360,8 +432,56 @@ const Roles = () => {
                                         placeholder="Describe the role's purpose and permissions"
                                         rows="3"
                                     />
-                                    <small className="text-muted">
-                                        Optional description of the role
+                                </FormGroup>
+                            </Col>
+
+                            <Col md={12}>
+                                <FormGroup>
+                                    <Label className="mb-2">Permissions</Label>
+                                    {menus.length === 0 ? (
+                                        <p className="text-muted mb-0">Loading menus...</p>
+                                    ) : (
+                                        <div className="border rounded p-3" style={{ maxHeight: 320, overflowY: "auto" }}>
+                                            {topLevelMenus.map((menu) => {
+                                                const children = childMenusByParent(menu._id);
+                                                const sectionState = permissionsState[menu._id] || { hasAccess: false, subMenus: new Set() };
+                                                return (
+                                                    <div key={menu._id} className="mb-2">
+                                                        <FormGroup check className="mb-1">
+                                                            <Input
+                                                                type="checkbox"
+                                                                id={`perm-${menu._id}`}
+                                                                checked={sectionState.hasAccess}
+                                                                onChange={(e) => toggleSectionAccess(menu._id, e.target.checked)}
+                                                            />
+                                                            <Label check for={`perm-${menu._id}`} className="fw-semibold">
+                                                                {menu.label}
+                                                            </Label>
+                                                        </FormGroup>
+                                                        {children.length > 0 && (
+                                                            <div className="ms-4">
+                                                                {children.map((child) => (
+                                                                    <FormGroup check key={child._id} className="mb-1">
+                                                                        <Input
+                                                                            type="checkbox"
+                                                                            id={`perm-${child._id}`}
+                                                                            checked={sectionState.subMenus.has(child._id)}
+                                                                            onChange={(e) => toggleSubMenu(menu._id, child._id, e.target.checked)}
+                                                                        />
+                                                                        <Label check for={`perm-${child._id}`}>
+                                                                            {child.label}
+                                                                        </Label>
+                                                                    </FormGroup>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                    <small className="text-muted d-block mt-1">
+                                        Check a section to grant access to it. Sections with sub-items also let you pick specific pages within that section.
                                     </small>
                                 </FormGroup>
                             </Col>
@@ -372,8 +492,9 @@ const Roles = () => {
                         <Button color="light" onClick={() => setModal(false)}>
                             Cancel
                         </Button>
-                        <Button color="primary" type="submit">
-                            {isEdit ? 'Update Role' : 'Create Role'}
+                        <Button color="primary" type="submit" disabled={isSubmitting}>
+                            {isSubmitting && <Spinner size="sm" className="me-1" />}
+                            {isSubmitting ? 'Saving...' : (isEdit ? 'Update Role' : 'Create Role')}
                         </Button>
                     </ModalFooter>
                 </Form>

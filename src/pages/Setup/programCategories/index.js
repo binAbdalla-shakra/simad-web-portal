@@ -6,13 +6,14 @@ import {
     Col, Container, Row,
     Form, Input, Label, FormGroup,
     Modal, ModalBody, ModalFooter, ModalHeader,
-    Button, Badge, FormFeedback
+    Button, Badge, FormFeedback, Spinner
 } from "reactstrap";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import BreadCrumb from "../../../Components/Common/BreadCrumb";
 import DeleteModal from "../../../Components/Common/DeleteModal";
 import Loader from "../../../Components/Common/Loader";
+import NoDataFound from "../../../Components/Common/NoDataFound";
 
 
 import { useDispatch, useSelector } from 'react-redux';
@@ -41,6 +42,7 @@ const ProgramCategories = () => {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [modal, setModal] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -130,8 +132,9 @@ const ProgramCategories = () => {
 
     // Create new category
     const createCategory = async () => {
-        if (!validateForm()) return;
+        if (!validateForm() || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const authUser = JSON.parse(sessionStorage.getItem("authUser"));
             const categoryData = {
@@ -139,18 +142,22 @@ const ProgramCategories = () => {
                 createdBy: authUser?.data?.user?.username || "Admin"
             };
 
-            dispatch(onAddProgramCategory(categoryData));
+            await dispatch(onAddProgramCategory(categoryData)).unwrap();
 
             setModal(false);
         } catch (error) {
-            console.log(`Error creating category: ${error.message}`);
+            // Failed: keep the modal open and the entered data intact so the
+            // user can fix the issue and resubmit instead of losing their input.
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     // Update category
     const updateCategory = async () => {
-        if (!validateForm() || !selectedCategory) return;
+        if (!validateForm() || !selectedCategory || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const authUser = JSON.parse(sessionStorage.getItem("authUser"));
             const categoryData = {
@@ -159,11 +166,13 @@ const ProgramCategories = () => {
                 updatedBy: authUser?.data?.user?.username || "Admin"
             };
 
-            dispatch(onUpdateProgramCategory(categoryData));
+            await dispatch(onUpdateProgramCategory(categoryData)).unwrap();
 
             setModal(false);
         } catch (error) {
-            console.log(`Error updating category: ${error.message}`);
+            // Error toast already shown by the thunk.
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -307,7 +316,9 @@ const ProgramCategories = () => {
                                 pagination
                                 highlightOnHover
                                 responsive
-                                noDataComponent="No categories found matching your criteria"
+                                noDataComponent={
+                                    <NoDataFound title="No categories found" message="No categories found matching your criteria." />
+                                }
                             />
                         )}
                     </CardBody>
@@ -331,7 +342,7 @@ const ProgramCategories = () => {
                                     <Input
                                         name="name"
                                         value={formData.name}
-                                        placeholder='Undergraduate'
+                                        placeholder="e.g., Undergraduate"
                                         onChange={handleInputChange}
 
                                     />
@@ -339,13 +350,14 @@ const ProgramCategories = () => {
                             </Col>
                             <Col md={4}>
                                 <FormGroup>
-                                    <Label>Order</Label>
+                                    <Label>Order <span className="text-muted fs-12">(optional)</span></Label>
                                     <Input
                                         type="number"
                                         name="order"
                                         value={formData.order}
                                         onChange={handleInputChange}
                                         min="0"
+                                        placeholder="e.g., 1"
                                     />
                                 </FormGroup>
                             </Col>
@@ -355,7 +367,7 @@ const ProgramCategories = () => {
                                     <Input
                                         type="textarea"
                                         name="description"
-                                        placeholder='eg. some description about the category'
+                                        placeholder="e.g., Programs leading to a bachelor's degree"
                                         value={formData.description}
                                         onChange={handleInputChange}
 
@@ -365,12 +377,12 @@ const ProgramCategories = () => {
                             </Col>
                             <Col md={12}>
                                 <FormGroup>
-                                    <Label>Icon Class (e.g., ri-book-line)</Label>
+                                    <Label>Icon Class <span className="text-muted fs-12">(optional)</span></Label>
                                     <Input
                                         name="icon"
                                         value={formData.icon}
                                         onChange={handleInputChange}
-                                        placeholder="Enter icon class name"
+                                        placeholder="e.g., ri-book-line"
                                     />
                                     <small className="text-muted">
                                         Use Remix Icon classes (e.g., ri-book-line, ri-graduation-cap-line)
@@ -397,8 +409,9 @@ const ProgramCategories = () => {
                         <Button color="light" onClick={() => setModal(false)}>
                             Cancel
                         </Button>
-                        <Button color="primary" type="submit" disabled={loading}>
-                            {loading ? 'Saving...' : 'Save Changes'}
+                        <Button color="primary" type="submit" disabled={isSubmitting}>
+                            {isSubmitting && <Spinner size="sm" className="me-1" />}
+                            {isSubmitting ? 'Saving...' : 'Save Changes'}
                         </Button>
                     </ModalFooter>
                 </Form>

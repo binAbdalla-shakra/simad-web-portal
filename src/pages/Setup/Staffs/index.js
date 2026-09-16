@@ -4,7 +4,7 @@ import {
     Col, Container, Row,
     Form, Input, Label, FormGroup,
     Modal, ModalBody, ModalFooter, ModalHeader,
-    Button, Badge, Nav, NavItem, NavLink, TabContent, TabPane
+    Button, Badge, Nav, NavItem, NavLink, TabContent, TabPane, Spinner
 } from "reactstrap";
 import DataTable from "react-data-table-component";
 import Select from "react-select";
@@ -14,6 +14,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import BreadCrumb from "../../../Components/Common/BreadCrumb";
 import DeleteModal from "../../../Components/Common/DeleteModal";
 import Loader from "../../../Components/Common/Loader";
+import NoDataFound from "../../../Components/Common/NoDataFound";
 import CreatableSelect from 'react-select/creatable';
 // Import FilePond for file uploads
 import { FilePond, registerPlugin } from 'react-filepond';
@@ -65,6 +66,7 @@ const StaffPage = () => {
     // State management
     const [staff, setStaff] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [modal, setModal] = useState(false);
     const [viewModal, setViewModal] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
@@ -359,8 +361,9 @@ const StaffPage = () => {
     // Create new staff
     const createStaff = async (e) => {
         e.preventDefault();
-        if (!validateForm()) return;
+        if (!validateForm() || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
 
@@ -436,21 +439,25 @@ const StaffPage = () => {
 
 
 
-            await dispatch(onCreateOrUpdateStaff(submitData));
+            await dispatch(onCreateOrUpdateStaff(submitData)).unwrap();
 
             handleModalClose();
             resetForm();
         } catch (error) {
+            // Failed: keep the modal open and the entered data intact so the
+            // user can fix the issue and resubmit instead of losing their input.
             console.error("Error creating staff:", error);
-
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     // Update staff
     const updateStaff = async (e) => {
         e.preventDefault();
-        if (!validateForm() || !selectedStaff) return;
+        if (!validateForm() || !selectedStaff || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
 
@@ -531,13 +538,14 @@ const StaffPage = () => {
             // Append ID for update
             submitData.append('_id', selectedStaff._id);
 
-            await dispatch(onCreateOrUpdateStaff(submitData));
+            await dispatch(onCreateOrUpdateStaff(submitData)).unwrap();
 
             handleModalClose();
             resetForm();
         } catch (error) {
             console.error("Error updating staff:", error);
-
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -852,7 +860,9 @@ const StaffPage = () => {
                                 pagination
                                 highlightOnHover
                                 responsive
-                                noDataComponent="No staff members found matching your criteria"
+                                noDataComponent={
+                                    <NoDataFound title="No staff members found" message="No staff members found matching your criteria." />
+                                }
                             />
                         )}
                     </CardBody>
@@ -973,23 +983,23 @@ const StaffPage = () => {
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label>Phone</Label>
+                                            <Label>Phone <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="phone"
                                                 value={formData.phone}
                                                 onChange={handleInputChange}
-                                                placeholder="Enter phone number"
+                                                placeholder="e.g., +252610000000"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={12}>
                                         <FormGroup>
-                                            <Label>Office Location</Label>
+                                            <Label>Office Location <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="officeLocation"
                                                 value={formData.officeLocation}
                                                 onChange={handleInputChange}
-                                                placeholder="Enter office location"
+                                                placeholder="e.g., Building A, Room 204"
                                             />
                                         </FormGroup>
                                     </Col>
@@ -1564,8 +1574,9 @@ const StaffPage = () => {
                                         Next <i className="ri-arrow-right-line ms-1" />
                                     </Button>
                                 ) : (
-                                    <Button color="success" type="submit">
-                                        {isEdit ? 'Update Staff' : 'Add Staff'}
+                                    <Button color="success" type="submit" disabled={isSubmitting}>
+                                        {isSubmitting && <Spinner size="sm" className="me-1" />}
+                                        {isSubmitting ? 'Saving...' : (isEdit ? 'Update Staff' : 'Add Staff')}
                                     </Button>
                                 )}
                             </div>

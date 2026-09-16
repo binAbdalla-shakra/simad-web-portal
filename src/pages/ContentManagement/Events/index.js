@@ -4,7 +4,7 @@ import {
     Col, Container, Row,
     Form, Input, Label, FormGroup,
     Modal, ModalBody, ModalFooter, ModalHeader,
-    Button, Badge
+    Button, Badge, Spinner
 } from "reactstrap";
 import Select from "react-select";
 
@@ -49,6 +49,7 @@ const EventsPage = () => {
     // State management
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [modal, setModal] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -272,8 +273,9 @@ const EventsPage = () => {
     // Create new event
     const createEvent = async (e) => {
         e.preventDefault();
-        if (!validateForm()) return;
+        if (!validateForm() || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
             submitData.append('title', formData.title);
@@ -287,21 +289,25 @@ const EventsPage = () => {
                 submitData.append('image', formData.image);
             }
 
-            await dispatch(onCreateOrUpdateEvent(submitData));
+            await dispatch(onCreateOrUpdateEvent(submitData)).unwrap();
 
             setModal(false);
             resetForm();
         } catch (error) {
+            // Failed: keep the modal open and the entered data intact so the
+            // user can fix the issue and resubmit instead of losing their input.
             console.error("Error creating event:", error);
-            // toast.error("Failed to create event");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     // Update event
     const updateEvent = async (e) => {
         e.preventDefault();
-        if (!validateForm() || !selectedEvent) return;
+        if (!validateForm() || !selectedEvent || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
             submitData.append('title', formData.title);
@@ -316,13 +322,14 @@ const EventsPage = () => {
                 submitData.append('image', formData.image);
             }
 
-            await dispatch(onCreateOrUpdateEvent(submitData));
+            await dispatch(onCreateOrUpdateEvent(submitData)).unwrap();
 
             setModal(false);
             resetForm();
         } catch (error) {
             console.error("Error updating event:", error);
-            // toast.error("Failed to update event");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -564,7 +571,7 @@ const EventsPage = () => {
                                         name="title"
                                         value={formData.title}
                                         onChange={handleInputChange}
-                                        placeholder="Enter event title"
+                                        placeholder="e.g., Annual Tech Symposium 2026"
                                         required
                                     />
                                 </FormGroup>
@@ -577,7 +584,7 @@ const EventsPage = () => {
                                         name="description"
                                         value={formData.description}
                                         onChange={handleInputChange}
-                                        placeholder="Enter event description"
+                                        placeholder="e.g., Join us for a day of talks and workshops on emerging technology."
                                         rows="4"
                                         required
                                     />
@@ -631,7 +638,7 @@ const EventsPage = () => {
                                         name="location"
                                         value={formData.location}
                                         onChange={handleInputChange}
-                                        placeholder="Enter event location"
+                                        placeholder="e.g., Simad University Main Campus, Mogadishu"
                                         required
                                     />
                                 </FormGroup>
@@ -661,8 +668,9 @@ const EventsPage = () => {
                         <Button color="light" onClick={() => setModal(false)}>
                             Cancel
                         </Button>
-                        <Button color="primary" type="submit">
-                            {isEdit ? 'Update Event' : 'Add Event'}
+                        <Button color="primary" type="submit" disabled={isSubmitting}>
+                            {isSubmitting && <Spinner size="sm" className="me-1" />}
+                            {isSubmitting ? 'Saving...' : (isEdit ? 'Update Event' : 'Add Event')}
                         </Button>
                     </ModalFooter>
                 </Form>

@@ -489,6 +489,7 @@ const Departments = () => {
                                         value={formik.values.name}
                                         onChange={formik.handleChange}
                                         onBlur={formik.handleBlur}
+                                        placeholder="e.g., Computer Science"
                                         invalid={formik.touched.name && !!formik.errors.name}
                                     />
                                     {formik.touched.name && formik.errors.name && (
@@ -498,13 +499,14 @@ const Departments = () => {
                             </Col>
                             <Col md={4}>
                                 <FormGroup>
-                                    <Label>Order</Label>
+                                    <Label>Order <span className="text-muted fs-12">(optional)</span></Label>
                                     <Input
                                         type="number"
                                         name="order"
                                         value={formik.values.order}
                                         onChange={formik.handleChange}
                                         onBlur={formik.handleBlur}
+                                        placeholder="e.g., 1"
                                         min="0"
                                         invalid={formik.touched.order && !!formik.errors.order}
                                     />
@@ -515,13 +517,14 @@ const Departments = () => {
                             </Col>
                             <Col md={12}>
                                 <FormGroup>
-                                    <Label>Description</Label>
+                                    <Label>Description <span className="text-muted fs-12">(optional)</span></Label>
                                     <Input
                                         type="textarea"
                                         name="description"
                                         value={formik.values.description}
                                         onChange={formik.handleChange}
                                         onBlur={formik.handleBlur}
+                                        placeholder="e.g., Brief overview of the department's focus and programs"
                                         rows="3"
                                         invalid={formik.touched.description && !!formik.errors.description}
                                     />
@@ -553,7 +556,7 @@ const Departments = () => {
                             </Col>
                             <Col md={6}>
                                 <FormGroup>
-                                    <Label>Department Head</Label>
+                                    <Label>Department Head <span className="text-muted fs-12">(optional)</span></Label>
                                     <Input
                                         type="select"
                                         name="head"
@@ -574,12 +577,13 @@ const Departments = () => {
                             </Col>
                             <Col md={4}>
                                 <FormGroup>
-                                    <Label>Contact Phone</Label>
+                                    <Label>Contact Phone <span className="text-muted fs-12">(optional)</span></Label>
                                     <Input
                                         name="contactInfo.phone"
                                         value={formik.values.contactInfo.phone}
                                         onChange={formik.handleChange}
                                         onBlur={formik.handleBlur}
+                                        placeholder="e.g., +252610000000"
                                         invalid={formik.touched.contactInfo?.phone && !!formik.errors.contactInfo?.phone}
                                     />
                                     {formik.touched.contactInfo?.phone && formik.errors.contactInfo?.phone && (
@@ -589,13 +593,14 @@ const Departments = () => {
                             </Col>
                             <Col md={4}>
                                 <FormGroup>
-                                    <Label>Contact Email</Label>
+                                    <Label>Contact Email <span className="text-muted fs-12">(optional)</span></Label>
                                     <Input
                                         type="email"
                                         name="contactInfo.email"
                                         value={formik.values.contactInfo.email}
                                         onChange={formik.handleChange}
                                         onBlur={formik.handleBlur}
+                                        placeholder="e.g., cs@simad.edu.so"
                                         invalid={formik.touched.contactInfo?.email && !!formik.errors.contactInfo?.email}
                                     />
                                     {formik.touched.contactInfo?.email && formik.errors.contactInfo?.email && (
@@ -605,12 +610,13 @@ const Departments = () => {
                             </Col>
                             <Col md={4}>
                                 <FormGroup>
-                                    <Label>Location</Label>
+                                    <Label>Location <span className="text-muted fs-12">(optional)</span></Label>
                                     <Input
                                         name="contactInfo.location"
                                         value={formik.values.contactInfo.location}
                                         onChange={formik.handleChange}
                                         onBlur={formik.handleBlur}
+                                        placeholder="e.g., Building A, Room 204"
                                         invalid={formik.touched.contactInfo?.location && !!formik.errors.contactInfo?.location}
                                     />
                                     {formik.touched.contactInfo?.location && formik.errors.contactInfo?.location && (

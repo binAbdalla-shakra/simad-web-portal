@@ -4,7 +4,7 @@ import {
     Col, Container, Row,
     Form, Input, Label, FormGroup,
     Modal, ModalBody, ModalFooter, ModalHeader,
-    Button, Badge
+    Button, Badge, Spinner
 } from "reactstrap";
 import Select from "react-select";
 
@@ -61,6 +61,7 @@ const PartnersPage = () => {
     const [partnerCategories, setPartnerCategories] = useState([]);
 
     const [loading, setLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [modal, setModal] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -200,8 +201,9 @@ const PartnersPage = () => {
     // Create new partner
     const createPartner = async (e) => {
         e.preventDefault();
-        if (!validateForm()) return;
+        if (!validateForm() || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
             submitData.append('name', formData.name);
@@ -213,21 +215,25 @@ const PartnersPage = () => {
                 submitData.append('logo', formData.logo);
             }
 
-            await dispatch(onCreateOrUpdatePartner(submitData));
+            await dispatch(onCreateOrUpdatePartner(submitData)).unwrap();
 
             setModal(false);
             resetForm();
         } catch (error) {
+            // Failed: keep the modal open and the entered data intact so the
+            // user can fix the issue and resubmit instead of losing their input.
             console.error("Error creating partner:", error);
-            toast.error("Failed to create partner");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     // Update partner
     const updatePartner = async (e) => {
         e.preventDefault();
-        if (!validateForm() || !selectedPartner) return;
+        if (!validateForm() || !selectedPartner || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
             submitData.append('name', formData.name);
@@ -240,13 +246,14 @@ const PartnersPage = () => {
                 submitData.append('logo', formData.logo);
             }
 
-            await dispatch(onCreateOrUpdatePartner(submitData));
+            await dispatch(onCreateOrUpdatePartner(submitData)).unwrap();
 
             setModal(false);
             resetForm();
         } catch (error) {
             console.error("Error updating partner:", error);
-            toast.error("Failed to update partner");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -479,27 +486,27 @@ const PartnersPage = () => {
                                         name="name"
                                         value={formData.name}
                                         onChange={handleInputChange}
-                                        placeholder="Enter partner name"
+                                        placeholder="e.g., Ministry of Education"
                                         required
                                     />
                                 </FormGroup>
                             </Col>
                             <Col md={12}>
                                 <FormGroup>
-                                    <Label>Description</Label>
+                                    <Label>Description <span className="text-muted fs-12">(optional)</span></Label>
                                     <Input
                                         type="textarea"
                                         name="desc"
                                         value={formData.desc}
                                         onChange={handleInputChange}
-                                        placeholder="Enter partner description"
+                                        placeholder="e.g., A strategic partnership focused on research and academic exchange"
                                         rows="3"
                                     />
                                 </FormGroup>
                             </Col>
                             <Col md={6}>
                                 <FormGroup>
-                                    <Label>Partnership Duration</Label>
+                                    <Label>Partnership Duration <span className="text-muted fs-12">(optional)</span></Label>
                                     <Input
                                         name="howLong"
                                         value={formData.howLong}
@@ -530,7 +537,7 @@ const PartnersPage = () => {
                             </Col>
                             <Col md={12}>
                                 <FormGroup>
-                                    <Label>Partner Logo</Label>
+                                    <Label>Partner Logo <span className="text-muted fs-12">(optional)</span></Label>
                                     <FilePond
                                         files={logoFiles}
                                         onupdatefiles={handleFileUpdate}
@@ -553,8 +560,9 @@ const PartnersPage = () => {
                         <Button color="light" onClick={() => setModal(false)}>
                             Cancel
                         </Button>
-                        <Button color="primary" type="submit">
-                            {isEdit ? 'Update Partner' : 'Add Partner'}
+                        <Button color="primary" type="submit" disabled={isSubmitting}>
+                            {isSubmitting && <Spinner size="sm" className="me-1" />}
+                            {isSubmitting ? 'Saving...' : (isEdit ? 'Update Partner' : 'Add Partner')}
                         </Button>
                     </ModalFooter>
                 </Form>

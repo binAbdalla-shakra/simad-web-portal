@@ -4,7 +4,7 @@ import {
     Col, Container, Row,
     Form, Input, Label, FormGroup,
     Modal, ModalBody, ModalFooter, ModalHeader,
-    Button, Badge
+    Button, Badge, Spinner
 } from "reactstrap";
 import Select from "react-select";
 
@@ -49,6 +49,7 @@ const FacilitiesPage = () => {
     // State management
     const [facilities, setFacilities] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [modal, setModal] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -172,8 +173,9 @@ const FacilitiesPage = () => {
     // Create new facility
     const createFacility = async (e) => {
         e.preventDefault();
-        if (!validateForm()) return;
+        if (!validateForm() || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
             submitData.append('name', formData.name);
@@ -183,23 +185,26 @@ const FacilitiesPage = () => {
                 submitData.append('image', formData.image);
             }
 
-            await dispatch(onCreateOrUpdateFacility(submitData));
-
+            await dispatch(onCreateOrUpdateFacility(submitData)).unwrap();
 
             setModal(false);
             resetForm();
             fetchFacilities(); // Refresh the list
         } catch (error) {
+            // Failed: keep the modal open and the entered data intact so the
+            // user can fix the issue and resubmit instead of losing their input.
             console.error("Error creating facility:", error);
-
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     // Update facility
     const updateFacility = async (e) => {
         e.preventDefault();
-        if (!validateForm() || !selectedFacility) return;
+        if (!validateForm() || !selectedFacility || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
             submitData.append('name', formData.name);
@@ -210,15 +215,15 @@ const FacilitiesPage = () => {
                 submitData.append('image', formData.image);
             }
 
-            await dispatch(onCreateOrUpdateFacility(submitData));
-
+            await dispatch(onCreateOrUpdateFacility(submitData)).unwrap();
 
             setModal(false);
             resetForm();
             fetchFacilities(); // Refresh the list
         } catch (error) {
             console.error("Error updating facility:", error);
-
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -449,7 +454,7 @@ const FacilitiesPage = () => {
                                         name="name"
                                         value={formData.name}
                                         onChange={handleInputChange}
-                                        placeholder="Enter facility name"
+                                        placeholder="e.g., Main Library"
                                         required
                                     />
                                 </FormGroup>
@@ -462,7 +467,7 @@ const FacilitiesPage = () => {
                                         name="description"
                                         value={formData.description}
                                         onChange={handleInputChange}
-                                        placeholder="Enter facility description"
+                                        placeholder="e.g., A modern facility equipped with the latest technology for student use"
                                         rows="4"
                                         required
                                     />
@@ -493,8 +498,9 @@ const FacilitiesPage = () => {
                         <Button color="light" onClick={() => setModal(false)}>
                             Cancel
                         </Button>
-                        <Button color="primary" type="submit">
-                            {isEdit ? 'Update Facility' : 'Add Facility'}
+                        <Button color="primary" type="submit" disabled={isSubmitting}>
+                            {isSubmitting && <Spinner size="sm" className="me-1" />}
+                            {isSubmitting ? 'Saving...' : (isEdit ? 'Update Facility' : 'Add Facility')}
                         </Button>
                     </ModalFooter>
                 </Form>

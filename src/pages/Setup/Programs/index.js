@@ -4,7 +4,7 @@ import {
     Col, Container, Row,
     Form, Input, Label, FormGroup,
     Modal, ModalBody, ModalFooter, ModalHeader,
-    Button, Badge, Nav, NavItem, NavLink, TabContent, TabPane
+    Button, Badge, Nav, NavItem, NavLink, TabContent, TabPane, Spinner
 } from "reactstrap";
 import DataTable from "react-data-table-component";
 import Select from "react-select";
@@ -14,6 +14,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import BreadCrumb from "../../../Components/Common/BreadCrumb";
 import DeleteModal from "../../../Components/Common/DeleteModal";
 import Loader from "../../../Components/Common/Loader";
+import NoDataFound from "../../../Components/Common/NoDataFound";
 
 // Import FilePond for file uploads
 import { FilePond, registerPlugin } from 'react-filepond';
@@ -75,6 +76,7 @@ const ProgramsPage = () => {
     const [programs, setPrograms] = useState([]);
     const [schools, setSchools] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [modal, setModal] = useState(false);
     const [viewModal, setViewModal] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
@@ -360,8 +362,9 @@ const ProgramsPage = () => {
     // Create new program
     const createProgram = async (e) => {
         e.preventDefault();
-        if (!validateForm()) return;
+        if (!validateForm() || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
 
@@ -413,21 +416,25 @@ const ProgramsPage = () => {
                 submitData.append('coverImage', formData.coverImage);
             }
 
-            await dispatch(onCreateOrUpdateProgram(submitData));
+            await dispatch(onCreateOrUpdateProgram(submitData)).unwrap();
 
             handleModalClose();
             resetForm();
         } catch (error) {
+            // Failed: keep the modal open and the entered data intact so the
+            // user can fix the issue and resubmit instead of losing their input.
             console.error("Error creating program:", error);
-
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     // Update program
     const updateProgram = async (e) => {
         e.preventDefault();
-        if (!validateForm() || !selectedProgram) return;
+        if (!validateForm() || !selectedProgram || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const submitData = new FormData();
 
@@ -485,13 +492,14 @@ const ProgramsPage = () => {
             // Append ID for update
             submitData.append('_id', selectedProgram._id);
 
-            await dispatch(onCreateOrUpdateProgram(submitData));
+            await dispatch(onCreateOrUpdateProgram(submitData)).unwrap();
 
             handleModalClose();
             resetForm();
         } catch (error) {
             console.error("Error updating program:", error);
-
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -856,11 +864,7 @@ const ProgramsPage = () => {
                                 responsive
                                 // striped
                                 noDataComponent={
-                                    <div className="text-center py-5">
-                                        <i className="ri-inbox-line display-4 text-muted"></i>
-                                        <h5 className="mt-3">No programs found</h5>
-                                        <p className="text-muted">Try adjusting your search criteria or add a new program.</p>
-                                    </div>
+                                    <NoDataFound title="No programs found" message="Try adjusting your search criteria or add a new program." />
                                 }
                                 customStyles={{
                                     headCells: {
@@ -944,12 +948,12 @@ const ProgramsPage = () => {
                                 <Row>
                                     <Col md={12}>
                                         <FormGroup>
-                                            <Label>Program Icon Class</Label>
+                                            <Label>Program Icon Class <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="icon"
                                                 value={formData.icon}
                                                 onChange={handleInputChange}
-                                                placeholder="ri-book-line"
+                                                placeholder="e.g., ri-book-line"
                                             />
                                             <small className="text-muted">
                                                 Enter Remix Icon class name (e.g., ri-book-line, ri-computer-line)
@@ -967,7 +971,7 @@ const ProgramsPage = () => {
                                     </Col>
                                     <Col md={12}>
                                         <FormGroup>
-                                            <Label>Cover Image</Label>
+                                            <Label>Cover Image <span className="text-muted fs-12">(optional)</span></Label>
                                             <FilePond
                                                 files={coverImageFiles}
                                                 onupdatefiles={handleCoverImageFileUpdate}
@@ -988,14 +992,14 @@ const ProgramsPage = () => {
                                                 name="name"
                                                 value={formData.name}
                                                 onChange={handleInputChange}
-                                                placeholder="Enter program name"
+                                                placeholder="e.g., Bachelor of Computer Science"
                                                 required
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label>Short Name</Label>
+                                            <Label>Short Name <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="shortName"
                                                 value={formData.shortName}
@@ -1022,31 +1026,31 @@ const ProgramsPage = () => {
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label>Provider</Label>
+                                            <Label>Provider <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="provider"
                                                 value={formData.provider}
                                                 onChange={handleInputChange}
-                                                placeholder="Program provider"
+                                                placeholder="e.g., SIMAD University"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label>Order</Label>
+                                            <Label>Order <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 type="number"
                                                 name="order"
                                                 value={formData.order}
                                                 onChange={handleInputChange}
                                                 min="0"
-                                                placeholder="Display order"
+                                                placeholder="e.g., 1"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={6}>
                                         <FormGroup>
-                                            <Label>External Link</Label>
+                                            <Label>External Link <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 type="url"
                                                 name="externalLink"
@@ -1058,12 +1062,12 @@ const ProgramsPage = () => {
                                     </Col>
                                     <Col md={12}>
                                         <FormGroup>
-                                            <Label>Tagline</Label>
+                                            <Label>Tagline <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="tagline"
                                                 value={formData.tagline}
                                                 onChange={handleInputChange}
-                                                placeholder="Enter program tagline"
+                                                placeholder="e.g., Empowering future innovators"
                                             />
                                         </FormGroup>
                                     </Col>
@@ -1078,7 +1082,7 @@ const ProgramsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Section Title</Label>
+                                            <Label>Section Title <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="about_program_sec_title"
                                                 value={formData.about_program_sec_title}
@@ -1089,7 +1093,7 @@ const ProgramsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Section Icon</Label>
+                                            <Label>Section Icon <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="about_program_sec_icon"
                                                 value={formData.about_program_sec_icon}
@@ -1100,7 +1104,7 @@ const ProgramsPage = () => {
                                     </Col>
                                     <Col md={12}>
                                         <FormGroup>
-                                            <Label>Program Information</Label>
+                                            <Label>Program Information <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 type="textarea"
                                                 name="about_program_sec_info"
@@ -1117,7 +1121,7 @@ const ProgramsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Duration (Years)</Label>
+                                            <Label>Duration (Years) <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 type="number"
                                                 name="duration"
@@ -1125,12 +1129,13 @@ const ProgramsPage = () => {
                                                 onChange={handleInputChange}
                                                 min="1"
                                                 max="10"
+                                                placeholder="e.g., 4"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Section Title</Label>
+                                            <Label>Section Title <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="duration_sec_title"
                                                 value={formData.duration_sec_title}
@@ -1141,7 +1146,7 @@ const ProgramsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Section Icon</Label>
+                                            <Label>Section Icon <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="duration_sec_icon"
                                                 value={formData.duration_sec_icon}
@@ -1156,7 +1161,7 @@ const ProgramsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Semester Fee ($)</Label>
+                                            <Label>Semester Fee ($) <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 type="number"
                                                 name="sem_fee"
@@ -1164,12 +1169,13 @@ const ProgramsPage = () => {
                                                 onChange={handleInputChange}
                                                 min="0"
                                                 step="0.01"
+                                                placeholder="e.g., 500"
                                             />
                                         </FormGroup>
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Section Title</Label>
+                                            <Label>Section Title <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="sem_fee_sec_title"
                                                 value={formData.sem_fee_sec_title}
@@ -1180,7 +1186,7 @@ const ProgramsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Section Icon</Label>
+                                            <Label>Section Icon <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="sem_fee_sec_icon"
                                                 value={formData.sem_fee_sec_icon}
@@ -1200,7 +1206,7 @@ const ProgramsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Section Title</Label>
+                                            <Label>Section Title <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="curriculum_sec_title"
                                                 value={formData.curriculum_sec_title}
@@ -1211,7 +1217,7 @@ const ProgramsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Section Icon</Label>
+                                            <Label>Section Icon <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="curriculum_sec_icon"
                                                 value={formData.curriculum_sec_icon}
@@ -1222,7 +1228,7 @@ const ProgramsPage = () => {
                                     </Col>
                                     <Col md={12}>
                                         <FormGroup>
-                                            <Label>Section Description</Label>
+                                            <Label>Section Description <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 type="textarea"
                                                 name="curriculum_sec_desc"
@@ -1258,29 +1264,30 @@ const ProgramsPage = () => {
                                                                 <Input
                                                                     value={item.title}
                                                                     onChange={(e) => handleArrayFieldChange('curriculum', index, 'title', e.target.value)}
-                                                                    placeholder="Enter curriculum title"
+                                                                    placeholder="e.g., Introduction to Programming"
                                                                     required
                                                                 />
                                                             </FormGroup>
                                                         </Col>
                                                         <Col md={6}>
                                                             <FormGroup>
-                                                                <Label>Icon Class</Label>
+                                                                <Label>Icon Class <span className="text-muted fs-12">(optional)</span></Label>
                                                                 <Input
                                                                     value={item.icon}
                                                                     onChange={(e) => handleArrayFieldChange('curriculum', index, 'icon', e.target.value)}
-                                                                    placeholder="ri-book-2-line"
+                                                                    placeholder="e.g., ri-book-2-line"
                                                                 />
                                                             </FormGroup>
                                                         </Col>
                                                         <Col md={6}>
                                                             <FormGroup>
-                                                                <Label>Order</Label>
+                                                                <Label>Order <span className="text-muted fs-12">(optional)</span></Label>
                                                                 <Input
                                                                     type="number"
                                                                     value={item.order}
                                                                     onChange={(e) => handleArrayFieldChange('curriculum', index, 'order', parseInt(e.target.value))}
                                                                     min="0"
+                                                                    placeholder="e.g., 1"
                                                                 />
                                                             </FormGroup>
                                                         </Col>
@@ -1291,7 +1298,7 @@ const ProgramsPage = () => {
                                                                     type="textarea"
                                                                     value={item.description}
                                                                     onChange={(e) => handleArrayFieldChange('curriculum', index, 'description', e.target.value)}
-                                                                    placeholder="Enter curriculum description"
+                                                                    placeholder="e.g., Covers the fundamentals of programming, algorithms, and problem solving"
                                                                     rows="3"
                                                                     required
                                                                 />
@@ -1324,7 +1331,7 @@ const ProgramsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Section Title</Label>
+                                            <Label>Section Title <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="admissionRequirements_sec_title"
                                                 value={formData.admissionRequirements_sec_title}
@@ -1335,7 +1342,7 @@ const ProgramsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Section Icon</Label>
+                                            <Label>Section Icon <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="admissionRequirements_sec_icon"
                                                 value={formData.admissionRequirements_sec_icon}
@@ -1346,7 +1353,7 @@ const ProgramsPage = () => {
                                     </Col>
                                     <Col md={12}>
                                         <FormGroup>
-                                            <Label>Section Description</Label>
+                                            <Label>Section Description <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 type="textarea"
                                                 name="admissionRequirements_sec_desc"
@@ -1365,7 +1372,7 @@ const ProgramsPage = () => {
                                                 <Input
                                                     value={requirement}
                                                     onChange={(e) => handleSimpleArrayChange('admissionRequirements', index, e.target.value)}
-                                                    placeholder="Enter admission requirement"
+                                                    placeholder="e.g., High school diploma or equivalent"
                                                 />
                                                 {formData.admissionRequirements.length > 1 && (
                                                     <Button
@@ -1396,7 +1403,7 @@ const ProgramsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Section Title</Label>
+                                            <Label>Section Title <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="careerPaths_sec_title"
                                                 value={formData.careerPaths_sec_title}
@@ -1407,7 +1414,7 @@ const ProgramsPage = () => {
                                     </Col>
                                     <Col md={4}>
                                         <FormGroup>
-                                            <Label>Section Icon</Label>
+                                            <Label>Section Icon <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 name="careerPaths_sec_icon"
                                                 value={formData.careerPaths_sec_icon}
@@ -1418,7 +1425,7 @@ const ProgramsPage = () => {
                                     </Col>
                                     <Col md={12}>
                                         <FormGroup>
-                                            <Label>Section Description</Label>
+                                            <Label>Section Description <span className="text-muted fs-12">(optional)</span></Label>
                                             <Input
                                                 type="textarea"
                                                 name="careerPaths_sec_desc"
@@ -1454,29 +1461,30 @@ const ProgramsPage = () => {
                                                                 <Input
                                                                     value={item.title}
                                                                     onChange={(e) => handleArrayFieldChange('careerPaths', index, 'title', e.target.value)}
-                                                                    placeholder="Enter career path title"
+                                                                    placeholder="e.g., Software Engineer"
                                                                     required
                                                                 />
                                                             </FormGroup>
                                                         </Col>
                                                         <Col md={6}>
                                                             <FormGroup>
-                                                                <Label>Icon Class</Label>
+                                                                <Label>Icon Class <span className="text-muted fs-12">(optional)</span></Label>
                                                                 <Input
                                                                     value={item.icon}
                                                                     onChange={(e) => handleArrayFieldChange('careerPaths', index, 'icon', e.target.value)}
-                                                                    placeholder="ri-briefcase-4-line"
+                                                                    placeholder="e.g., ri-briefcase-4-line"
                                                                 />
                                                             </FormGroup>
                                                         </Col>
                                                         <Col md={6}>
                                                             <FormGroup>
-                                                                <Label>Order</Label>
+                                                                <Label>Order <span className="text-muted fs-12">(optional)</span></Label>
                                                                 <Input
                                                                     type="number"
                                                                     value={item.order}
                                                                     onChange={(e) => handleArrayFieldChange('careerPaths', index, 'order', parseInt(e.target.value))}
                                                                     min="0"
+                                                                    placeholder="e.g., 1"
                                                                 />
                                                             </FormGroup>
                                                         </Col>
@@ -1487,7 +1495,7 @@ const ProgramsPage = () => {
                                                                     type="textarea"
                                                                     value={item.description}
                                                                     onChange={(e) => handleArrayFieldChange('careerPaths', index, 'description', e.target.value)}
-                                                                    placeholder="Enter career path description"
+                                                                    placeholder="e.g., Graduates can pursue roles in software development, IT consulting, or systems analysis"
                                                                     rows="3"
                                                                     required
                                                                 />
@@ -1528,8 +1536,9 @@ const ProgramsPage = () => {
                                         Next <i className="ri-arrow-right-line ms-1" />
                                     </Button>
                                 ) : (
-                                    <Button color="success" type="submit">
-                                        {isEdit ? 'Update Program' : 'Add Program'}
+                                    <Button color="success" type="submit" disabled={isSubmitting}>
+                                        {isSubmitting && <Spinner size="sm" className="me-1" />}
+                                        {isSubmitting ? 'Saving...' : (isEdit ? 'Update Program' : 'Add Program')}
                                     </Button>
                                 )}
                             </div>

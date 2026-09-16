@@ -26,7 +26,7 @@ export const {
 
 export const CreateOrUpdateStaff = createAsyncThunk(
     "setup/staff",
-    async (data, { dispatch }) => {
+    async (data, { dispatch, rejectWithValue }) => {
         try {
             const res = await StaffAPI.createOrupdate(data);
             if (!res.success) throw res;
@@ -37,6 +37,7 @@ export const CreateOrUpdateStaff = createAsyncThunk(
             // Handle axios error response
             const errorMessage = error.response?.data?.message || error.message || 'Failed to take an action';
             toast.error(errorMessage);
+            return rejectWithValue(errorMessage);
         }
     }
 );
@@ -48,7 +49,7 @@ export const {
 
 export const CreateOrUpdateProgram = createAsyncThunk(
     "setup/program",
-    async (data, { dispatch }) => {
+    async (data, { dispatch, rejectWithValue }) => {
         try {
             const res = await ProgramAPI.createOrupdate(data);
             if (!res.success) throw res;
@@ -59,6 +60,7 @@ export const CreateOrUpdateProgram = createAsyncThunk(
             // Handle axios error response
             const errorMessage = error.response?.data?.message || error.message || 'Failed to take an action';
             toast.error(errorMessage);
+            return rejectWithValue(errorMessage);
         }
     }
 );
@@ -70,7 +72,7 @@ export const {
 
 export const CreateOrUpdateSchool = createAsyncThunk(
     "setup/school",
-    async (data, { dispatch }) => {
+    async (data, { dispatch, rejectWithValue }) => {
         try {
             const res = await SchoolAPI.createOrupdate(data);
             if (!res.success) throw res;
@@ -81,6 +83,7 @@ export const CreateOrUpdateSchool = createAsyncThunk(
             // Handle axios error response
             const errorMessage = error.response?.data?.message || error.message || 'Failed to take an action';
             toast.error(errorMessage);
+            return rejectWithValue(errorMessage);
         }
     }
 );
@@ -93,7 +96,7 @@ export const {
 
 export const CreateOrUpdatePartner = createAsyncThunk(
     "setup/updatepartnerInfo",
-    async (data, { dispatch }) => {
+    async (data, { dispatch, rejectWithValue }) => {
         try {
             const res = await PartnerAPI.createOrupdate(data);
             if (!res.success) throw res;
@@ -126,7 +129,7 @@ export const {
 
 export const createOrUpdateInstitution = createAsyncThunk(
     "setup/InstitutionsAPI",
-    async (data, { dispatch }) => {
+    async (data, { dispatch, rejectWithValue }) => {
         try {
             const res = await InstitutionsAPI.createOrupdate(data);
             if (!res.success) throw res;

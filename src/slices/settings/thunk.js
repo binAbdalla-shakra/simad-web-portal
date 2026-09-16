@@ -32,7 +32,7 @@ export const {
 
 export const createOrUpdateAccreditation = createAsyncThunk(
     "setting/accreditationAPI",
-    async (data, { dispatch }) => {
+    async (data, { dispatch, rejectWithValue }) => {
         try {
             const res = await accreditationAPI.createOrupdate(data);
             if (!res.success) throw res;
@@ -58,7 +58,7 @@ export const {
 
 export const createOrUpdateSenateMember = createAsyncThunk(
     "setting/senateAPI",
-    async (data, { dispatch }) => {
+    async (data, { dispatch, rejectWithValue }) => {
         try {
             const res = await senateAPI.createOrupdate(data);
             if (!res.success) throw res;
@@ -84,7 +84,7 @@ export const {
 
 export const createOrUpdateUniversity = createAsyncThunk(
     "setting/universityAPI",
-    async (data, { dispatch }) => {
+    async (data, { dispatch, rejectWithValue }) => {
         try {
             const res = await universityAPI.createOrupdate(data);
             if (!res.success) throw res;
@@ -112,7 +112,7 @@ export const {
 
 export const createOrUpdateWhySimad = createAsyncThunk(
     "setting/whySimadAPI",
-    async (data, { dispatch }) => {
+    async (data, { dispatch, rejectWithValue }) => {
         try {
             const res = await whySimadAPI.createOrupdate(data);
             if (!res.success) throw res;
@@ -139,7 +139,7 @@ export const {
 
 export const createOrUpdateHistory = createAsyncThunk(
     "setting/historyAPI",
-    async (data, { dispatch }) => {
+    async (data, { dispatch, rejectWithValue }) => {
         try {
             const res = await historyAPI.createOrupdate(data);
             if (!res.success) throw res;

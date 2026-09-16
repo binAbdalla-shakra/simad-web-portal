@@ -16,6 +16,9 @@ import SetupReducer from "./setups/reducer";
 
 import ContentManagementReducer from "./ContentManagement/reducer";
 
+import DashboardReducer from "./dashboard/reducer";
+import ReportsReducer from "./reports/reducer";
+
 const rootReducer = combineReducers({
     Layout: LayoutReducer,
     Login: LoginReducer,
@@ -25,6 +28,8 @@ const rootReducer = combineReducers({
     Settings: SettingsReducer,
     Setups: SetupReducer,
     ContentManagement: ContentManagementReducer,
+    Dashboard: DashboardReducer,
+    Reports: ReportsReducer,
 });
 
 export default rootReducer;
