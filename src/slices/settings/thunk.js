@@ -1,4 +1,4 @@
-import { UserAPI, UniversityAPI, RoleAPI, accreditationAPI, senateAPI, profileAPI, universityAPI, whySimadAPI, historyAPI } from "../../helpers/backend_helper";
+import { UserAPI, RoleAPI, accreditationAPI, senateAPI, profileAPI, universityAPI, whySimadAPI, historyAPI } from "../../helpers/backend_helper";
 import { makeCRUDThunks } from "../../helpers/thunk_factory";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { toast } from "react-toastify";
